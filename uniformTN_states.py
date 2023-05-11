@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod
 from uniformTN_transfers import inverseTransfer_left,mpsTransfer
 from uniformTN_gradients import grad_mps_1d_left,grad_mps_1d
 from uniformTN_gradients import *
+from uniformTN_functions import polarDecomp,randoUnitary,project_mpsTangentVector,project_mpoTangentVector
 
 def polarDecomp(M):
     U,S,Vd = sp.linalg.svd(M,full_matrices = False)
@@ -21,8 +22,7 @@ def polarDecomp(M):
 
 def randoUnitary(d1,d2):
     A = np.random.uniform(-1,1,(d1,d2)) + 1j*np.random.uniform(-1,1,(d1,d2))
-    U,S,Vd = sp.linalg.svd(A,full_matrices = False)
-    return np.dot(U,Vd)
+    return polarDecomp(A)
 
 def project_mpsTangentVector(gradA,A,T):
     T_eigvector_inverse = np.linalg.inv(T.tensor)
@@ -92,14 +92,8 @@ class uMPS_1d:
     def updateTensors(self,mps,mpo):
         self.mps = mps
     def randoInit(self):
-        #random tensor
-        M = np.random.uniform(-1,1,(2,self.D,self.D))
-        #normalise
-        T = mpsTransfer(M)
-        e,u = np.linalg.eig(T.matrix)
-        e0 = e[np.argmax(np.abs(e))]
-        M = M / np.sqrt(np.abs(e0))
-        self.mps = M
+        #WLOG just initialise as left canonical (always possible with gauge)
+        self.mps = randoUnitary(2*self.D,self.D).reshape(2,self.D,self.D)
     def gradDescent(self,twoBodyH,L,R,T_inv,learningRate):
         #grad descent
         gradA = grad_mps_1d(twoBodyH,self.mps,L,R,T_inv)
@@ -113,9 +107,7 @@ class uMPS_1d:
 
 class uMPS_1d_left(uMPS_1d):
     def randoInit(self):
-        #random left canon mps tensor
         self.mps = randoUnitary(2*self.D,self.D).reshape(2,self.D,self.D)
-    #update with an iteration of gradient descent
     def gradDescent(self,twoBodyH,R,T_inv,learningRate,metric=False):
         #grad descent
         gradA = grad_mps_1d_left(twoBodyH,self.mps,R,T_inv,metric=metric)
@@ -194,7 +186,6 @@ class uMPS_1d_centre(uMPS_1d_left):
         else:
             self.polarDecomp_bestCanon()
         self.mps = self.Al
-
 
 class uMPSU_2d:
     def __init__(self,D_mps,D_mpo,mps=None,mpo=None):
