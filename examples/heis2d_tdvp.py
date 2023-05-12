@@ -7,12 +7,12 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 
-from uniformTN_states import uMPSU1_2d_left,uMPS_1d_centre
+from uniformTN_states import uMPSU1_2d_left,uMPS_1d_centre,uMPSU1_2d_left_bipartite,uMPS_1d_left
 from uniformTN_transfers import mpsTransfer,mpsu1Transfer_left_oneLayer,mpsu1Transfer_left_twoLayer,mpsu1Transfer_left_twoLayerWithMpsInsert,inverseTransfer,mpsu1Transfer_left_threeLayerWithMpsInsert_lower,mpsu1Transfer_left_threeLayerWithMpsInsert_upper
 from uniformTN_transfers import inverseTransfer,inverseTransfer_left
-from uniformTN_exp import exp_2d_2body_horizontal_left,exp_2d_2body_vertical_left,exp_1d_2body_left
 from uniformTN_gradients import grad_mpu_horizontal,grad_mpu_vertical,grad_mps_horizontal,grad_mps_vertical
-from uniformTN_gs_solvers import gradDescent_1d_left,gradDescent_2d_left
+from uniformTN_gs_solvers import gradDescent
+from uniformTN_Hamiltonians import localH,twoBodyH
 
 
 N_iter = 1000
@@ -28,11 +28,14 @@ X = np.array([[0,1],[1,0]])
 Y = np.array([[0,1j],[-1j,0]])
 Z = np.array([[-1,0],[0,1]])
 I = np.eye(2)
-twoBodyH = J/4*(np.kron(X,X)+np.kron(Y,Y)+np.kron(Z,Z)).reshape(2,2,2,2)
+heisTerm = twoBodyH(J/4*(np.kron(X,X)+np.kron(Y,Y)+np.kron(Z,Z)))
+H = localH([heisTerm])
 
-psi = uMPSU1_2d_left(D_mps,D_mpo)
+psi = uMPS_1d_left(D)
+# psi = uMPSU1_2d_left(D_mps,D_mpo)
+# psi = uMPSU1_2d_left_bipartite(D_mps,D_mpo)
 psi.randoInit()
-psi,eDensity = gradDescent_2d_left(psi,twoBodyH,N_iter,learningRate,printE0=True,decay=0,tol=tol,envTol=1e-5,TDVP=True)
+psi,eDensity = gradDescent(psi,H,N_iter,learningRate,printE0=True,decay=0,tol=tol,envTol=1e-5,TDVP=True)
 
 plt.plot(eDensity)
 plt.xlabel("Iter")
