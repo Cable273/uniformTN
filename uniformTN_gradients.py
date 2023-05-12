@@ -10,18 +10,7 @@ from scipy.sparse import linalg as sparse_linalg
 from ncon import ncon
 from einsumt import einsumt as einsum
 from abc import ABC, abstractmethod
-
 from uniformTN_transfers import *
-from uniformTN_exp import exp_2d_2body_horizontal_left,exp_2d_2body_vertical_left
-
-def check_energy(alpha,A,g,twoBodyH):
-    A_new = A - alpha*g
-    T = mpsTransfer(A)
-    L = T.findLeftEig()
-    R = T.findRightEig()
-    R.norm_pairedVector(L.vector)
-    E = ncon([A_new,A_new,twoBodyH,A_new.conj(),A_new.conj(),L.tensor,R.tensor],((1,5,6),(3,6,7),(2,4,1,3),(2,10,9),(4,9,8),(10,5),(8,7)))
-    return np.real(E)
 
 def grad_mps_1d(twoBodyH,A,L,R,T_inv):
     D = np.size(A,axis=1)
@@ -42,7 +31,7 @@ def grad_mps_1d(twoBodyH,A,L,R,T_inv):
     # print(np.einsum('ijk,ijk',grad,grad.conj()))
     return grad
 
-def grad_mps_1d_left(twoBodyH,A,R,T_inv,metric=False):
+def grad_mps_1d_left(twoBodyH,A,R,T_inv):
     D = np.size(A,axis=1)
     #subtract off current exp - ensures gradient is zero when converged
     exp = np.real(ncon([A,A,twoBodyH,A.conj(),A.conj(),R.tensor],((1,5,6),(3,6,7),(2,4,1,3),(2,5,9),(4,9,8),(8,7))))
@@ -58,14 +47,7 @@ def grad_mps_1d_left(twoBodyH,A,R,T_inv,metric=False):
     rightEnv = ncon([A,A,twoBodyH,A.conj(),A.conj(),R.tensor],((1,-5,6),(3,6,7),(2,4,1,3),(2,-10,9),(4,9,8),(8,7)),forder=(-10,-5))
     rightEnv = T_inv.applyLeft(rightEnv.reshape(D**2)).reshape(D,D)
     grad += ncon([A,rightEnv],((-1,-2,3),(-4,3)),forder=(-1,-2,-4))
-    if metric is False:
-        return grad
-    else:
-        #tangent space gradient (TDVP imag time evolution with euler integration)
-        G = grad - ncon([grad,A.conj(),A],((1,3,-4),(1,3,5),(-2,-6,5)),forder=(-2,-6,-4))
-        r_inv = np.linalg.pinv(R.tensor)
-        G = np.einsum('ijk,ka->ija',G,r_inv)
-        return G
+    return grad
 
 def grad_mps_horizontal(twoBodyH,psi,T,R,Ta_inv,Tw_inv,TDVP=False):
     grad = np.zeros(np.shape(psi.mps),dtype=complex)
@@ -149,6 +131,7 @@ def grad_mpu_horizontal(twoBodyH,psi,T,R,RR,Ta,Tw_inv,envTol=1e-5,TDVP=False):
 
     #two terms with mpo removed in line with hamiltonian (left and right)
     centreContractLeft = ncon([psi.mpo,psi.mpo,twoBodyH,psi.mpo.conj(),psi.mpo.conj(),outerContract,outerContract],((2,1,9,10),(6,5,10,-11),(3,7,2,6),(3,4,9,13),(7,8,13,-12),(4,1),(8,5)),forder=(-12,-11),order=(9,1,2,3,4,10,13,6,7,5,8))
+    exp = np.einsum('ij,ij',centreContractLeft,R.tensor)
     centreContractLeft = Tw_inv.applyRight(centreContractLeft.reshape(psi.D_mpo**2)).reshape(psi.D_mpo,psi.D_mpo)
     grad += ncon([centreContractLeft,psi.mpo,R.tensor,outerContract],((-6,4),(-2,1,4,5),(-7,5),(-3,1)),forder=(-3,-2,-6,-7),order=(4,5,1))
 
@@ -159,7 +142,6 @@ def grad_mpu_horizontal(twoBodyH,psi,T,R,RR,Ta,Tw_inv,envTol=1e-5,TDVP=False):
         del centreContractLeft
 
     # #RRd geometric sums...
-    exp = exp_2d_2body_horizontal_left(twoBodyH,psi,T,R)
     h_tilde = (twoBodyH.reshape(4,4)-np.eye(4)*exp).reshape(2,2,2,2)
     for d in range(0,100):
         gradRun = np.zeros((2,2,psi.D_mpo,psi.D_mpo)).astype(complex)
@@ -221,6 +203,7 @@ def grad_mpu_vertical(twoBodyH,psi,T,R,RR,Ta,Tw_inv,Tw2,Tw2_inv,envTol=1e-5,TDVP
 
     #4 terms with mpo removed horizontally in line with hamiltonian
     leftEnv = ncon([psi.mpo,psi.mpo,twoBodyH,psi.mpo.conj(),psi.mpo.conj(),outerContract],((2,1,9,-10),(6,5,11,-12),(3,7,2,6),(3,4,9,-13),(7,8,11,-14),(4,8,1,5)),forder=(-13,-10,-14,-12),order=(9,1,2,3,4,11,5,6,7,8))
+    exp = np.einsum('abcd,abcd',leftEnv,RR.tensor)
     leftEnv = Tw2_inv.applyRight(leftEnv.reshape(psi.D_mpo**4)).reshape(psi.D_mpo,psi.D_mpo,psi.D_mpo,psi.D_mpo)
     grad += ncon([leftEnv,psi.mpo,psi.mpo,psi.mpo.conj(),RR.tensor,outerContract],((13,11,-9,7),(-2,1,7,8),(5,4,11,12),(5,6,13,14),(14,12,-10,8),(6,-3,4,1)),forder=(-3,-2,-9,-10),order=(14,12,5,4,6,8,1,13,11,7))
     grad += ncon([leftEnv,psi.mpo,psi.mpo.conj(),psi.mpo,RR.tensor,outerContract],((-10,9,8,7),(2,1,7,11),(2,3,8,12),(-5,4,9,13),(-14,13,12,11),(-6,3,4,1)),forder=(-6,-5,-10,-14),order=(11,12,2,1,3,7,8,9,13,4))
@@ -237,7 +220,6 @@ def grad_mpu_vertical(twoBodyH,psi,T,R,RR,Ta,Tw_inv,Tw2,Tw2_inv,envTol=1e-5,TDVP
     #RRd geometric sums...
     # #this is where big transfer matrices are necessary,D^12 !!
     # #at most will have 2*D^12 arrays in memory at a time
-    exp = exp_2d_2body_vertical_left(twoBodyH,psi,T,RR)
     h_tilde = (twoBodyH.reshape(4,4)-np.eye(4)*exp).reshape(2,2,2,2)
     for d in range(0,100):
         gradRun = np.zeros((2,2,psi.D_mpo,psi.D_mpo)).astype(complex)
