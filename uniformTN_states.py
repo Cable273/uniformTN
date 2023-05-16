@@ -16,6 +16,15 @@ from uniformTN_transfers import *
 from uniformTN_gradients import grad_mps_1d_left,grad_mps_1d
 from uniformTN_gradients import *
 from uniformTN_functions import polarDecomp,randoUnitary,project_mpsTangentVector,project_mpoTangentVector
+from uniformTN_gradFactory import *
+
+def gradFactory(psi,H):
+    if type(psi) == uMPS_1d:
+        return gradEvaluater_uniform_1d_oneSite(psi,H)
+    elif type(psi) == uMPS_1d_left:
+        return gradEvaluater_uniform_1d_oneSiteLeft(psi,H)
+    elif type(psi) == uMPSU1_2d_left:
+        return gradEvaluater_mpso_2d_mps_uniform(psi,H)
 
 class stateAnsatz(ABC):
     @abstractmethod
@@ -65,7 +74,6 @@ class uMPS_1d(stateAnsatz):
     def del_inverses(self):
         del self.Ta_inv
     def gradDescent(self,H,learningRate,TDVP=False):
-        #grad descent
         gradA = np.zeros(self.mps.shape).astype(complex)
         for n in range(0,len(H.terms)):
             gradA += grad_mps_1d(H.terms[n].tensor,self.mps,self.L,self.R,self.Ta_inv)
@@ -98,7 +106,6 @@ class uMPS_1d_left(uMPS_1d):
         self.Ta_inv = inverseTransfer_left(self.Ta,self.R.vector)
     def del_fixedPoints(self):
         del self.R
-
 
 class uMPS_1d_centre(uMPS_1d_left):
     def randoInit(self):
