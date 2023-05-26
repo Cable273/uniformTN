@@ -15,10 +15,17 @@ class localH:
         for n in range(0,len(self.terms)):
             E += self.terms[n].exp(psi)
         return E
-
+    def subtractExp(self,psi):
+        self.subtractedTerms = dict()
+        for n in range(0,len(self.terms)):
+            self.subtractedTerms[n] = self.terms[n].subtractExp(psi)
+            
 class localH_term:
     def __init__(self,H):
         self.matrix = H
+        self.tensor = self.reshapeTensor(self.matrix)
+    def subtractExp(self,psi):
+        return self.reshapeTensor(self.matrix - self.exp(psi)*np.eye(np.size(self.matrix,axis=0)))
     def exp(self,psi):
         if type(psi) == uMPSU1_2d_left:
             return self.exp_2d_left(psi)
@@ -30,10 +37,8 @@ class localH_term:
             return self.exp_1d(psi)
 
 class oneBodyH(localH_term):
-    def __init__(self,H):
-        super().__init__(H)
-        self.tensor = self.matrix.view()
-        self.tensor.shape = np.array([2,2])
+    def reshapeTensor(self,H_matrix):
+        return H_matrix.reshape([2,2])
     def exp_1d(self,psi):
         return np.real(ncon([psi.mps,self.tensor,psi.mps.conj(),psi.L.tensor,psi.R.tensor],((1,3,4),(2,1),(2,5,6),(5,3),(6,4))),order=(3,5,1,2,4,6))
     def exp_1d_left(self,psi):
@@ -42,10 +47,8 @@ class oneBodyH(localH_term):
         return np.real(ncon([psi.mps,psi.mpo,self.tensor,psi.mpo.conj(),psi.mps.conj(),psi.R.tensor,psi.T.tensor],((1,8,9),(2,1,5,6),(3,2),(3,4,5,7),(4,8,10),(7,6),(10,9)),order=(8,9,10,5,2,3,7,6,1,4))) 
 
 class twoBodyH(localH_term):
-    def __init__(self,H):
-        super().__init__(H)
-        self.tensor = self.matrix.view()
-        self.tensor.shape = np.array([2,2,2,2])
+    def reshapeTensor(self,H_matrix):
+        return H_matrix.reshape([2,2,2,2])
 
     #1d
     def exp_1d(self,psi):
@@ -93,7 +96,5 @@ class twoBodyH_vert(twoBodyH):
         return E/2
 
 class plaquetteH(localH_term):
-    def __init__(self,H):
-        super().__init__(H)
-        self.tensor = self.matrix.view()
-        self.tensor.shape = np.array([2,2,2,2,2,2,2,2])
+    def reshapeTensor(self,H_matrix):
+        return H_matrix.reshape([2,2,2,2,2,2,2,2])
