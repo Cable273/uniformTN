@@ -29,7 +29,6 @@ def gradDescent(psi0,H,N_iter,learningRate,decay=0,tol=1e-15,envTol=1e-15,printE
         psi.get_transfers()
         psi.get_fixedPoints()
         psi.get_inverses()
-        # psi.del_transfers()
 
         eDensity[n] = H.exp(psi)
         if printE0 is True:

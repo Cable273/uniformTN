@@ -61,7 +61,7 @@ def grad_mps_horizontal(twoBodyH,psi,T,R,Ta_inv,Tw_inv,TDVP=False):
     grad += ncon([centreContract,outerContract,psi.mps,T.tensor],((3,-4,1,2),(3,1),(2,-5,6),(-7,6)),forder=(-4,-5,-7))
 
     #4 terms above and below horizontal hamiltonian,
-    #below 
+    # below 
     if TDVP is False:
         grad += ncon([centreContract,outerContract,psi.mps,psi.mps.conj(),T.tensor,Ta_inv.tensor,psi.mps],((3,4,1,2),(4,2),(1,8,9),(3,11,10),(10,9),(-12,7,11,8),(-5,-6,7)),forder=(-5,-6,-12),order=(9,10,4,2,1,3,8,11,7))
         grad += ncon([centreContract,outerContract,psi.mps,psi.mps.conj(),T.tensor,Ta_inv.tensor,psi.mps],((3,4,1,2),(3,1),(2,7,5),(4,8,6),(6,5),(-10,9,8,7),(-12,-11,9)),forder=(-12,-11,-10),order=(5,6,3,1,4,2,7,8,9))
@@ -78,7 +78,7 @@ def grad_mps_horizontal(twoBodyH,psi,T,R,Ta_inv,Tw_inv,TDVP=False):
     #3 terms from right half (upper right quadrant, lower right quadrant, one in line with H)
     #right
     grad += ncon([centreContractLeft,psi.mps,T.tensor],((-2,1),(1,-3,4),(-5,4)),forder=(-2,-3,-5),order=(4,1))
-    #upper right
+    # upper right
     grad += ncon([centreContractLeft,psi.mps,psi.mps.conj(),Ta_inv.tensor,psi.mps,T.tensor],((2,1),(1,4,5),(2,4,10),(10,5,-9,6),(-3,6,7),(-8,7)),forder=(-3,-9,-8),order=(4,1,2,5,10,6,7))
     #lower right
     if TDVP is False:
@@ -141,8 +141,9 @@ def grad_mpu_horizontal(twoBodyH,psi,T,R,RR,Ta,Tw_inv,envTol=1e-5,TDVP=False):
         grad += ncon([psi.mpo,centreContractRight,outerContract],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
         del centreContractLeft
 
-    # #RRd geometric sums...
+    #RRd geometric sums...
     h_tilde = (twoBodyH.reshape(4,4)-np.eye(4)*exp).reshape(2,2,2,2)
+    innerContract = ncon([psi.mpo,psi.mpo,h_tilde,psi.mpo.conj(),psi.mpo.conj()],((2,-1,9,10),(6,-5,10,-11),(3,7,2,6),(3,-4,9,13),(7,-8,13,-12)),forder=(-4,-8,-1,-5,-12,-11),order=(9,2,3,10,13,6,7))
     for d in range(0,100):
         gradRun = np.zeros((2,2,psi.D_mpo,psi.D_mpo)).astype(complex)
         if d == 0:
@@ -158,9 +159,8 @@ def grad_mpu_horizontal(twoBodyH,psi,T,R,RR,Ta,Tw_inv,envTol=1e-5,TDVP=False):
             del TT_d
 
         #4 terms with mpo removed vertical to hamiltonian
-        # #new double ring around horizontal interaction
+        #new double ring around horizontal interaction
         outerContractDouble = ncon([psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),Td_tensor,T.tensor],((-1,5,6),(-2,7,8),(-3,5,11),(-4,10,9),(11,6,10,7),(9,8)),forder=(-3,-4,-1,-2),order=(5,6,11,7,10,8,9))
-        innerContract = ncon([psi.mpo,psi.mpo,h_tilde,psi.mpo.conj(),psi.mpo.conj()],((2,-1,9,10),(6,-5,10,-11),(3,7,2,6),(3,-4,9,13),(7,-8,13,-12)),forder=(-4,-8,-1,-5,-12,-11),order=(9,2,3,10,13,6,7))
 
         gradRun += ncon([innerContract,psi.mpo,psi.mpo,psi.mpo.conj(),RR_d.tensor,outerContractDouble,outerContractDouble],((1,2,3,4,5,6),(11,10,15,13),(-8,7,-17,15),(11,12,-16,14),(14,13,5,6),(-9,1,7,3),(12,2,10,4)),forder=(-9,-8,-17,-16),order=(5,6,13,14,15,4,2,10,12,3,1,7))
         gradRun += ncon([innerContract,psi.mpo,RR_d.tensor,outerContract,outerContractDouble],((1,2,3,4,5,6),(-8,7,-12,10),(-11,10,5,6),(1,3),(-9,2,7,4)),forder=(-9,-8,-12,-11),order=(5,6,10,1,3,2,4,7))
@@ -175,10 +175,7 @@ def grad_mpu_horizontal(twoBodyH,psi,T,R,RR,Ta,Tw_inv,envTol=1e-5,TDVP=False):
 
         if TDVP is False:
             rightEnv = ncon([innerContract,RR_d.tensor,psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),outerContractDouble,outerContractDouble],((1,2,3,4,5,6),(18,15,5,6),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(9,1,7,3),(12,2,10,4)),forder=(-16,-13),order=(5,6,15,18,11,4,2,10,12,14,17,8,1,3,7,9))
-            rightEnv = Tw_inv.applyLeft(rightEnv.reshape(psi.D_mpo**2)).reshape(psi.D_mpo,psi.D_mpo)
-            gradRun += ncon([psi.mpo,rightEnv,outerContract],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-
-            rightEnv = ncon([innerContract,RR_d.tensor,psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),outerContractDouble,outerContractDouble],((1,2,3,4,5,6),(5,6,18,15),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(1,9,3,7),(2,12,4,10)),forder=(-16,-13),order=(5,6,18,15,11,10,12,4,2,14,17,8,7,9,3,1))
+            rightEnv += ncon([innerContract,RR_d.tensor,psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),outerContractDouble,outerContractDouble],((1,2,3,4,5,6),(5,6,18,15),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(1,9,3,7),(2,12,4,10)),forder=(-16,-13),order=(5,6,18,15,11,10,12,4,2,14,17,8,7,9,3,1))
             rightEnv = Tw_inv.applyLeft(rightEnv.reshape(psi.D_mpo**2)).reshape(psi.D_mpo,psi.D_mpo)
             gradRun += ncon([psi.mpo,rightEnv,outerContract],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
 
@@ -218,9 +215,12 @@ def grad_mpu_vertical(twoBodyH,psi,T,R,RR,Ta,Tw_inv,Tw2,Tw2_inv,envTol=1e-5,TDVP
         grad += ncon([psi.mpo,rightEnv2,outerContractSingle],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
 
     #RRd geometric sums...
-    # #this is where big transfer matrices are necessary,D^12 !!
-    # #at most will have 2*D^12 arrays in memory at a time
+    #this is where big transfer matrices are necessary,D^12 !!
+    #at most will have 2*D^12 arrays in memory at a time
     h_tilde = (twoBodyH.reshape(4,4)-np.eye(4)*exp).reshape(2,2,2,2)
+    #redo 
+    leftEnv = ncon([psi.mpo,psi.mpo,h_tilde,psi.mpo.conj(),psi.mpo.conj(),outerContract],((2,1,9,-10),(6,5,11,-12),(3,7,2,6),(3,4,9,-13),(7,8,11,-14),(4,8,1,5)),forder=(-13,-10,-14,-12),order=(9,1,2,3,4,11,5,6,7,8))
+    leftEnv = Tw2_inv.applyRight(leftEnv.reshape(psi.D_mpo**4)).reshape(psi.D_mpo,psi.D_mpo,psi.D_mpo,psi.D_mpo)
     for d in range(0,100):
         gradRun = np.zeros((2,2,psi.D_mpo,psi.D_mpo)).astype(complex)
         if d == 0:
