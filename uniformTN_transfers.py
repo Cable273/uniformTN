@@ -92,6 +92,12 @@ class mpsTransfer(regularTransfer):
         #no legs on each side of tensor (tensor is equiv to D^noLegs,D^noLegs array)
         self.noLegs = 2
         self.matrix = np.einsum('ijk,iab->ajbk',A,A.conj()).reshape(self.D**2,self.D**2)
+class mpsTransfer_twoSite(regularTransfer):
+    def __init__(self,A):
+        self.D = np.size(A,axis=2)
+        #no legs on each side of tensor (tensor is equiv to D^noLegs,D^noLegs array)
+        self.noLegs = 2
+        self.matrix = np.einsum('ijab,ijcd->cadb',A,A.conj()).reshape(self.D**2,self.D**2)
 class mpoTransfer_withPauli(regularTransfer):
     def __init__(self,W,pauli=np.eye(2)):
         self.D = np.size(W,axis=2)

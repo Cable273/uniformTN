@@ -101,6 +101,39 @@ class uMPS_1d_left(uMPS_1d):
     def norm(self):
         self.mps = polarDecomp(self.mps.reshape(2*self.D,self.D)).reshape(2,self.D,self.D)
 
+class uMPS_1d_left_twoSite(uMPS_1d_left):
+    def randoInit(self):
+        self.mps = randoUnitary(4*self.D,self.D).reshape(2,2,self.D,self.D)
+    def get_transfers(self):
+        self.Ta = mpsTransfer_twoSite(self.mps)
+    def norm(self):
+        self.mps = polarDecomp(self.mps.reshape(4*self.D,self.D)).reshape(2,2,self.D,self.D)
+
+class uMPS_1d_left_bipartite(uMPS_1d_left):
+    def randoInit(self):
+        self.mps = dict()
+        self.mps[1] = randoUnitary(2*self.D,self.D).reshape(2,self.D,self.D)
+        self.mps[2] = randoUnitary(2*self.D,self.D).reshape(2,self.D,self.D)
+    def get_transfers(self):
+        self.Ta = dict()
+        self.Ta[1] = mpsTransferBip(self.mps[1],self.mps[2])
+        self.Ta[2] = mpsTransferBip(self.mps[2],self.mps[1])
+    def get_fixedPoints(self):
+        self.R = dict()
+        for n in range(1,len(self.Ta)+1):
+            self.R[n] = self.Ta[n].findRightEig()
+            self.R[n].norm_pairedCanon()
+    def get_inverses(self):
+        self.Ta_inv = dict()
+        self.Ta_inv[1] = inverseTransfer_left(self.Ta[1],self.R[1].vector)
+        self.Ta_inv[2] = inverseTransfer_left(self.Ta[2],self.R[2].vector)
+    def shiftTensors(self,coef,tensorDict):
+        self.mps[1] += coef*tensorDict[1]
+        self.mps[2] += coef*tensorDict[2]
+    def norm(self):
+        self.mps[1] = polarDecomp(self.mps[1].reshape(2*self.D,self.D)).reshape(2,self.D,self.D)
+        self.mps[2] = polarDecomp(self.mps[2].reshape(2*self.D,self.D)).reshape(2,self.D,self.D)
+
 class uMPSU_2d(stateAnsatz):
     def __init__(self,D_mps,D_mpo,mps=None,mpo=None):
         self.mps= mps

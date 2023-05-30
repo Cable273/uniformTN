@@ -35,6 +35,10 @@ class localH_term:
             return self.exp_1d_left(psi)
         elif type(psi) == uMPS_1d:
             return self.exp_1d(psi)
+        elif type(psi) == uMPS_1d_left_bipartite:
+            return self.exp_1d_left_bipartite(psi)
+        elif type(psi) == uMPS_1d_left_twoSite:
+            return self.exp_1d_left_twoSite(psi)
 
 class oneBodyH(localH_term):
     def reshapeTensor(self,H_matrix):
@@ -46,6 +50,18 @@ class oneBodyH(localH_term):
     def exp_2d_left(self,psi):
         return np.real(ncon([psi.mps,psi.mpo,self.tensor,psi.mpo.conj(),psi.mps.conj(),psi.R.tensor,psi.T.tensor],((1,8,9),(2,1,5,6),(3,2),(3,4,5,7),(4,8,10),(7,6),(10,9)),order=(8,9,10,5,2,3,7,6,1,4))) 
 
+    def exp_1d_left_twoSite(self,psi):
+        E = np.real(ncon([psi.mps,self.tensor,psi.mps.conj(),psi.R.tensor],((1,2,4,5),(3,1),(3,2,4,6),(6,5)),order=(4,1,3,2,5,6)))
+        E += np.real(ncon([psi.mps,self.tensor,psi.mps.conj(),psi.R.tensor],((1,2,4,5),(3,2),(1,3,4,6),(6,5)),order=(4,1,2,3,5,6)))
+        return E/2
+
+    def exp_1d_left_bipartite_ind(self,mps1,R2):
+        return np.real(ncon([mps1,self.tensor,mps1.conj(),R2.tensor],((1,3,4),(2,1),(2,3,5),(5,4)),order=(3,1,2,4,5)))
+    def exp_1d_left_bipartite(self,psi):
+        E = self.exp_1d_left_bipartite_ind(psi.mps[1],psi.R[2])
+        E += self.exp_1d_left_bipartite_ind(psi.mps[2],psi.R[1])
+        return E/2
+
 class twoBodyH(localH_term):
     def reshapeTensor(self,H_matrix):
         return H_matrix.reshape([2,2,2,2])
@@ -56,6 +72,17 @@ class twoBodyH(localH_term):
     def exp_1d_left(self,psi):
         return np.real(ncon([psi.mps,psi.mps,self.tensor,psi.mps.conj(),psi.mps.conj(),psi.R.tensor],((1,5,6),(3,6,7),(2,4,1,3),(2,5,9),(4,9,8),(8,7))))
 
+    def exp_1d_left_twoSite(self,psi):
+        E = np.real(ncon([psi.mps,self.tensor,psi.mps.conj(),psi.R.tensor],((1,2,5,6),(3,4,1,2),(3,4,5,7),(7,6)),order=(5,1,3,2,4,6,7)))
+        E += np.real(ncon([psi.mps,psi.mps,self.tensor,psi.mps.conj(),psi.mps.conj(),psi.R.tensor],((1,2,7,8),(3,4,8,9),(5,6,2,3),(1,5,7,11),(6,4,11,10),(10,9)),order=(7,1,2,5,8,11,3,6,4,9,10)))
+        return E/2
+
+    def exp_1d_left_bipartite_ind(self,mps1,mps2,R1):
+        return np.real(ncon([mps1,mps2,self.tensor,mps1.conj(),mps2.conj(),R1.tensor],((1,5,6),(3,6,7),(2,4,1,3),(2,5,9),(4,9,8),(8,7))))
+    def exp_1d_left_bipartite(self,psi):
+        E = self.exp_1d_left_bipartite_ind(psi.mps[1],psi.mps[2],psi.R[1])
+        E += self.exp_1d_left_bipartite_ind(psi.mps[2],psi.mps[1],psi.R[2])
+        return E/2
 
 class twoBodyH_hori(twoBodyH):
     def exp_2d_left(self,psi):
