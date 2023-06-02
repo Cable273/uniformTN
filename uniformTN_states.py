@@ -20,30 +20,12 @@ class stateAnsatz(ABC):
     @abstractmethod
     def randoInit(self):
         pass
-
     @abstractmethod
     def shiftTensors(self):
         pass
     @abstractmethod
     def norm(self):
         pass
-
-    def gradDescent(self,H,learningRate,TDVP=False):
-        from uniformTN_gradEvaluaters import gradFactory
-        H_new = copy.deepcopy(H)
-        # for n in range(0,len(H_new.terms)):
-            # H_new.terms[n].tensor = H.terms[n].subtractExp(self)
-            
-        gradEvaluater = gradFactory(self,H_new)
-        gradEvaluater.eval()
-        if TDVP is True:
-            gradEvaluater.projectTDVP()
-        self.shiftTensors(-learningRate,gradEvaluater.grad)
-        self.norm()
-
-    def gaugeTDVP(self):
-        pass
-
     @abstractmethod
     def get_transfers(self):
         pass
@@ -62,6 +44,20 @@ class stateAnsatz(ABC):
     @abstractmethod
     def del_inverses(self):
         pass
+    def gaugeTDVP(self):
+        pass
+    def gradDescent(self,H,learningRate,TDVP=False,subtractExp=False):
+        from uniformTN_gradEvaluaters import gradFactory
+        H_new = copy.deepcopy(H)
+        if subtractExp is True:
+        for n in range(0,len(H_new.terms)):
+            H_new.terms[n].tensor = H.terms[n].subtractExp(self)
+        gradEvaluater = gradFactory(self,H_new)
+        gradEvaluater.eval()
+        if TDVP is True:
+            gradEvaluater.projectTDVP()
+        self.shiftTensors(-learningRate,gradEvaluater.grad)
+        self.norm()
     
 class uMPS_1d(stateAnsatz):
     def __init__(self,D,mps=None):
