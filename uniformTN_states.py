@@ -10,6 +10,7 @@ from scipy.sparse import linalg as sparse_linalg
 from ncon import ncon
 from einsumt import einsumt as einsum
 from abc import ABC, abstractmethod
+import copy
 
 from uniformTN_transfers import *
 from uniformTN_gradients import *
@@ -28,8 +29,12 @@ class stateAnsatz(ABC):
         pass
 
     def gradDescent(self,H,learningRate,TDVP=False):
-        from uniformTN_gradFactory import gradFactory
-        gradEvaluater = gradFactory(self,H)
+        from uniformTN_gradEvaluaters import gradFactory
+        H_new = copy.deepcopy(H)
+        # for n in range(0,len(H_new.terms)):
+            # H_new.terms[n].tensor = H.terms[n].subtractExp(self)
+            
+        gradEvaluater = gradFactory(self,H_new)
         gradEvaluater.eval()
         if TDVP is True:
             gradEvaluater.projectTDVP()
@@ -143,9 +148,7 @@ class uMPSU_2d(stateAnsatz):
         
 class uMPSU1_2d_left(uMPSU_2d):
     def randoInit(self):
-        #random left canon mps tensor
         self.mps = randoUnitary(2*self.D_mps,self.D_mps).reshape(2,self.D_mps,self.D_mps)
-        #random unitary mpo, left canon
         self.mpo = np.einsum('iajb->ijab',randoUnitary(2*self.D_mpo,2*self.D_mpo).reshape(2,self.D_mpo,2,self.D_mpo))
     def get_transfers(self):
         self.Ta = mpsTransfer(self.mps)
@@ -198,67 +201,50 @@ class uMPSU1_2d_left(uMPSU_2d):
         self.mps += coef*tensorDict['mps']
         self.mpo += coef*tensorDict['mpo']
 
-class uMPSU1_2d_left_bipartite(uMPSU_2d):
+class uMPSU1_2d_left_bipartite(uMPSU1_2d_left):
     def randoInit(self):
-        self.mps1 = randoUnitary(2*self.D_mps,self.D_mps).reshape(2,self.D_mps,self.D_mps)
-        self.mps2 = randoUnitary(2*self.D_mps,self.D_mps).reshape(2,self.D_mps,self.D_mps)
-        self.mpo1 = np.einsum('iajb->ijab',randoUnitary(2*self.D_mpo,2*self.D_mpo).reshape(2,self.D_mpo,2,self.D_mpo))
-        self.mpo2 = np.einsum('iajb->ijab',randoUnitary(2*self.D_mpo,2*self.D_mpo).reshape(2,self.D_mpo,2,self.D_mpo))
+        self.mps = dict()
+        self.mpo = dict()
+        self.mps[1] = randoUnitary(2*self.D_mps,self.D_mps).reshape(2,self.D_mps,self.D_mps)
+        self.mps[2] = randoUnitary(2*self.D_mps,self.D_mps).reshape(2,self.D_mps,self.D_mps)
+        self.mpo[1] = np.einsum('iajb->ijab',randoUnitary(2*self.D_mpo,2*self.D_mpo).reshape(2,self.D_mpo,2,self.D_mpo))
+        self.mpo[2] = np.einsum('iajb->ijab',randoUnitary(2*self.D_mpo,2*self.D_mpo).reshape(2,self.D_mpo,2,self.D_mpo))
     def get_transfers(self):
-        self.Ta_12 = mpsTransferBip(self.mps1,self.mps2)
-        self.Ta_21 = mpsTransferBip(self.mps2,self.mps1)
-        T1 = self.Ta_12.findRightEig()
-        T2 = self.Ta_21.findRightEig()
+        self.Ta = dict()
+        self.Tb = dict()
+        self.Tb2 = dict()
+        self.Ta[1] = mpsTransferBip(self.mps[1],self.mps[2])
+        self.Ta[2] = mpsTransferBip(self.mps[2],self.mps[1])
+        T1 = self.Ta[1].findRightEig()
+        T2 = self.Ta[2].findRightEig()
         T1.norm_pairedCanon()
         T2.norm_pairedCanon()
-        self.Tb_12 = mpsu1Transfer_left_oneLayerBip(self.mps1,self.mps2,self.mpo1,self.mpo2,T1,T2)
-        self.Tb_21 = mpsu1Transfer_left_oneLayerBip(self.mps2,self.mps1,self.mpo2,self.mpo1,T2,T1)
-        self.Tb2_12 = mpsu1Transfer_left_twoLayerBip(self.mps1,self.mps2,self.mpo1,self.mpo2,T1,T2)
-        self.Tb2_21 = mpsu1Transfer_left_twoLayerBip(self.mps2,self.mps1,self.mpo2,self.mpo1,T2,T1)
+        self.Tb[1] = mpsu1Transfer_left_oneLayerBip(self.mps[1],self.mps[2],self.mpo[1],self.mpo[2],T1,T2)
+        self.Tb[2] = mpsu1Transfer_left_oneLayerBip(self.mps[2],self.mps[1],self.mpo[2],self.mpo[1],T2,T1)
+        self.Tb2[1] = mpsu1Transfer_left_twoLayerBip(self.mps[1],self.mps[2],self.mpo[1],self.mpo[2],T1,T2)
+        self.Tb2[2] = mpsu1Transfer_left_twoLayerBip(self.mps[2],self.mps[1],self.mpo[2],self.mpo[1],T2,T1)
     def get_fixedPoints(self):
-        self.T1 = self.Ta_12.findRightEig()
-        self.T2 = self.Ta_21.findRightEig()
-        self.T1.norm_pairedCanon()
-        self.T2.norm_pairedCanon()
-        self.R1 = self.Tb_12.findRightEig()
-        self.R2 = self.Tb_21.findRightEig()
-        self.R1.norm_pairedCanon()
-        self.R2.norm_pairedCanon()
-        self.RR1 = self.Tb2_12.findRightEig()
-        self.RR2 = self.Tb2_21.findRightEig()
-        self.RR1.norm_pairedCanon()
-        self.RR2.norm_pairedCanon()
+        self.T = dict()
+        self.R = dict()
+        self.RR = dict()
+        for n in range(1,len(self.mps)+1):
+            self.T[n] = self.Ta[n].findRightEig()
+            self.T[n].norm_pairedCanon()
+            self.R[n] = self.Tb[n].findRightEig()
+            self.R[n].norm_pairedCanon()
+            self.RR[n] = self.Tb2[n].findRightEig()
+            self.RR[n].norm_pairedCanon()
     def get_inverses(self):
-        self.Ta_12_inv = inverseTransfer_left(self.Ta_12,self.T1.vector)
-        self.Ta_21_inv = inverseTransfer_left(self.Ta_21,self.T2.vector)
-        self.Tb_12_inv = inverseTransfer_left(self.Tb_12,self.R1.vector)
-        self.Tb_21_inv = inverseTransfer_left(self.Tb_21,self.R2.vector)
-        self.Tb2_12_inv = inverseTransfer_left(self.Tb2_12,self.RR1.vector)
-        self.Tb2_21_inv = inverseTransfer_left(self.Tb2_21,self.RR2.vector)
-    def del_transfers(self):
-        del self.Ta_12 
-        del self.Ta_21 
-        del self.Tb_12 
-        del self.Tb_21 
-        del self.Tb2_12 
-        del self.Tb2_21 
-    def del_fixedPoints(self):
-        del self.T1 
-        del self.T2 
-        del self.R1 
-        del self.R2 
-        del self.RR1 
-        del self.RR2 
-    def del_inverses(self):
-        del self.Ta_12_inv 
-        del self.Ta_21_inv 
-        del self.Tb_12_inv 
-        del self.Tb_21_inv 
-        del self.Tb2_12_inv 
-        del self.Tb2_21_inv 
+        self.Ta_inv = dict()
+        self.Tb_inv = dict()
+        self.Tb2_inv = dict()
+        for n in range(1,len(self.mps)+1):
+            self.Ta_inv[n] = inverseTransfer_left(self.Ta[n],self.T[n].vector)
+            self.Tb_inv[n] = inverseTransfer_left(self.Tb[n],self.R[n].vector)
+            self.Tb2_inv[n] = inverseTransfer_left(self.Tb2[n],self.RR[n].vector)
     def gaugeTDVP(self):
-        Ta_12 = mpsTransferBip(self.mps1,self.mps2)
-        Ta_21 = mpsTransferBip(self.mps2,self.mps1)
+        Ta[1] = mpsTransferBip(self.mps[1],self.mps[2])
+        Ta[2] = mpsTransferBip(self.mps[2],self.mps[1])
         T1 = Ta_12.findRightEig()
         T2 = Ta_21.findRightEig()
         T1.norm_pairedCanon()
@@ -269,29 +255,29 @@ class uMPSU1_2d_left_bipartite(uMPSU_2d):
         u2 = np.array([[np.cos(theta/2),1j*np.sin(theta/2)],[1j*np.sin(theta/2),np.cos(theta/2)]])
 
         #gauge transform so diagonal in Z basis
-        rho = np.einsum('ija,ujb,ba->ui',self.mps1,self.mps1.conj(),T2.tensor)
+        rho = np.einsum('ija,ujb,ba->ui',self.mps[1],self.mps[1].conj(),T2.tensor)
         e,u =np.linalg.eig(rho)
         u = np.dot(u,u2)
-        self.mps1 = np.einsum('ijk,ia->ajk',self.mps1,u)
-        self.mpo1 = np.einsum('ijab,kj->ikab',self.mpo1,u.conj().transpose())
+        self.mps[1] = np.einsum('ijk,ia->ajk',self.mps[1],u)
+        self.mpo[1] = np.einsum('ijab,kj->ikab',self.mpo[1],u.conj().transpose())
 
         #gauge transform so diagonal in Z basis
-        rho = np.einsum('ija,ujb,ba->ui',self.mps2,self.mps2.conj(),T1.tensor)
+        rho = np.einsum('ija,ujb,ba->ui',self.mps[2],self.mps[2].conj(),T1.tensor)
         e,u =np.linalg.eig(rho)
         u = np.dot(u,u2)
-        self.mps2 = np.einsum('ijk,ia->ajk',self.mps2,u)
-        self.mpo2 = np.einsum('ijab,kj->ikab',self.mpo2,u.conj().transpose())
+        self.mps[2] = np.einsum('ijk,ia->ajk',self.mps[2],u)
+        self.mpo[2] = np.einsum('ijab,kj->ikab',self.mpo[2],u.conj().transpose())
     def shiftTensors(self,coef,tensorDict):
-        self.mps1 += coef*tensorDict['mps1']
-        self.mps2 += coef*tensorDict['mps2']
-        self.mpo1 += coef*tensorDict['mpo1']
-        self.mpo2 += coef*tensorDict['mpo2']
+        self.mps[1] += coef*tensorDict['mps1']
+        self.mps[2] += coef*tensorDict['mps2']
+        self.mpo[1] += coef*tensorDict['mpo1']
+        self.mpo[2] += coef*tensorDict['mpo2']
     def norm(self):
         #polar decomps to project to closest unitaries
-        self.mps1 = polarDecomp(self.mps1.reshape(2*self.D_mps,self.D_mps)).reshape(2,self.D_mps,self.D_mps)
-        self.mps2 = polarDecomp(self.mps2.reshape(2*self.D_mps,self.D_mps)).reshape(2,self.D_mps,self.D_mps)
-        self.mpo1 = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo1).reshape(2*self.D_mpo,2*self.D_mpo)).reshape(2,self.D_mpo,2,self.D_mpo))
-        self.mpo2 = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo2).reshape(2*self.D_mpo,2*self.D_mpo)).reshape(2,self.D_mpo,2,self.D_mpo))
+        self.mps[1] = polarDecomp(self.mps[1].reshape(2*self.D_mps,self.D_mps)).reshape(2,self.D_mps,self.D_mps)
+        self.mps[2] = polarDecomp(self.mps[2].reshape(2*self.D_mps,self.D_mps)).reshape(2,self.D_mps,self.D_mps)
+        self.mpo[1] = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo[1]).reshape(2*self.D_mpo,2*self.D_mpo)).reshape(2,self.D_mpo,2,self.D_mpo))
+        self.mpo[2] = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo[2]).reshape(2*self.D_mpo,2*self.D_mpo)).reshape(2,self.D_mpo,2,self.D_mpo))
 
 class uMPS_1d_centre(uMPS_1d_left):
     def randoInit(self):
