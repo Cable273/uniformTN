@@ -50,8 +50,8 @@ class stateAnsatz(ABC):
         from uniformTN_gradEvaluaters import gradFactory
         H_new = copy.deepcopy(H)
         if subtractExp is True:
-        for n in range(0,len(H_new.terms)):
-            H_new.terms[n].tensor = H.terms[n].subtractExp(self)
+            for n in range(0,len(H_new.terms)):
+                H_new.terms[n].tensor = H.terms[n].subtractExp(self)
         gradEvaluater = gradFactory(self,H_new)
         gradEvaluater.eval()
         if TDVP is True:
