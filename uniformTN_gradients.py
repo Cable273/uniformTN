@@ -288,12 +288,12 @@ def grad_mps_horizontalBip(twoBodyH,mps1,mps2,mpo1,mpo2,T1,T2,R1,R2,Ta_12_inv,Ta
     centreContract = ncon([mpo1,mpo2,twoBodyH,mpo1.conj(),mpo2.conj(),R1.tensor],((1,-10,5,6),(2,-11,6,7),(3,4,1,2),(3,-12,5,9),(4,-13,9,8),(8,7)),forder=(-12,-13,-10,-11),order=(5,6,9,7,8,1,2,3,4))
     outerContract1 = ncon([mps1,mps1.conj(),T2.tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1),order=(5,4,3))
     outerContract2 = ncon([mps2,mps2.conj(),T1.tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1),order=(5,4,3))
-    #2 terms with mps tensor removed under local hamiltonian
+    # #2 terms with mps tensor removed under local hamiltonian
     grad_121 += ncon([centreContract,outerContract2,mps1,T2.tensor],((-3,4,1,2),(4,2),(1,-5,6),(-7,6)),forder=(-3,-5,-7),order=(2,4,1,6))
     grad_122 += ncon([centreContract,outerContract1,mps2,T1.tensor],((3,-4,1,2),(3,1),(2,-5,6),(-7,6)),forder=(-4,-5,-7),order=(1,3,2,6))
 
-    #terms above and below horizontal hamiltonian,
-    #below 
+    # #terms above and below horizontal hamiltonian,
+    # #below 
     h_tl = ncon([centreContract,outerContract2,mps1,mps1.conj(),T2.tensor],((3,4,1,2),(4,2),(1,-5,6),(3,-7,8),(8,6)),forder=(-7,-5),order=(6,8,1,3,2,4))
     h_tl = Ta_12_inv.applyLeft(h_tl.reshape(D_mps**2)).reshape(D_mps,D_mps)
     grad_122 += ncon([h_tl,mps2],((-4,3),(-1,-2,3)),forder=(-1,-2,-4))
@@ -322,13 +322,12 @@ def grad_mps_horizontalBip(twoBodyH,mps1,mps2,mpo1,mpo2,T1,T2,R1,R2,Ta_12_inv,Ta
     grad_122 += ncon([h_br,mps2,T1.tensor],((-4,2),(-1,2,3),(-5,3)))
     del h_br
 
-    #term in line with hamiltonian, to the right
+    # #term in line with hamiltonian, to the right
     centreContractLeft = ncon([twoBodyH,mpo1,mpo2,mpo1.conj(),mpo2.conj(),outerContract1,outerContract2],((3,4,1,2),(1,10,5,6),(2,11,6,-7),(3,12,5,9),(4,13,9,-8),(12,10),(13,11)),forder=(-8,-7),order=(5,10,1,3,12,6,9,11,2,4,13))
-    expectation = np.real(ncon([centreContractLeft,R1.tensor],((1,2),(1,2)))) #for left half terms
     centreContractLeft = Tw_12_inv.applyRight(centreContractLeft.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
     grad_121 += ncon([mps1,mpo1,mpo1.conj(),centreContractLeft,R2.tensor,T2.tensor],((1,-4,5),(2,1,7,8),(2,-3,10,9),(10,7),(9,8),(-6,5)),forder=(-3,-4,-6),order=(7,10,2,8,9,1,5))
 
-    #upper / lower quadrants
+    # #upper / lower quadrants
     leftEnv = ncon([mps1,mpo1,mpo1.conj(),mps1.conj(),centreContractLeft,R2.tensor],((1,4,-5),(2,1,6,7),(2,3,8,9),(3,4,-10),(8,6),(9,7)),forder=(-10,-5),order=(6,8,2,7,9,4,1,3))
     leftEnv = Ta_21_inv.applyRight(leftEnv.reshape(D_mps**2)).reshape(D_mps,D_mps)
     grad_122 += ncon([leftEnv,mps2,T1.tensor],((-4,2),(-1,2,3),(-5,3)),forder=(-1,-4,-5))
@@ -340,7 +339,7 @@ def grad_mps_horizontalBip(twoBodyH,mps1,mps2,mpo1,mpo2,T1,T2,R1,R2,Ta_12_inv,Ta
     rightEnv = ncon([mps2,mps2.conj(),rightEnv],((1,-2,3),(1,-4,5),(5,3)),forder=(-4,-2),order=(3,5,1))
     grad_121 += ncon([rightEnv,mps1],((-4,3),(-1,-2,3)),forder=(-1,-2,-4))
 
-    #now repeat, but with additional site added
+    # #now repeat, but with additional site added
     transfer = mpsu1Transfer_left_oneLayer(mps1,mpo1,T2)
     centreContractLeft = transfer.applyRight(centreContractLeft.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
     grad_122 += ncon([mps2,mpo2,mpo2.conj(),centreContractLeft,R1.tensor,T1.tensor],((1,-4,5),(2,1,7,8),(2,-3,10,9),(10,7),(9,8),(-6,5)),forder=(-3,-4,-6),order=(7,10,2,8,9,1,5))
@@ -366,12 +365,12 @@ def grad_mps_verticalBip(twoBodyH,mps1,mps2,mpo1,mpo2,T1,T2,RR1,RR2,Ta_12_inv,Ta
     grad_122 = np.zeros(np.shape(mps1),dtype=complex)
 
     centreContract = ncon([mpo1,mpo2,twoBodyH,mpo1.conj(),mpo2.conj(),RR2.tensor],((1,-11,5,6),(2,-12,8,9),(3,4,1,2),(3,-13,5,7),(4,-14,8,10),(7,6,10,9)),forder=(-13,-14,-11,-12),order=(6,7,10,9,5,8,1,2,3,4))
-    #2 terms with mps tensor removed under local hamiltonian
+    # 2 terms with mps tensor removed under local hamiltonian
     grad_121 += ncon([mps1,mps2,centreContract,mps2.conj(),T1.tensor],((1,-5,6),(2,6,7),(-3,4,1,2),(4,-9,8),(8,7)),forder=(-3,-5,-9),order=(8,7,2,4,6,1))
     grad_122 += ncon([mps1,mps2,centreContract,mps1.conj(),T1.tensor],((1,5,6),(2,6,7),(3,-4,1,2),(3,5,-9),(-8,7)),forder=(-4,-9,-8),order=(5,1,3,5,2,7))
 
-    #2 terms with mps removed vertical to local hamiltonian
-    #above
+    # #2 terms with mps removed vertical to local hamiltonian
+    # #above
     leftEnv = ncon([mps1,mps2,centreContract,mps1.conj(),mps2.conj()],((1,5,6),(2,6,-7),(3,4,1,2),(3,5,9),(4,9,-8)),forder=(-8,-7),order=(5,1,3,6,9,2,4))
     leftEnv = Ta_12_inv.applyRight(leftEnv.reshape(D_mps**2)).reshape(D_mps,D_mps)
     grad_121 += ncon([leftEnv,mps1,T2.tensor],((-4,2),(-1,2,3),(-5,3)),forder=(-1,-4,-5))
@@ -386,14 +385,13 @@ def grad_mps_verticalBip(twoBodyH,mps1,mps2,mpo1,mpo2,T1,T2,RR1,RR2,Ta_12_inv,Ta
     del centreContract
 
     centreContractLeft = ncon([twoBodyH,mps1,mps2,mpo1,mpo2,mpo1.conj(),mpo2.conj(),mps1.conj(),mps2.conj(),T1.tensor],((3,7,2,6),(1,9,10),(5,10,11),(2,1,14,-15),(6,5,17,-18),(3,4,14,-16),(7,8,17,-19),(4,9,13),(8,13,12),(12,11)),forder=(-16,-15,-19,-18),order=(9,10,13,11,12,1,14,2,3,4,5,17,6,7,8))
-    expectation = np.real(ncon([centreContractLeft,RR2.tensor],((1,2,3,4),(1,2,3,4))))
     centreContractLeft = Tw2_21_inv.applyRight(centreContractLeft.reshape(D_mpo**4)).reshape(D_mpo,D_mpo,D_mpo,D_mpo)
     #reshape and do a dot product might be better for memory (big D)
     Env = ncon([mpo2,mpo1,mpo2.conj(),mpo1.conj(),centreContractLeft,RR1.tensor],((2,-1,7,9),(5,-4,11,13),(2,-3,8,10),(5,-6,12,14),(8,7,12,11),(10,9,14,13)),forder=(-3,-6,-1,-4),order=(13,14,5,9,10,2,8,7,12,11))
     #right
     grad_121 += ncon([mps2,mps1,Env,mps2.conj(),T2.tensor],((1,5,6),(2,6,7),(3,-4,1,2),(3,5,-9),(-8,7)),forder=(-4,-9,-8),order=(5,1,3,5,2,7))
     grad_122 += ncon([mps2,mps1,Env,mps1.conj(),T2.tensor],((1,-5,6),(2,6,7),(-3,4,1,2),(4,-9,8),(8,7)),forder=(-3,-5,-9),order=(8,7,2,4,6,1))
-    #right above
+    # #right above
     leftEnv = ncon([mps2,mps1,Env,mps2.conj(),mps1.conj()],((1,5,6),(2,6,-7),(3,4,1,2),(3,5,9),(4,9,-8)),forder=(-8,-7),order=(5,1,3,6,9,2,4))
     leftEnv = Ta_21_inv.applyRight(leftEnv.reshape(D_mps**2)).reshape(D_mps,D_mps)
     grad_122 += ncon([leftEnv,mps2,T1.tensor],((-4,2),(-1,2,3),(-5,3)),forder=(-1,-4,-5))
@@ -406,7 +404,7 @@ def grad_mps_verticalBip(twoBodyH,mps1,mps2,mpo1,mpo2,T1,T2,RR1,RR2,Ta_12_inv,Ta
     rightEnv = ncon([mps1,mps1.conj(),rightEnv],((1,-2,3),(1,-4,5),(5,3)),forder=(-4,-2),order=(3,5,1))
     grad_122 += ncon([mps2,rightEnv],((-1,-2,3),(-4,3)),forder=(-1,-2,-4))
 
-    #now repeat with extra site inserted
+    # #now repeat with extra site inserted
     transfer = ncon([mps2,mps1,mpo2,mpo1,mpo2.conj(),mpo1.conj(),mps2.conj(),mps1.conj(),T2.tensor],((1,7,8),(4,8,9),(2,1,-12,-14),(5,4,-16,-18),(2,3,-13,-15),(5,6,-17,-19),(3,7,11),(6,11,10),(10,9)),forder=(-13,-12,-17,-16,-15,-14,-19,-18),order=(7,8,9,10,11,1,2,3,4,5,6)).reshape(D_mpo**4,D_mpo**4)
     centreContractLeft = np.dot(centreContractLeft.reshape(D_mpo**4),transfer).reshape(D_mpo,D_mpo,D_mpo,D_mpo)
     Env = ncon([mpo1,mpo2,mpo1.conj(),mpo2.conj(),centreContractLeft,RR2.tensor],((2,-1,7,9),(5,-4,11,13),(2,-3,8,10),(5,-6,12,14),(8,7,12,11),(10,9,14,13)),forder=(-3,-6,-1,-4),order=(13,14,5,9,10,2,8,7,12,11))
@@ -414,7 +412,7 @@ def grad_mps_verticalBip(twoBodyH,mps1,mps2,mpo1,mpo2,T1,T2,RR1,RR2,Ta_12_inv,Ta
     grad_122 += ncon([mps1,mps2,Env,mps1.conj(),T1.tensor],((1,5,6),(2,6,7),(3,-4,1,2),(3,5,-9),(-8,7)),forder=(-4,-9,-8),order=(5,1,3,5,2,7))
     grad_121 += ncon([mps1,mps2,Env,mps2.conj(),T1.tensor],((1,-5,6),(2,6,7),(-3,4,1,2),(4,-9,8),(8,7)),forder=(-3,-5,-9),order=(8,7,2,4,6,1))
 
-    #right above
+    # #right above
     leftEnv = ncon([mps1,mps2,Env,mps1.conj(),mps2.conj()],((1,5,6),(2,6,-7),(3,4,1,2),(3,5,9),(4,9,-8)),forder=(-8,-7),order=(5,1,3,6,9,2,4))
     leftEnv = Ta_12_inv.applyRight(leftEnv.reshape(D_mps**2)).reshape(D_mps,D_mps)
     grad_121 += ncon([leftEnv,mps1,T2.tensor],((-4,2),(-1,2,3),(-5,3)),forder=(-1,-4,-5))
