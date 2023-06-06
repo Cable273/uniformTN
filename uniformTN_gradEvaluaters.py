@@ -33,7 +33,7 @@ def gradFactory(psi,H):
         return gradEvaluater_mpso_2d_uniform(psi,H)
 
     elif type(psi) == uMPSU1_2d_left_bipartite:
-        return gradEvaluater_mpso_2d_mps_bipartite(psi,H)
+        return gradEvaluater_mpso_2d_mpo_bipartite(psi,H)
 
 class gradEvaluater(ABC):
     def __init__(self,psi,H):
@@ -210,10 +210,11 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
         pass
     def eval(self,geo=True,envTol=1e-5):
         #terms underneath Hamiltonian
-        self.grad = np.zeros(self.psi.mpo.shape).astype(complex)
+        self.grad = self.H_imp[0].getCentralTerms()
         for n in range(0,len(self.H.terms)):
             #terms under Hamiltonian
-            self.grad += self.H_imp[n].getCentralTerms()
+            if n > 0:
+                self.grad += self.H_imp[n].getCentralTerms()
             #terms to left of H
             rightEnv = self.H_imp[n].buildRightEnv()
             self.grad += self.H_imp[n].attachLeftMax(rightEnv)
@@ -221,28 +222,26 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
             leftEnv = self.H_imp[n].buildLeftEnv()
             self.grad += self.H_imp[n].attachRightMax(leftEnv)
 
-            # geometric sums...
+            # # geometric sums...
             if geo is True:
-                Td_matrix = np.eye(self.psi.D_mps**2)
-                Td= Td_matrix.reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+                Td_matrix,Td = self.H_imp[n].init_mps_transfers()
                 #tensors needed for geosum not dependent on d
                 leftEnv_h_tilde = self.H_imp[n].buildLeftEnv(H=self.H_imp[n].h_tilde)
                 for d in range(0,100):
-                    gradRun = np.zeros(self.psi.mpo.shape).astype(complex)
+                    gradRun = np.zeros(self.grad.shape).astype(complex)
                     #d dependant tensors needed
                     if d > 0:
-                        Td_matrix = np.dot(Td_matrix,self.psi.Ta.matrix)
-                        Td= Td_matrix.reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+                        Td_matrix,Td = self.H_imp[n].apply_mps_transfers(Td_matrix)
                     rightFP_d = self.H_imp[n].getFixedPoints(d,Td) #bottleneck of algo
                     outers_d = self.H_imp[n].getOuterContracts(Td)
 
                     # terms below Hamiltonian
                     env = self.H_imp[n].buildTopEnvGeo(rightFP_d,outers_d)
-                    # right quadrant lower
+                    # # right quadrant lower
                     env += self.H_imp[n].buildTopEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
                     gradRun += self.attachBot(env)
 
-                    # terms above Hamiltonian
+                    # # terms above Hamiltonian
                     env = self.H_imp[n].buildBotEnvGeo(rightFP_d,outers_d)
                     # right quadrant upper
                     env += self.H_imp[n].buildBotEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
@@ -262,6 +261,37 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
 
     def projectTDVP(self):
         self.grad = project_mpoTangentVector(self.grad,self.psi.mps,self.psi.mpo,self.psi.T,self.psi.R)
+
+class gradEvaluater_mpso_2d_mpo_bipartite_ind(gradEvaluater_mpso_2d_mpo_uniform):
+    #find an individual gradient of bipartite ansatz, d/dA_1 <H> or d/dA_2 <H> (index arg is which gradient)
+    #can reuse gradEvaluater_uniform_1d eval code as same structure to find gradient
+    def __init__(self,psi,H,H_index,grad_index):
+        self.grad_index = grad_index
+        self.H_index = H_index
+        if grad_index == 1:
+            self.index1 = 1
+            self.index2 = 2
+        elif grad_index == 2:
+            self.index1 = 2
+            self.index2 = 1
+        super().__init__(psi,H)
+
+    def fetch_implementation(self,H):
+        if type(H) == oneBodyH:
+            return gradImplementation_mpso_2d_mpo_bipartite_oneBodyH(self.psi,H.tensor,self.H_index,self.grad_index)
+        elif type(H) == twoBodyH_hori: 
+            return gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_hori(self.psi,H.tensor,self.H_index,self.grad_index)
+        elif type(H) == twoBodyH_vert: 
+            return gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_vert(self.psi,H.tensor,self.H_index,self.grad_index)
+
+    def projectTDVP(self):
+        self.grad = project_mpsTangentVector(self.grad,self.psi.mps[self.index1],self.psi.mpo[self.index1],self.psi.T[self.index1],self.psi.R[self.index1])
+
+    def attachTop(self,env):
+        return ncon([env,self.psi.mps[self.index1],self.psi.mpo[self.index1],self.psi.mps[self.index1].conj(),self.psi.T[self.index2].tensor],((9,-8,7,4),(1,4,5),(-2,1,-6,7),(-3,9,10),(10,5)),forder=(-3,-2,-6,-8),order=(4,9,5,10,1,7))
+
+    def attachBot(self,env):
+        return ncon([env,self.psi.mps[self.index1],self.psi.mpo[self.index1],self.psi.mps[self.index1].conj()],((9,-8,7,5),(1,4,5),(-2,1,-6,7),(-3,4,9)),forder=(-3,-2,-6,-8),order=(9,5,4,7,1))
 
 class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps_uniform):
     def fetch_implementation(self,H):
@@ -344,6 +374,28 @@ class gradEvaluater_mpso_2d_mps_bipartite(gradEvaluater):
         self.grad[1] = project_mpsTangentVector(self.grad[1],self.psi.mps[1],self.psi.T[1])
         self.grad[2] = project_mpsTangentVector(self.grad[2],self.psi.mps[2],self.psi.T[2])
 
+class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater):
+    def __init__(self,psi,H):
+        self.psi = psi
+        self.H = H
+    def eval(self):
+        self.grad = dict()
+        gradEvaluater_11 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=1,grad_index=1)
+        gradEvaluater_12 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=1,grad_index=2)
+        gradEvaluater_21 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=2,grad_index=1)
+        gradEvaluater_22 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=2,grad_index=2)
+
+        gradEvaluater_11.eval()
+        gradEvaluater_12.eval()
+        gradEvaluater_21.eval()
+        gradEvaluater_22.eval()
+        self.grad[1] = 1/2*(gradEvaluater_11.grad + gradEvaluater_21.grad)
+        self.grad[2] = 1/2*(gradEvaluater_12.grad + gradEvaluater_22.grad)
+    def fetch_implementation(self):
+        pass
+    def projectTDVP(self):
+        self.grad[1] = project_mpoTangentVector(self.grad[1],self.psi.mps[1],self.psi.mpo[1],self.psi.T[1],self.psi.R[1])
+        self.grad[2] = project_mpoTangentVector(self.grad[2],self.psi.mps[2],self.psi.mpo[2],self.psi.T[2],self.psi.R[2])
 
 class gradEvaluater_mpso_2d_mps_bipartite(gradEvaluater_mpso_2d_mps_bipartite):
     def fetch_implementation(self,H):

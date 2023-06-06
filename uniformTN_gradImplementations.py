@@ -98,6 +98,28 @@ class gradImplementation_mpso_2d_mpo_uniform(ABC):
     def attachLeftSingle(self,env):
         return ncon([self.psi.mpo,env,self.outerContract],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
 
+    #d dep bipartite transfers for geosum
+    def init_mps_transfers(self):
+        Td_matrix = np.eye(self.psi.D_mps**2)
+        Td = Td_matrix.reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+        return Td_matrix,Td
+    def apply_mps_transfers(self,Td_matrix):
+        Td_matrix = np.dot(Td_matrix,self.psi.Ta.matrix)
+        Td = Td_matrix.reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+        return Td_matrix,Td
+
+class gradImplementation_mpso_2d_mpo_bipartite(gradImplementation_mpso_2d_mpo_uniform):
+    def __init__(self,psi,H,H_index,grad_index):
+        super().__init__(psi,H)
+        self.H_index = H_index #the index above the first site of H
+        self.grad_index = grad_index #the mps tensor to take gradient of
+        if self.grad_index == 1:
+            self.index1 = 1
+            self.index2 = 2
+        elif self.grad_index == 2:
+            self.index1 = 2
+            self.index2 = 1
+
 # -------------------------------------------------------------------------------------------------------------------------------------
 #Concrete implementations
 # -------------------------------------------------------------------------------------------------------------------------------------
@@ -468,4 +490,476 @@ class gradImplementation_mpso_2d_mpo_uniform_twoBodyH_vert(gradImplementation_mp
         env2 = ncon([env2,self.psi.mps,self.psi.mpo,self.psi.mpo.conj(),self.psi.mps.conj(),self.psi.T.tensor],((10,9,7,4),(1,4,5),(2,1,-6,7),(2,3,-8,9),(3,10,11),(11,5)),forder=(-8,-6),order=(4,7,9,10,1,2,3,5,11))
         env = env1 + env2
         env = self.psi.Tb_inv.applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
+        return env
+
+# -----------------------------
+class gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_hori(gradImplementation_mpso_2d_mpo_bipartite):
+    def __init__(self,psi,H,H_index,grad_index):
+        super().__init__(psi,H,H_index,grad_index)
+        # objects needed to construct terms
+        self.outerContract = dict()
+
+        self.outerContract[1] =  ncon([self.psi.mps[1],self.psi.mps[1].conj(),self.psi.T[2].tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1),order=(3,4,5))
+        self.outerContract[2] =  ncon([self.psi.mps[2],self.psi.mps[2].conj(),self.psi.T[1].tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1),order=(3,4,5))
+
+        if self.H_index == self.grad_index:
+            innerContract = ncon([self.psi.mpo[self.index1],self.psi.mpo[self.index2],self.H,self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2].conj()],((2,-1,9,10),(6,-5,10,-11),(3,7,2,6),(3,-4,9,13),(7,-8,13,-12)),forder=(-4,-8,-1,-5,-12,-11),order=(9,2,3,10,13,6,7))
+            exp = np.real(ncon([innerContract,self.outerContract[self.index1],self.outerContract[self.index2],self.psi.R[self.index1].tensor],((1,2,3,4,5,6),(1,3),(2,4),(5,6)),order=(1,3,2,4,5,6)))
+        else:
+            innerContract = ncon([self.psi.mpo[self.index2],self.psi.mpo[self.index1],self.H,self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1].conj()],((2,-1,9,10),(6,-5,10,-11),(3,7,2,6),(3,-4,9,13),(7,-8,13,-12)),forder=(-4,-8,-1,-5,-12,-11),order=(9,2,3,10,13,6,7))
+            exp = np.real(ncon([innerContract,self.outerContract[self.index2],self.outerContract[self.index1],self.psi.R[self.index2].tensor],((1,2,3,4,5,6),(1,3),(2,4),(5,6)),order=(1,3,2,4,5,6)))
+        self.h_tilde = (self.H.reshape(4,4)-exp*np.eye(4)).reshape(2,2,2,2)
+
+        if self.H_index == self.grad_index:
+            self.innerContract = ncon([self.psi.mpo[self.index1],self.psi.mpo[self.index2],self.h_tilde,self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2].conj()],((2,-1,9,10),(6,-5,10,-11),(3,7,2,6),(3,-4,9,13),(7,-8,13,-12)),forder=(-4,-8,-1,-5,-12,-11),order=(9,2,3,10,13,6,7))
+        else:
+            self.innerContract = ncon([self.psi.mpo[self.index2],self.psi.mpo[self.index1],self.h_tilde,self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1].conj()],((2,-1,9,10),(6,-5,10,-11),(3,7,2,6),(3,-4,9,13),(7,-8,13,-12)),forder=(-4,-8,-1,-5,-12,-11),order=(9,2,3,10,13,6,7))
+
+
+    #d dep bipartite transfers for geosum
+    def init_mps_transfers(self):
+        Td_matrix = dict()
+        Td = dict()
+        Td_matrix[1] = np.eye(self.psi.D_mps**2)
+        Td[1] = Td_matrix[1].reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+        Td_matrix[2] = Td_matrix[1]
+        Td[2] = Td[1]
+        return Td_matrix,Td
+    def apply_mps_transfers(self,Td_matrix):
+        Td_matrix[1] = np.dot(Td_matrix[1],self.psi.Ta[1].matrix)
+        Td_matrix[2] = np.dot(Td_matrix[2],self.psi.Ta[2].matrix)
+        Td = dict()
+        Td[1] = Td_matrix[1].reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+        Td[2] = Td_matrix[2].reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+        return Td_matrix,Td
+
+    def getFixedPoints(self,d,Td):
+        RR_d = dict()
+        RR_d_p1 = dict()
+
+        TT_d_12 = mpsu1Transfer_left_twoLayerWithMpsInsertBip(self.psi.mps[1],self.psi.mps[2],self.psi.mpo[1],self.psi.mpo[2],self.psi.T[1],self.psi.T[2],Td[1],Td[2])
+        RR_d[1] = TT_d_12.findRightEig()
+        RR_d[1].norm_pairedCanon()
+        RR_d[1] = RR_d[1].tensor
+        del TT_d_12
+
+        TT_d_21 = mpsu1Transfer_left_twoLayerWithMpsInsertBip(self.psi.mps[2],self.psi.mps[1],self.psi.mpo[2],self.psi.mpo[1],self.psi.T[2],self.psi.T[1],Td[2],Td[1])
+        RR_d[2] = TT_d_21.findRightEig()
+        RR_d[2].norm_pairedCanon()
+        RR_d[2] = RR_d[2].tensor
+        del TT_d_21
+
+        TT_d_12_p1 = mpsu1Transfer_left_twoLayerWithMpsInsertBip_plusOne(self.psi.mps[1],self.psi.mps[2],self.psi.mpo[1],self.psi.mpo[2],self.psi.T[1],self.psi.T[2],Td[1],Td[2])
+        RR_d_p1[1] = TT_d_12_p1.findRightEig()
+        RR_d_p1[1].norm_pairedCanon()
+        RR_d_p1[1] = RR_d_p1[1].tensor
+        del TT_d_12_p1
+
+        TT_d_21_p1 = mpsu1Transfer_left_twoLayerWithMpsInsertBip_plusOne(self.psi.mps[2],self.psi.mps[1],self.psi.mpo[2],self.psi.mpo[1],self.psi.T[2],self.psi.T[1],Td[2],Td[1])
+        RR_d_p1[2] = TT_d_21_p1.findRightEig()
+        RR_d_p1[2].norm_pairedCanon()
+        RR_d_p1[2] = RR_d_p1[2].tensor
+        del TT_d_21_p1
+
+        fp = dict()
+        fp['RR_d'] = RR_d
+        fp['RR_d_p1'] = RR_d_p1
+        return fp
+
+    def getOuterContracts(self,Td):
+        outerContractDouble = dict()
+        outerContractDouble_p1 = dict()
+        outerContract_open_top = dict()
+        outerContract_open_bot = dict()
+        outerContract_open_top_p1 = dict()
+        outerContract_open_bot_p1 = dict()
+
+        outerContractDouble[1] = ncon([self.psi.mps[1],self.psi.mps[2],self.psi.mps[1].conj(),self.psi.mps[2].conj(),Td[2],self.psi.T[1].tensor],((-1,5,6),(-3,7,8),(-2,5,11),(-4,10,9),(11,6,10,7),(9,8)),forder=(-2,-4,-1,-3),order=(5,6,11,7,10,8,9))
+        outerContractDouble[2] = ncon([self.psi.mps[2],self.psi.mps[1],self.psi.mps[2].conj(),self.psi.mps[1].conj(),Td[1],self.psi.T[2].tensor],((-1,5,6),(-3,7,8),(-2,5,11),(-4,10,9),(11,6,10,7),(9,8)),forder=(-2,-4,-1,-3),order=(5,6,11,7,10,8,9))
+
+        outerContractDouble_p1[1] = ncon([self.psi.mps[1],self.psi.mps[2],self.psi.mps[1],self.psi.mps[1].conj(),self.psi.mps[2].conj(),self.psi.mps[1].conj(),Td[2],self.psi.T[2].tensor],((-1,6,7),(3,8,9),(-4,9,10),(-2,6,14),(3,13,12),(-5,12,11),(14,7,13,8),(11,10)),forder=(-2,-5,-1,-4),order=(6,7,14,8,13,3,9,12,10,11))
+        outerContractDouble_p1[2] = ncon([self.psi.mps[2],self.psi.mps[1],self.psi.mps[2],self.psi.mps[2].conj(),self.psi.mps[1].conj(),self.psi.mps[2].conj(),Td[1],self.psi.T[1].tensor],((-1,6,7),(3,8,9),(-4,9,10),(-2,6,14),(3,13,12),(-5,12,11),(14,7,13,8),(11,10)),forder=(-2,-5,-1,-4),order=(6,7,14,8,13,3,9,12,10,11))
+
+        outerContract_open_top[1] = ncon([self.psi.mps[1],self.psi.mps[1].conj(),self.psi.T[2].tensor,Td[1]],((-1,4,5),(-2,7,6),(6,5),(-8,-3,7,4)),forder=(-2,-1,-8,-3),order=(5,6,4,7))
+        outerContract_open_top[2] = ncon([self.psi.mps[2],self.psi.mps[2].conj(),self.psi.T[1].tensor,Td[2]],((-1,4,5),(-2,7,6),(6,5),(-8,-3,7,4)),forder=(-2,-1,-8,-3),order=(5,6,4,7))
+        outerContract_open_bot[1] = ncon([self.psi.mps[1],self.psi.mps[1].conj(),Td[2]],((-1,3,4),(-2,3,5),(5,4,-7,-6)),forder=(-2,-1,-7,-6),order=(3,4,5))
+        outerContract_open_bot[2] = ncon([self.psi.mps[2],self.psi.mps[2].conj(),Td[1]],((-1,3,4),(-2,3,5),(5,4,-7,-6)),forder=(-2,-1,-7,-6),order=(3,4,5))
+
+        outerContract_open_top_p1[1] = ncon([self.psi.mps[1],self.psi.mps[1].conj(),self.psi.mps[2],self.psi.mps[2].conj(),self.psi.T[2].tensor,Td[2]],((-1,6,7),(-2,9,8),(3,5,6),(3,10,9),(8,7),(-11,-4,10,5)),forder=(-2,-1,-11,-4),order=(8,7,6,9,3,5,10))
+        outerContract_open_top_p1[2] = ncon([self.psi.mps[2],self.psi.mps[2].conj(),self.psi.mps[1],self.psi.mps[1].conj(),self.psi.T[1].tensor,Td[1]],((-1,6,7),(-2,9,8),(3,5,6),(3,10,9),(8,7),(-11,-4,10,5)),forder=(-2,-1,-11,-4),order=(8,7,6,9,3,5,10))
+        outerContract_open_bot_p1[1] = ncon([self.psi.mps[1],self.psi.mps[1].conj(),self.psi.mps[2],self.psi.mps[2].conj(),Td[1]],((-1,4,5),(-2,4,10),(3,5,6),(3,10,9),(9,6,-8,-7)),forder=(-2,-1,-8,-7),order=(4,5,10,3,6,9))
+        outerContract_open_bot_p1[2] = ncon([self.psi.mps[2],self.psi.mps[2].conj(),self.psi.mps[1],self.psi.mps[1].conj(),Td[2]],((-1,4,5),(-2,4,10),(3,5,6),(3,10,9),(9,6,-8,-7)),forder=(-2,-1,-8,-7),order=(4,5,10,3,6,9))
+
+        fp = dict()
+        fp['outerContractDouble'] = outerContractDouble
+        fp['outerContract_open_top'] = outerContract_open_top
+        fp['outerContract_open_bot'] = outerContract_open_bot
+        fp['outerContractDouble_p1'] = outerContractDouble_p1
+        fp['outerContract_open_top_p1'] = outerContract_open_top_p1
+        fp['outerContract_open_bot_p1'] = outerContract_open_bot_p1
+        return fp
+
+    def getCentralTerms(self):
+        if self.H_index == self.grad_index:
+            return ncon([self.psi.mpo[self.index1],self.psi.mpo[self.index2],self.H,self.psi.mpo[self.index2].conj(),self.psi.R[self.index1].tensor,self.outerContract[self.index1],self.outerContract[self.index2]],((2,1,-9,10),(6,5,10,11),(-3,7,2,6),(7,8,-13,12),(12,11),(-4,1),(8,5)),forder=(-4,-3,-9,-13),order=(12,11,5,8,6,7,10,1))
+        else:
+            return ncon([self.psi.mpo[self.index2],self.psi.mpo[self.index1],self.H,self.psi.mpo[self.index2].conj(),self.psi.R[self.index2].tensor,self.outerContract[self.index2],self.outerContract[self.index1]],((2,1,9,10),(6,5,10,11),(3,-7,2,6),(3,4,9,-13),(-12,11),(4,1),(-8,5)),forder=(-8,-7,-13,-12),order=(9,1,2,3,4,1,5,6,11))
+
+    def buildLeftEnv(self,H=None):
+        if H is None:
+            H = self.H
+            appendExtraSite = True #init left env for gradient in line
+        else:
+            appendExtraSite = False #left env for quadrants, dont append extra site, is done later
+
+        if self.H_index == self.grad_index:
+            env = ncon([self.psi.mpo[self.index1],self.psi.mpo[self.index2],H,self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2].conj(),self.outerContract[self.index1],self.outerContract[self.index2]],((2,1,9,10),(6,5,10,-11),(3,7,2,6),(3,4,9,13),(7,8,13,-12),(4,1),(8,5)),forder=(-12,-11),order=(9,1,2,3,4,10,13,6,7,5,8))
+            env = self.psi.Tb_inv[self.index1].applyRight(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
+        else:
+            env = ncon([self.psi.mpo[self.index2],self.psi.mpo[self.index1],H,self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1].conj(),self.outerContract[self.index2],self.outerContract[self.index1]],((2,1,9,10),(6,5,10,-11),(3,7,2,6),(3,4,9,13),(7,8,13,-12),(4,1),(8,5)),forder=(-12,-11),order=(9,1,2,3,4,10,13,6,7,5,8))
+            if appendExtraSite is True:
+                env = ncon([env,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContract[self.index2]],((6,4),(2,1,4,-5),(2,3,6,-7),(3,1)),forder=(-7,-5),order=(4,6,1,2,3))
+                env = self.psi.Tb_inv[self.index1].applyRight(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
+            else:
+                env = self.psi.Tb_inv[self.index2].applyRight(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
+        return env
+
+    def buildRightEnv(self,H=None):
+        if H is None:
+            H = self.H
+        if self.H_index == self.grad_index:
+            env = ncon([self.psi.mpo[self.index1],self.psi.mpo[self.index2],H,self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2].conj(),self.psi.R[self.index1].tensor,self.outerContract[self.index1],self.outerContract[self.index2]],((2,1,-9,10),(6,5,10,11),(3,7,2,6),(3,4,-14,13),(7,8,13,12),(12,11),(4,1),(8,5)),forder=(-14,-9),order=(11,12,5,6,7,8,10,13,2,3,1,4))
+            env = ncon([env,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContract[self.index2]],((7,5),(2,1,-4,5),(2,3,-6,7),(3,1)),forder=(-6,-4),order=(5,7,1,2,3))
+        else:
+            env = ncon([self.psi.mpo[self.index2],self.psi.mpo[self.index1],H,self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1].conj(),self.psi.R[self.index2].tensor,self.outerContract[self.index2],self.outerContract[self.index1]],((2,1,-9,10),(6,5,10,11),(3,7,2,6),(3,4,-14,13),(7,8,13,12),(12,11),(4,1),(8,5)),forder=(-14,-9),order=(11,12,5,6,7,8,10,13,2,3,1,4))
+
+        env = self.psi.Tb_inv[self.index2].applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
+        return env
+
+    def attachRightSingle(self,env):
+        return ncon([self.psi.mpo[self.index1],env,self.psi.R[self.index2].tensor,self.outerContract[self.index1]],((-2,1,4,5),(-6,4),(-7,5),(-3,1)),forder=(-3,-2,-6,-7),order=(4,1,5))
+    def attachLeftSingle(self,env):
+        return ncon([self.psi.mpo[self.index1],env,self.outerContract[self.index1]],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
+    def attachRightMax(self,env):
+        return self.attachRightSingle(env)
+    def attachLeftMax(self,env):
+        return self.attachLeftSingle(env)
+
+    def buildTopEnvGeo(self,fixedPoints,outers):
+        if self.H_index == self.grad_index:
+            env = ncon([self.innerContract,fixedPoints['RR_d_p1'][self.index1],self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),outers['outerContractDouble_p1'][self.index2],outers['outerContract_open_top_p1'][self.index1]],((1,2,3,4,5,6),(10,8,5,6),(12,11,-7,8),(12,13,-9,10),(13,2,11,4),(1,3,-14,-15)),forder=(-14,-9,-7,-15),order=(5,6,8,10,4,2,11,12,13,1,3))
+            env += ncon([self.innerContract,fixedPoints['RR_d'][self.index2],self.outerContract[self.index1],outers['outerContract_open_top'][self.index2]],((1,2,3,4,5,6),(-8,-7,5,6),(1,3),(2,4,-9,-10)),forder=(-9,-8,-7,-10),order=(5,6,1,3,2,4))
+            return env
+        else:
+            env = ncon([self.innerContract,fixedPoints['RR_d'][self.index1],self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),outers['outerContractDouble'][self.index2],outers['outerContract_open_top'][self.index2]],((1,2,3,4,5,6),(10,8,5,6),(12,11,-7,8),(12,13,-9,10),(13,2,11,4),(1,3,-14,-15)),forder=(-14,-9,-7,-15),order=(5,6,8,10,4,2,11,12,13,1,3))
+            env += ncon([self.innerContract,fixedPoints['RR_d_p1'][self.index2],self.outerContract[self.index2],outers['outerContract_open_top_p1'][self.index1]],((1,2,3,4,5,6),(-8,-7,5,6),(1,3),(2,4,-9,-10)),forder=(-9,-8,-7,-10),order=(5,6,1,3,2,4))
+            return env
+
+    def buildBotEnvGeo(self,fixedPoints,outers):
+        if self.H_index == self.grad_index:
+            env = ncon([self.innerContract,fixedPoints['RR_d_p1'][self.index1],self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),outers['outerContractDouble_p1'][self.index2],outers['outerContract_open_bot_p1'][self.index1]],((1,2,3,4,5,6),(5,6,7,8),(10,9,-12,8),(10,11,-13,7),(2,11,4,9),(1,3,-14,-15)),forder=(-14,-13,-12,-15),order=(5,6,7,8,9,10,11,4,2,1,3))
+            env += ncon([self.innerContract,fixedPoints['RR_d'][self.index1],self.outerContract[self.index1],outers['outerContract_open_bot'][self.index2]],((1,2,3,4,5,6),(5,6,-7,-8),(1,3),(2,4,-9,-10)),forder=(-9,-7,-8,-10),order=(5,6,1,3,2,4))
+            return env
+        else:
+            env = ncon([self.innerContract,fixedPoints['RR_d'][self.index2],self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),outers['outerContractDouble'][self.index1],outers['outerContract_open_bot'][self.index2]],((1,2,3,4,5,6),(5,6,7,8),(10,9,-12,8),(10,11,-13,7),(2,11,4,9),(1,3,-14,-15)),forder=(-14,-13,-12,-15),order=(5,6,7,8,9,10,11,4,2,1,3))
+            env += ncon([self.innerContract,fixedPoints['RR_d_p1'][self.index2],self.outerContract[self.index2],outers['outerContract_open_bot_p1'][self.index1]],((1,2,3,4,5,6),(5,6,-7,-8),(1,3),(2,4,-9,-10)),forder=(-9,-7,-8,-10),order=(5,6,1,3,2,4))
+            return env
+
+    def buildTopEnvGeo_quadrants(self,fixedPoints,outers,leftEnv):
+        if self.H_index == self.grad_index:
+            env = ncon([leftEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),fixedPoints['RR_d_p1'][self.index2],outers['outerContract_open_top_p1'][self.index1]],((6,4),(2,1,4,5),(2,3,6,7),(-9,-8,7,5),(3,1,-10,-11)),forder=(-10,-9,-8,-11),order=(6,4,2,5,7,1,3))
+            newLeftEnv = ncon([leftEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.outerContract[self.index1]],((6,4),(2,1,4,-5),(2,3,6,-7),(3,1)),forder=(-7,-5),order=(4,6,1,2,3))
+            env += ncon([newLeftEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),fixedPoints['RR_d'][self.index2],outers['outerContract_open_top'][self.index2]],((6,4),(2,1,4,5),(2,3,6,7),(-9,-8,7,5),(3,1,-10,-11)),forder=(-10,-9,-8,-11),order=(6,4,2,5,7,1,3))
+            return env
+        else:
+            env = ncon([leftEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),fixedPoints['RR_d'][self.index2],outers['outerContract_open_top'][self.index2]],((6,4),(2,1,4,5),(2,3,6,7),(-9,-8,7,5),(3,1,-10,-11)),forder=(-10,-9,-8,-11),order=(6,4,2,5,7,1,3))
+            newLeftEnv = ncon([leftEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContract[self.index2]],((6,4),(2,1,4,-5),(2,3,6,-7),(3,1)),forder=(-7,-5),order=(4,6,1,2,3))
+            env += ncon([newLeftEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),fixedPoints['RR_d_p1'][self.index2],outers['outerContract_open_top_p1'][self.index1]],((6,4),(2,1,4,5),(2,3,6,7),(-9,-8,7,5),(3,1,-10,-11)),forder=(-10,-9,-8,-11),order=(6,4,2,5,7,1,3))
+            return env
+
+    def buildBotEnvGeo_quadrants(self,fixedPoints,outers,leftEnv):
+        if self.H_index == self.grad_index:
+            env = ncon([leftEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),fixedPoints['RR_d_p1'][self.index2],outers['outerContract_open_bot_p1'][self.index1]],((6,4),(2,1,4,5),(2,3,6,7),(7,5,-8,-9),(3,1,-10,-11)),forder=(-10,-8,-9,-11),order=(4,6,2,5,7,1,3))
+            newLeftEnv = ncon([leftEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.outerContract[self.index1]],((6,4),(2,1,4,-5),(2,3,6,-7),(3,1)),forder=(-7,-5),order=(4,6,1,2,3))
+            env += ncon([newLeftEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),fixedPoints['RR_d'][self.index1],outers['outerContract_open_bot'][self.index2]],((6,4),(2,1,4,5),(2,3,6,7),(7,5,-8,-9),(3,1,-10,-11)),forder=(-10,-8,-9,-11),order=(4,6,2,5,7,1,3))
+            return env
+        else:
+            env = ncon([leftEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),fixedPoints['RR_d'][self.index1],outers['outerContract_open_bot'][self.index2]],((6,4),(2,1,4,5),(2,3,6,7),(7,5,-8,-9),(3,1,-10,-11)),forder=(-10,-8,-9,-11),order=(4,6,2,5,7,1,3))
+            newLeftEnv = ncon([leftEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContract[self.index2]],((6,4),(2,1,4,-5),(2,3,6,-7),(3,1)),forder=(-7,-5),order=(4,6,1,2,3))
+            env += ncon([newLeftEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),fixedPoints['RR_d_p1'][self.index2],outers['outerContract_open_bot_p1'][self.index1]],((6,4),(2,1,4,5),(2,3,6,7),(7,5,-8,-9),(3,1,-10,-11)),forder=(-10,-8,-9,-11),order=(4,6,2,5,7,1,3))
+            return env
+
+    def buildRightEnvGeo_quadrants(self,fixedPoints,outers):
+        if self.H_index == self.grad_index:
+            env1 = ncon([self.innerContract,fixedPoints['RR_d'][self.index2],self.psi.mpo[self.index1],self.psi.mpo[self.index2],self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2].conj(),outers['outerContractDouble'][self.index2],outers['outerContractDouble'][self.index1]],((1,2,3,4,5,6),(18,15,5,6),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(9,1,7,3),(12,2,10,4)),forder=(-16,-13),order=(5,6,15,18,11,4,2,10,12,14,17,8,1,3,7,9))
+            env1 += ncon([self.innerContract,fixedPoints['RR_d'][self.index1],self.psi.mpo[self.index1],self.psi.mpo[self.index2],self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2].conj(),outers['outerContractDouble'][self.index1],outers['outerContractDouble'][self.index2]],((1,2,3,4,5,6),(5,6,18,15),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(1,9,3,7),(2,12,4,10)),forder=(-16,-13),order=(5,6,18,15,11,10,12,4,2,14,17,8,7,9,3,1))
+            env2 = ncon([self.innerContract,fixedPoints['RR_d_p1'][self.index1],self.psi.mpo[self.index2],self.psi.mpo[self.index1],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1].conj(),outers['outerContractDouble_p1'][self.index1],outers['outerContractDouble_p1'][self.index2]],((1,2,3,4,5,6),(18,15,5,6),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(9,1,7,3),(12,2,10,4)),forder=(-16,-13),order=(5,6,15,18,11,4,2,10,12,14,17,8,1,3,7,9))
+            env2 += ncon([self.innerContract,fixedPoints['RR_d_p1'][self.index1],self.psi.mpo[self.index2],self.psi.mpo[self.index1],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1].conj(),outers['outerContractDouble_p1'][self.index1],outers['outerContractDouble_p1'][self.index2]],((1,2,3,4,5,6),(5,6,18,15),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(1,9,3,7),(2,12,4,10)),forder=(-16,-13),order=(5,6,18,15,11,10,12,4,2,14,17,8,7,9,3,1))
+        else:
+            env1 = ncon([self.innerContract,fixedPoints['RR_d_p1'][self.index2],self.psi.mpo[self.index1],self.psi.mpo[self.index2],self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2].conj(),outers['outerContractDouble_p1'][self.index2],outers['outerContractDouble_p1'][self.index1]],((1,2,3,4,5,6),(18,15,5,6),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(9,1,7,3),(12,2,10,4)),forder=(-16,-13),order=(5,6,15,18,11,4,2,10,12,14,17,8,1,3,7,9))
+            env1 += ncon([self.innerContract,fixedPoints['RR_d_p1'][self.index2],self.psi.mpo[self.index1],self.psi.mpo[self.index2],self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2].conj(),outers['outerContractDouble_p1'][self.index2],outers['outerContractDouble_p1'][self.index1]],((1,2,3,4,5,6),(5,6,18,15),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(1,9,3,7),(2,12,4,10)),forder=(-16,-13),order=(5,6,18,15,11,10,12,4,2,14,17,8,7,9,3,1))
+            env2 = ncon([self.innerContract,fixedPoints['RR_d'][self.index1],self.psi.mpo[self.index2],self.psi.mpo[self.index1],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1].conj(),outers['outerContractDouble'][self.index1],outers['outerContractDouble'][self.index2]],((1,2,3,4,5,6),(18,15,5,6),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(9,1,7,3),(12,2,10,4)),forder=(-16,-13),order=(5,6,15,18,11,4,2,10,12,14,17,8,1,3,7,9))
+            env2 += ncon([self.innerContract,fixedPoints['RR_d'][self.index2],self.psi.mpo[self.index2],self.psi.mpo[self.index1],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1].conj(),outers['outerContractDouble'][self.index2],outers['outerContractDouble'][self.index1]],((1,2,3,4,5,6),(5,6,18,15),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(1,9,3,7),(2,12,4,10)),forder=(-16,-13),order=(5,6,18,15,11,10,12,4,2,14,17,8,7,9,3,1))
+
+        env2 = ncon([env2,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContract[self.index2]],((7,5),(2,1,-4,5),(2,3,-6,7),(3,1)),forder=(-6,-4),order=(5,7,1,2,3))
+        env = env1 + env2
+        env = self.psi.Tb_inv[self.index2].applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
+        return env
+
+# -----------------------------
+class gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_vert(gradImplementation_mpso_2d_mpo_bipartite):
+    def __init__(self,psi,H,H_index,grad_index):
+        super().__init__(psi,H,H_index,grad_index)
+        #objects needed to construct terms
+        self.outerContract = dict()
+        self.outerContractDouble = dict()
+        self.outerContract[1] =  ncon([self.psi.mps[1],self.psi.mps[1].conj(),self.psi.T[2].tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1),order=(3,4,5))
+        self.outerContract[2] =  ncon([self.psi.mps[2],self.psi.mps[2].conj(),self.psi.T[1].tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1),order=(3,4,5))
+        self.outerContractDouble[1] = ncon([self.psi.mps[1],self.psi.mps[2],self.psi.mps[1].conj(),self.psi.mps[2].conj(),self.psi.T[1].tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2))
+        self.outerContractDouble[2] = ncon([self.psi.mps[2],self.psi.mps[1],self.psi.mps[2].conj(),self.psi.mps[1].conj(),self.psi.T[2].tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2))
+
+        if self.H_index == self.grad_index:
+            leftEnv = ncon([self.psi.mpo[self.index1],self.psi.mpo[self.index2],self.H,self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2].conj(),self.outerContractDouble[self.index1]],((2,1,9,-10),(6,5,11,-12),(3,7,2,6),(3,4,9,-13),(7,8,11,-14),(4,8,1,5)),forder=(-13,-10,-14,-12),order=(9,1,2,3,4,11,5,6,7,8))
+            exp = np.einsum('abcd,abcd',leftEnv,self.psi.RR[self.index2].tensor)
+        else:
+            leftEnv = ncon([self.psi.mpo[self.index2],self.psi.mpo[self.index1],self.H,self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1].conj(),self.outerContractDouble[self.index2]],((2,1,9,-10),(6,5,11,-12),(3,7,2,6),(3,4,9,-13),(7,8,11,-14),(4,8,1,5)),forder=(-13,-10,-14,-12),order=(9,1,2,3,4,11,5,6,7,8))
+            exp = np.einsum('abcd,abcd',leftEnv,self.psi.RR[self.index1].tensor)
+        self.h_tilde = (self.H.reshape(4,4)-exp*np.eye(4)).reshape(2,2,2,2)
+
+        if self.H_index == self.grad_index:
+            self.innerContract= ncon([self.psi.mpo[self.index1],self.psi.mpo[self.index2],self.h_tilde,self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2].conj()],((2,-1,9,-10),(6,-5,11,-12),(3,7,2,6),(3,-4,9,-13),(7,-8,11,-14)),forder=(-4,-8,-1,-5,-13,-10,-14,-12),order=(9,2,3,11,6,7))
+        else:
+            self.innerContract= ncon([self.psi.mpo[self.index2],self.psi.mpo[self.index1],self.h_tilde,self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1].conj()],((2,-1,9,-10),(6,-5,11,-12),(3,7,2,6),(3,-4,9,-13),(7,-8,11,-14)),forder=(-4,-8,-1,-5,-13,-10,-14,-12),order=(9,2,3,11,6,7))
+
+    #d dep bipartite transfers for geosum
+    def init_mps_transfers(self):
+        Td_matrix = dict()
+        Td = dict()
+        Td_matrix[1] = np.eye(self.psi.D_mps**2)
+        Td[1] = Td_matrix[1].reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+        Td_matrix[2] = Td_matrix[1]
+        Td[2] = Td[1]
+        return Td_matrix,Td
+    def apply_mps_transfers(self,Td_matrix):
+        Td_matrix[1] = np.dot(Td_matrix[1],self.psi.Ta[1].matrix)
+        Td_matrix[2] = np.dot(Td_matrix[2],self.psi.Ta[2].matrix)
+        Td = dict()
+        Td[1] = Td_matrix[1].reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+        Td[2] = Td_matrix[2].reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+        return Td_matrix,Td
+
+    def getFixedPoints(self,d,Td):
+        RRR_d_lower = dict()
+        RRR_d_upper = dict()
+        RRR_d_lower_p1 = dict()
+        RRR_d_upper_p1 = dict()
+
+        #get new fixed points 
+        TTT_d_u_12 = mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip(self.psi.mps[1],self.psi.mps[2],self.psi.mpo[1],self.psi.mpo[2],self.psi.T[1],self.psi.T[2],Td[1],Td[2])
+        RRR_d_u_1 = TTT_d_u_12.findRightEig()
+        RRR_d_u_1.norm_pairedCanon()
+        RRR_d_upper[1] = RRR_d_u_1.tensor
+        del TTT_d_u_12
+
+        TTT_d_u_21 = mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip(self.psi.mps[2],self.psi.mps[1],self.psi.mpo[2],self.psi.mpo[1],self.psi.T[2],self.psi.T[1],Td[2],Td[1])
+        RRR_d_u_2 = TTT_d_u_21.findRightEig()
+        RRR_d_u_2.norm_pairedCanon()
+        RRR_d_upper[2] = RRR_d_u_2.tensor
+        del TTT_d_u_21
+
+        TTT_d_u_12_p1 = mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip_plusOne(self.psi.mps[1],self.psi.mps[2],self.psi.mpo[1],self.psi.mpo[2],self.psi.T[1],self.psi.T[2],Td[1],Td[2])
+        RRR_d_u_1_p1 = TTT_d_u_12_p1.findRightEig()
+        RRR_d_u_1_p1.norm_pairedCanon()
+        RRR_d_upper_p1[1] = RRR_d_u_1_p1.tensor
+        del TTT_d_u_12_p1
+
+        TTT_d_u_21_p1 = mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip_plusOne(self.psi.mps[2],self.psi.mps[1],self.psi.mpo[2],self.psi.mpo[1],self.psi.T[2],self.psi.T[1],Td[2],Td[1])
+        RRR_d_u_2_p1 = TTT_d_u_21_p1.findRightEig()
+        RRR_d_u_2_p1.norm_pairedCanon()
+        RRR_d_upper_p1[2] = RRR_d_u_2_p1.tensor
+        del TTT_d_u_21_p1
+
+        TTT_d_l_12 = mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip(self.psi.mps[1],self.psi.mps[2],self.psi.mpo[1],self.psi.mpo[2],self.psi.T[1],self.psi.T[2],Td[1],Td[2])
+        RRR_d_l_1 = TTT_d_l_12.findRightEig()
+        RRR_d_l_1.norm_pairedCanon()
+        RRR_d_lower[1] = RRR_d_l_1.tensor
+        del TTT_d_l_12
+
+        TTT_d_l_21 = mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip(self.psi.mps[2],self.psi.mps[1],self.psi.mpo[2],self.psi.mpo[1],self.psi.T[2],self.psi.T[1],Td[2],Td[1])
+        RRR_d_l_2 = TTT_d_l_21.findRightEig()
+        RRR_d_l_2.norm_pairedCanon()
+        RRR_d_lower[2] = RRR_d_l_2.tensor
+        del TTT_d_l_21
+
+        TTT_d_l_12_p1 = mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip_plusOne(self.psi.mps[1],self.psi.mps[2],self.psi.mpo[1],self.psi.mpo[2],self.psi.T[1],self.psi.T[2],Td[1],Td[2])
+        RRR_d_l_1_p1 = TTT_d_l_12_p1.findRightEig()
+        RRR_d_l_1_p1.norm_pairedCanon()
+        RRR_d_lower_p1[1] = RRR_d_l_1_p1.tensor
+        del TTT_d_l_12_p1
+
+        TTT_d_l_21_p1 = mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip_plusOne(self.psi.mps[2],self.psi.mps[1],self.psi.mpo[2],self.psi.mpo[1],self.psi.T[2],self.psi.T[1],Td[2],Td[1])
+        RRR_d_l_2_p1 = TTT_d_l_21_p1.findRightEig()
+        RRR_d_l_2_p1.norm_pairedCanon()
+        RRR_d_lower_p1[2] = RRR_d_l_2_p1.tensor
+        del TTT_d_l_21_p1
+
+        fp = dict()
+        fp['RRR_d_lower'] = RRR_d_lower
+        fp['RRR_d_upper'] = RRR_d_upper
+        fp['RRR_d_lower_p1'] = RRR_d_lower_p1
+        fp['RRR_d_upper_p1'] = RRR_d_upper_p1
+        return fp
+
+    def getOuterContracts(self,Td):
+        outerContract_open_upper = dict()
+        outerContract_open_lower = dict()
+        outerContract_open_upper_p1 = dict()
+        outerContract_open_lower_p1 = dict()
+
+        outerContract_open_upper[1] = ncon([self.psi.mps[1],self.psi.mps[2],self.psi.mps[1].conj(),self.psi.mps[2].conj(),Td[1]],((-1,5,6),(-3,6,7),(-2,5,11),(-4,11,10),(10,7,-9,-8)),forder=(-2,-4,-1,-3,-9,-8),order=(5,6,11,7,10))
+        outerContract_open_upper[2] = ncon([self.psi.mps[2],self.psi.mps[1],self.psi.mps[2].conj(),self.psi.mps[1].conj(),Td[2]],((-1,5,6),(-3,6,7),(-2,5,11),(-4,11,10),(10,7,-9,-8)),forder=(-2,-4,-1,-3,-9,-8),order=(5,6,11,7,10))
+        outerContract_open_lower[1] = ncon([self.psi.mps[1],self.psi.mps[2],self.psi.mps[1].conj(),self.psi.mps[2].conj(),self.psi.T[1].tensor,Td[1]],((-1,6,7),(-3,7,8),(-2,11,10),(-4,10,9),(9,8),(-12,-5,11,6)),forder=(-2,-4,-1,-3,-12,-5),order=(9,8,7,10,6,11))
+        outerContract_open_lower[2] = ncon([self.psi.mps[2],self.psi.mps[1],self.psi.mps[2].conj(),self.psi.mps[1].conj(),self.psi.T[2].tensor,Td[2]],((-1,6,7),(-3,7,8),(-2,11,10),(-4,10,9),(9,8),(-12,-5,11,6)),forder=(-2,-4,-1,-3,-12,-5),order=(9,8,7,10,6,11))
+
+        outerContract_open_upper_p1[1] = ncon([outerContract_open_upper[1],self.psi.mps[1],self.psi.mps[1].conj()],((-6,-7,-8,-9,4,2),(1,2,-3),(1,4,-5)),forder=(-6,-7,-8,-9,-5,-3),order=(2,4,1))
+        outerContract_open_upper_p1[2] = ncon([outerContract_open_upper[2],self.psi.mps[2],self.psi.mps[2].conj()],((-6,-7,-8,-9,4,2),(1,2,-3),(1,4,-5)),forder=(-6,-7,-8,-9,-5,-3),order=(2,4,1))
+        outerContract_open_lower_p1[1] = ncon([outerContract_open_lower[1],self.psi.mps[2],self.psi.mps[2].conj()],((-6,-7,-8,-9,5,3),(1,-2,3),(1,-4,5)),forder=(-6,-7,-8,-9,-4,-2),order=(3,5,1))
+        outerContract_open_lower_p1[2] = ncon([outerContract_open_lower[2],self.psi.mps[1],self.psi.mps[1].conj()],((-6,-7,-8,-9,5,3),(1,-2,3),(1,-4,5)),forder=(-6,-7,-8,-9,-4,-2),order=(3,5,1))
+
+        fp = dict()
+        fp['outerContract_open_upper'] = outerContract_open_upper
+        fp['outerContract_open_lower'] = outerContract_open_lower
+        fp['outerContract_open_upper_p1'] = outerContract_open_upper_p1
+        fp['outerContract_open_lower_p1'] = outerContract_open_lower_p1
+        return fp
+
+    def getCentralTerms(self):
+        if self.H_index == self.grad_index:
+            return ncon([self.psi.mpo[self.index1],self.psi.mpo[self.index2],self.H,self.psi.mpo[self.index2].conj(),self.psi.RR[self.index2].tensor,self.outerContractDouble[self.index1]],((2,1,-9,10),(4,3,11,12),(-5,7,2,4),(7,8,11,14),(-13,10,14,12),(-6,8,1,3)),forder=(-6,-5,-9,-13),order=(12,14,11,4,7,3,8,10,2,1))
+        else:
+            return ncon([self.psi.mpo[self.index2],self.psi.mpo[self.index1],self.H,self.psi.mpo[self.index2].conj(),self.psi.RR[self.index1].tensor,self.outerContractDouble[self.index2]],((2,1,9,10),(6,5,-11,12),(3,-7,2,6),(3,4,9,13),(13,10,-14,12),(4,-8,1,5)),forder=(-8,-7,-11,-14),order=(10,13,9,2,3,1,4,12,5))
+
+    def buildLeftEnv(self,H=None):
+        if H is None:
+            H = self.H
+        if self.H_index == self.grad_index:
+            env = ncon([self.psi.mpo[self.index1],self.psi.mpo[self.index2],H,self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2].conj(),self.outerContractDouble[self.index1]],((2,1,9,-10),(6,5,11,-12),(3,7,2,6),(3,4,9,-13),(7,8,11,-14),(4,8,1,5)),forder=(-13,-10,-14,-12),order=(9,1,2,3,4,11,5,6,7,8))
+            env = self.psi.Tb2_inv[self.index2].applyRight(env.reshape(self.psi.D_mpo**4)).reshape(self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
+        else:
+            env = ncon([self.psi.mpo[self.index2],self.psi.mpo[self.index1],H,self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1].conj(),self.outerContractDouble[self.index2]],((2,1,9,-10),(6,5,11,-12),(3,7,2,6),(3,4,9,-13),(7,8,11,-14),(4,8,1,5)),forder=(-13,-10,-14,-12),order=(9,1,2,3,4,11,5,6,7,8))
+            env = self.psi.Tb2_inv[self.index1].applyRight(env.reshape(self.psi.D_mpo**4)).reshape(self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
+        return env
+
+    def buildRightEnv(self,H=None):
+        if H is None:
+            H = self.H
+        if self.H_index == self.grad_index:
+            env = ncon([self.psi.mpo[self.index1],self.psi.mpo[self.index2],H,self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2].conj(),self.psi.RR[self.index2].tensor,self.outerContractDouble[self.index1]],((2,1,-9,10),(6,5,-11,12),(3,7,2,6),(3,4,-13,14),(7,8,-15,16),(14,10,16,12),(4,8,1,5)),forder=(-13,-9,-15,-11),order=(12,16,5,6,7,8,10,14,1,2,3,4))
+            env = self.psi.Tb2_inv[self.index1].applyLeft(env.reshape(self.psi.D_mpo**4)).reshape(self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
+        else:
+            env = ncon([self.psi.mpo[self.index2],self.psi.mpo[self.index1],H,self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1].conj(),self.psi.RR[self.index1].tensor,self.outerContractDouble[self.index2]],((2,1,-9,10),(6,5,-11,12),(3,7,2,6),(3,4,-13,14),(7,8,-15,16),(14,10,16,12),(4,8,1,5)),forder=(-13,-9,-15,-11),order=(12,16,5,6,7,8,10,14,1,2,3,4))
+            env = self.psi.Tb2_inv[self.index2].applyLeft(env.reshape(self.psi.D_mpo**4)).reshape(self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
+        return env
+
+    def attachRightSingle(self,env):
+        return ncon([self.psi.mpo[self.index1],env,self.psi.R[self.index2].tensor,self.outerContract[self.index1]],((-2,1,4,5),(-6,4),(-7,5),(-3,1)),forder=(-3,-2,-6,-7),order=(4,1,5))
+    def attachLeftSingle(self,env):
+        return ncon([self.psi.mpo[self.index1],env,self.outerContract[self.index1]],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
+
+    def attachRightMax(self,leftEnv):
+        if self.H_index == self.grad_index:
+            grad = ncon([leftEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.RR[self.index1].tensor,self.outerContractDouble[self.index2]],((13,11,-9,7),(-2,1,7,8),(5,4,11,12),(5,6,13,14),(14,12,-10,8),(6,-3,4,1)),forder=(-3,-2,-9,-10),order=(14,12,5,4,6,8,1,13,11,7))
+            newEnv = ncon([leftEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContractDouble[self.index2]],((13,11,9,7),(2,1,7,-8),(2,3,9,-10),(5,4,11,-12),(5,6,13,-14),(6,3,4,1)),forder=(-14,-12,-10,-8),order=(7,9,1,2,3,11,13,4,5,6))
+            grad += ncon([newEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1],self.psi.RR[self.index2].tensor,self.outerContractDouble[self.index1]],((-10,9,8,7),(2,1,7,11),(2,3,8,12),(-5,4,9,13),(-14,13,12,11),(-6,3,4,1)),forder=(-6,-5,-10,-14),order=(11,12,2,1,3,7,8,9,13,4))
+        else:
+            grad = ncon([leftEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1],self.psi.RR[self.index2].tensor,self.outerContractDouble[self.index1]],((-10,9,8,7),(2,1,7,11),(2,3,8,12),(-5,4,9,13),(-14,13,12,11),(-6,3,4,1)),forder=(-6,-5,-10,-14),order=(11,12,2,1,3,7,8,9,13,4))
+            newEnv = ncon([leftEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.outerContractDouble[self.index1]],((13,11,9,7),(2,1,7,-8),(2,3,9,-10),(5,4,11,-12),(5,6,13,-14),(6,3,4,1)),forder=(-14,-12,-10,-8),order=(7,9,1,2,3,11,13,4,5,6))
+            grad += ncon([newEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.RR[self.index1].tensor,self.outerContractDouble[self.index2]],((13,11,-9,7),(-2,1,7,8),(5,4,11,12),(5,6,13,14),(14,12,-10,8),(6,-3,4,1)),forder=(-3,-2,-9,-10),order=(14,12,5,4,6,8,1,13,11,7))
+        return grad
+
+    def attachLeftMax(self,rightEnv):
+        if self.H_index == self.grad_index:
+            rightEnv1 = np.einsum('aabc->bc',rightEnv)
+            rightEnv2 = np.einsum('abcc->ab',rightEnv)
+            rightEnv2 = ncon([rightEnv2,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContract[self.index2]],((7,5),(2,1,-4,5),(2,3,-6,7),(3,1)),forder=(-6,-4),order=(7,5,1,2,3))
+        else:
+            rightEnv1 = np.einsum('abcc->ab',rightEnv)
+            rightEnv2 = np.einsum('aabc->bc',rightEnv)
+            rightEnv2 = ncon([rightEnv2,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContract[self.index2]],((7,5),(2,1,-4,5),(2,3,-6,7),(3,1)),forder=(-6,-4),order=(7,5,1,2,3))
+        env = rightEnv1 + rightEnv2
+        return self.attachLeftSingle(env)
+
+    def buildTopEnvGeo(self,fixedPoints,outers):
+        if self.H_index == self.grad_index:
+            return ncon([self.innerContract,fixedPoints['RRR_d_lower_p1'][self.index2],outers['outerContract_open_lower_p1'][self.index1]],((1,2,3,4,5,6,7,8),(-9,-10,5,6,7,8),(1,2,3,4,-11,-12)),forder=(-11,-9,-10,-12),order=(5,6,7,8,1,2,3,4))
+        else:
+            return ncon([self.innerContract,fixedPoints['RRR_d_lower'][self.index2],outers['outerContract_open_lower'][self.index2]],((1,2,3,4,5,6,7,8),(-9,-10,5,6,7,8),(1,2,3,4,-11,-12)),forder=(-11,-9,-10,-12),order=(5,6,7,8,1,2,3,4))
+
+    def buildBotEnvGeo(self,fixedPoints,outers):
+        if self.H_index == self.grad_index:
+            return ncon([self.innerContract,fixedPoints['RRR_d_upper'][self.index2],outers['outerContract_open_upper'][self.index1]],((1,2,3,4,5,6,7,8),(5,6,7,8,-9,-10),(1,2,3,4,-11,-12)),forder=(-11,-9,-10,-12),order=(5,6,7,8,1,2,3,4))
+        else:
+            return ncon([self.innerContract,fixedPoints['RRR_d_upper_p1'][self.index1],outers['outerContract_open_upper_p1'][self.index2]],((1,2,3,4,5,6,7,8),(5,6,7,8,-9,-10),(1,2,3,4,-11,-12)),forder=(-11,-9,-10,-12),order=(5,6,7,8,1,2,3,4))
+
+    def buildTopEnvGeo_quadrants(self,fixedPoints,outers,leftEnv):
+        if self.H_index == self.grad_index:
+            env =  ncon([leftEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),fixedPoints['RRR_d_lower'][self.index2],outers['outerContract_open_lower'][self.index2]],((13,11,9,7),(2,1,7,8),(2,3,9,10),(5,4,11,12),(5,6,13,14),(-16,-15,14,12,10,8),(6,3,4,1,-17,-18)),forder=(-17,-16,-15,-18),order=(7,9,2,11,13,5,8,10,12,14,1,3,4,6))
+            newEnv = ncon([leftEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContractDouble[self.index2]],((13,11,9,7),(2,1,7,-8),(2,3,9,-10),(5,4,11,-12),(5,6,13,-14),(6,3,4,1)),forder=(-14,-12,-10,-8),order=(7,9,11,13,1,2,3,4,5,6))
+            env +=  ncon([newEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),fixedPoints['RRR_d_lower_p1'][self.index2],outers['outerContract_open_lower_p1'][self.index1]],((13,11,9,7),(2,1,7,8),(2,3,9,10),(5,4,11,12),(5,6,13,14),(-16,-15,14,12,10,8),(6,3,4,1,-17,-18)),forder=(-17,-16,-15,-18),order=(7,9,2,11,13,5,8,10,12,14,1,3,4,6))
+        else:
+            env =  ncon([leftEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),fixedPoints['RRR_d_lower_p1'][self.index2],outers['outerContract_open_lower_p1'][self.index1]],((13,11,9,7),(2,1,7,8),(2,3,9,10),(5,4,11,12),(5,6,13,14),(-16,-15,14,12,10,8),(6,3,4,1,-17,-18)),forder=(-17,-16,-15,-18),order=(7,9,2,11,13,5,8,10,12,14,1,3,4,6))
+            newEnv = ncon([leftEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.outerContractDouble[self.index1]],((13,11,9,7),(2,1,7,-8),(2,3,9,-10),(5,4,11,-12),(5,6,13,-14),(6,3,4,1)),forder=(-14,-12,-10,-8),order=(7,9,11,13,1,2,3,4,5,6))
+            env +=  ncon([newEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),fixedPoints['RRR_d_lower'][self.index2],outers['outerContract_open_lower'][self.index2]],((13,11,9,7),(2,1,7,8),(2,3,9,10),(5,4,11,12),(5,6,13,14),(-16,-15,14,12,10,8),(6,3,4,1,-17,-18)),forder=(-17,-16,-15,-18),order=(7,9,2,11,13,5,8,10,12,14,1,3,4,6))
+        return env
+
+    def buildBotEnvGeo_quadrants(self,fixedPoints,outers,leftEnv,):
+        if self.H_index == self.grad_index:
+            env = ncon([leftEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),fixedPoints['RRR_d_upper_p1'][self.index1],outers['outerContract_open_upper_p1'][self.index2]],((13,11,9,7),(2,1,7,8),(2,3,9,10),(5,4,11,12),(5,6,13,14),(14,12,10,8,-15,-16),(6,3,4,1,-17,-18)),forder=(-17,-15,-16,-18),order=(7,9,2,11,13,5,8,10,12,14,1,3,4,6))
+            newEnv = ncon([leftEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContractDouble[self.index2]],((13,11,9,7),(2,1,7,-8),(2,3,9,-10),(5,4,11,-12),(5,6,13,-14),(6,3,4,1)),forder=(-14,-12,-10,-8),order=(7,9,11,13,1,2,3,4,5,6))
+            env += ncon([newEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),fixedPoints['RRR_d_upper'][self.index2],outers['outerContract_open_upper'][self.index1]],((13,11,9,7),(2,1,7,8),(2,3,9,10),(5,4,11,12),(5,6,13,14),(14,12,10,8,-15,-16),(6,3,4,1,-17,-18)),forder=(-17,-15,-16,-18),order=(7,9,2,11,13,5,8,10,12,14,1,3,4,6))
+        else:
+            env = ncon([leftEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),fixedPoints['RRR_d_upper'][self.index2],outers['outerContract_open_upper'][self.index1]],((13,11,9,7),(2,1,7,8),(2,3,9,10),(5,4,11,12),(5,6,13,14),(14,12,10,8,-15,-16),(6,3,4,1,-17,-18)),forder=(-17,-15,-16,-18),order=(7,9,2,11,13,5,8,10,12,14,1,3,4,6))
+            newEnv = ncon([leftEnv,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.outerContractDouble[self.index1]],((13,11,9,7),(2,1,7,-8),(2,3,9,-10),(5,4,11,-12),(5,6,13,-14),(6,3,4,1)),forder=(-14,-12,-10,-8),order=(7,9,11,13,1,2,3,4,5,6))
+            env += ncon([newEnv,self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),fixedPoints['RRR_d_upper_p1'][self.index1],outers['outerContract_open_upper_p1'][self.index2]],((13,11,9,7),(2,1,7,8),(2,3,9,10),(5,4,11,12),(5,6,13,14),(14,12,10,8,-15,-16),(6,3,4,1,-17,-18)),forder=(-17,-15,-16,-18),order=(7,9,2,11,13,5,8,10,12,14,1,3,4,6))
+        return env
+
+
+    def buildRightEnvGeo_quadrants(self,fixedPoints,outers):
+        if self.H_index == self.grad_index:
+            #bot env
+            env1 = ncon([self.innerContract,fixedPoints['RRR_d_upper_p1'][self.index2],outers['outerContract_open_upper_p1'][self.index1]],((1,2,3,4,5,6,7,8),(5,6,7,8,-9,-10),(1,2,3,4,-11,-12)),forder=(-11,-9,-10,-12),order=(5,6,7,8,1,2,3,4))
+            env1 = ncon([env1,self.psi.mps[self.index2],self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mps[self.index2].conj(),self.psi.T[self.index1].tensor],((10,9,7,4),(1,4,5),(2,1,-6,7),(2,3,-8,9),(3,10,11),(11,5)),forder=(-8,-6),order=(4,7,9,10,1,2,3,5,11))
+            env2 = ncon([self.innerContract,fixedPoints['RRR_d_upper'][self.index2],outers['outerContract_open_upper'][self.index1]],((1,2,3,4,5,6,7,8),(5,6,7,8,-9,-10),(1,2,3,4,-11,-12)),forder=(-11,-9,-10,-12),order=(5,6,7,8,1,2,3,4))
+            env2 = ncon([env2,self.psi.mps[self.index1],self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.psi.mps[self.index1].conj(),self.psi.T[self.index2].tensor],((10,9,7,4),(1,4,5),(2,1,-6,7),(2,3,-8,9),(3,10,11),(11,5)),forder=(-8,-6),order=(4,7,9,10,1,2,3,5,11))
+            env2 = ncon([env2,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContract[self.index2]],((7,5),(2,1,-4,5),(2,3,-6,7),(3,1)),forder=(-6,-4),order=(5,7,1,2,3))
+            temp1 = env1
+            botEnv = env1 + env2
+
+            #top env
+            env1 = ncon([self.innerContract,fixedPoints['RRR_d_lower'][self.index1],outers['outerContract_open_lower'][self.index1]],((1,2,3,4,5,6,7,8),(-9,-10,5,6,7,8),(1,2,3,4,-11,-12)),forder=(-11,-9,-10,-12),order=(5,6,7,8,1,2,3,4))
+            env1 = ncon([env1,self.psi.mps[self.index2],self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mps[self.index2].conj()],((10,9,7,5),(1,4,5),(2,1,-6,7),(2,3,-8,9),(3,4,10)),forder=(-8,-6),order=(5,7,9,10,1,2,3,4))
+            env2 = ncon([self.innerContract,fixedPoints['RRR_d_lower_p1'][self.index2],outers['outerContract_open_lower_p1'][self.index1]],((1,2,3,4,5,6,7,8),(-9,-10,5,6,7,8),(1,2,3,4,-11,-12)),forder=(-11,-9,-10,-12),order=(5,6,7,8,1,2,3,4))
+            env2 = ncon([env2,self.psi.mps[self.index1],self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.psi.mps[self.index1].conj()],((10,9,7,5),(1,4,5),(2,1,-6,7),(2,3,-8,9),(3,4,10)),forder=(-8,-6),order=(5,7,9,10,1,2,3,4))
+            env2 = ncon([env2,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContract[self.index2]],((7,5),(2,1,-4,5),(2,3,-6,7),(3,1)),forder=(-6,-4),order=(5,7,1,2,3))
+            topEnv = env1 + env2
+
+        else:
+            #bot env
+            env1 = ncon([self.innerContract,fixedPoints['RRR_d_upper'][self.index1],outers['outerContract_open_upper'][self.index2]],((1,2,3,4,5,6,7,8),(5,6,7,8,-9,-10),(1,2,3,4,-11,-12)),forder=(-11,-9,-10,-12),order=(5,6,7,8,1,2,3,4))
+            env1 = ncon([env1,self.psi.mps[self.index2],self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mps[self.index2].conj(),self.psi.T[self.index1].tensor],((10,9,7,4),(1,4,5),(2,1,-6,7),(2,3,-8,9),(3,10,11),(11,5)),forder=(-8,-6),order=(4,7,9,10,1,2,3,5,11))
+            env2 = ncon([self.innerContract,fixedPoints['RRR_d_upper_p1'][self.index1],outers['outerContract_open_upper_p1'][self.index2]],((1,2,3,4,5,6,7,8),(5,6,7,8,-9,-10),(1,2,3,4,-11,-12)),forder=(-11,-9,-10,-12),order=(5,6,7,8,1,2,3,4))
+            env2 = ncon([env2,self.psi.mps[self.index1],self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.psi.mps[self.index1].conj(),self.psi.T[self.index2].tensor],((10,9,7,4),(1,4,5),(2,1,-6,7),(2,3,-8,9),(3,10,11),(11,5)),forder=(-8,-6),order=(4,7,9,10,1,2,3,5,11))
+            env2 = ncon([env2,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContract[self.index2]],((7,5),(2,1,-4,5),(2,3,-6,7),(3,1)),forder=(-6,-4),order=(5,7,1,2,3))
+            botEnv = env1 + env2
+
+            #top env
+            env1 = ncon([self.innerContract,fixedPoints['RRR_d_lower_p1'][self.index1],outers['outerContract_open_lower_p1'][self.index2]],((1,2,3,4,5,6,7,8),(-9,-10,5,6,7,8),(1,2,3,4,-11,-12)),forder=(-11,-9,-10,-12),order=(5,6,7,8,1,2,3,4))
+            env1 = ncon([env1,self.psi.mps[self.index2],self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.psi.mps[self.index2].conj()],((10,9,7,5),(1,4,5),(2,1,-6,7),(2,3,-8,9),(3,4,10)),forder=(-8,-6),order=(5,7,9,10,1,2,3,4))
+            env2 = ncon([self.innerContract,fixedPoints['RRR_d_lower'][self.index2],outers['outerContract_open_lower'][self.index2]],((1,2,3,4,5,6,7,8),(-9,-10,5,6,7,8),(1,2,3,4,-11,-12)),forder=(-11,-9,-10,-12),order=(5,6,7,8,1,2,3,4))
+            env2 = ncon([env2,self.psi.mps[self.index1],self.psi.mpo[self.index1],self.psi.mpo[self.index1].conj(),self.psi.mps[self.index1].conj()],((10,9,7,5),(1,4,5),(2,1,-6,7),(2,3,-8,9),(3,4,10)),forder=(-8,-6),order=(5,7,9,10,1,2,3,4))
+            env2 = ncon([env2,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContract[self.index2]],((7,5),(2,1,-4,5),(2,3,-6,7),(3,1)),forder=(-6,-4),order=(5,7,1,2,3))
+            topEnv = env1 + env2
+
+        env = botEnv + topEnv
+        env = self.psi.Tb_inv[self.index2].applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
         return env
