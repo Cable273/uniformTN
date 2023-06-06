@@ -126,8 +126,8 @@ class uMPS_1d_left_bipartite(uMPS_1d_left):
             self.R[n].norm_pairedCanon()
     def get_inverses(self):
         self.Ta_inv = dict()
-        self.Ta_inv[1] = inverseTransfer_left(self.Ta[1],self.R[1].vector)
-        self.Ta_inv[2] = inverseTransfer_left(self.Ta[2],self.R[2].vector)
+        for n in range(1,len(self.Ta)+1):
+            self.Ta_inv[n] = inverseTransfer_left(self.Ta[n],self.R[n].vector)
     def shiftTensors(self,coef,tensorDict):
         self.mps[1] += coef*tensorDict[1]
         self.mps[2] += coef*tensorDict[2]
