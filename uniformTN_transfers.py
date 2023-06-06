@@ -29,6 +29,12 @@ class transferMatrix(ABC):
     def applyRight(self):
         pass
 
+class regularTransfer(transferMatrix):
+    def applyLeft(self,psi):
+        return np.dot(self.matrix,psi)
+    def applyRight(self,psi):
+        return np.dot(psi,self.matrix)
+
 class inverseTransfer(transferMatrix):
     def __init__(self,transferMatrix,leftEig,rightEig):
         # pseudo inverse = (I - T + |R><L|)^{-1} - |R><L|
@@ -44,6 +50,7 @@ class inverseTransfer(transferMatrix):
         return sp.sparse.linalg.bicgstab(self.inverseMatrix.transpose(),np.dot(self.Q.transpose(),leftVector),tol=tol)[0]
     def genInverse(self):
         self.matrix = sp.linalg.inv(self.inverseMatrix)-self.proj
+
 class inverseTransfer_left(inverseTransfer):
     def __init__(self,transferMatrix,rightEig):
         #left eigvector assumed to be product of identities
@@ -61,11 +68,6 @@ class inverseTransfer_right(inverseTransfer):
         rightEig = rightEig.reshape(transferMatrix.D**transferMatrix.noLegs)
         super().__init__(transferMatrix,leftEig,rightEig)
 
-class regularTransfer(transferMatrix):
-    def applyLeft(self,psi):
-        return np.dot(self.matrix,psi)
-    def applyRight(self,psi):
-        return np.dot(psi,self.matrix)
 
 class fixedPoint:
     def __init__(self,vector,D,noLegs):
@@ -74,7 +76,6 @@ class fixedPoint:
         #use view object to raise errors for copies
         self.tensor = self.vector.view()
         self.tensor.shape = np.ones(noLegs,dtype=int)*D
-
         self.D = D
         self.noLegs = noLegs
     def norm_pairedVector(self,eigPair):
@@ -84,7 +85,6 @@ class fixedPoint:
         #ie np.einsum('abcdef...,ab,cd,ef,...',tensor,I,I,I,....) = 1
         contractionIndices = np.vstack((np.arange(0,self.noLegs/2,dtype=int),np.arange(0,self.noLegs/2,dtype=int))).transpose().flatten()+1
         self.vector /= ncon([self.tensor],(contractionIndices))
-
 
 class mpsTransfer(regularTransfer):
     def __init__(self,A):
