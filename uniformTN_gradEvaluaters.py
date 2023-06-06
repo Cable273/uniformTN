@@ -208,48 +208,57 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
     @abstractmethod
     def attachTop(self):
         pass
-    def eval(self,geo=True,envTol=1e-5):
-        #terms underneath Hamiltonian
-        self.grad = self.H_imp[0].getCentralTerms()
-        for n in range(0,len(self.H.terms)):
-            #terms under Hamiltonian
-            if n > 0:
-                self.grad += self.H_imp[n].getCentralTerms()
-            #terms to left of H
-            rightEnv = self.H_imp[n].buildRightEnv()
-            self.grad += self.H_imp[n].attachLeftMax(rightEnv)
-            #terms to right of H
-            leftEnv = self.H_imp[n].buildLeftEnv()
-            self.grad += self.H_imp[n].attachRightMax(leftEnv)
 
-            # # geometric sums...
+    def eval_non_geo(self,H_term_index):
+        n = H_term_index
+        #terms under H
+        grad = self.H_imp[n].getCentralTerms()
+        #terms to left of H
+        rightEnv = self.H_imp[n].buildRightEnv()
+        grad += self.H_imp[n].attachLeftMax(rightEnv)
+        #terms to right of H
+        leftEnv = self.H_imp[n].buildLeftEnv()
+        grad += self.H_imp[n].attachRightMax(leftEnv)
+        return np.einsum('ijab->jiab',grad)
+
+    #geometric sum
+    def eval_geo(self,H_term_index,Td,rightFP_d,outers_d):
+        n = H_term_index
+        #necessary for quadrants
+        leftEnv_h_tilde = self.H_imp[n].buildLeftEnv(H=self.H_imp[n].h_tilde)
+        # terms below Hamiltonian
+        env = self.H_imp[n].buildTopEnvGeo(rightFP_d,outers_d)
+        # # right quadrant lower
+        env += self.H_imp[n].buildTopEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
+        grad = self.attachBot(env)
+
+        # # terms above Hamiltonian
+        env = self.H_imp[n].buildBotEnvGeo(rightFP_d,outers_d)
+        # right quadrant upper
+        env += self.H_imp[n].buildBotEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
+        grad += self.attachTop(env)
+
+        #left quadrants upper and lower
+        rightEnv = self.H_imp[n].buildRightEnvGeo_quadrants(rightFP_d,outers_d)
+        grad += self.H_imp[n].attachLeftSingle(rightEnv)
+        return np.einsum('ijab->jiab',grad)
+
+
+    def eval(self,geo=True,envTol=1e-5):
+        self.grad = self.eval_non_geo(0)
+        for n in range(0,len(self.H.terms)):
+            if n > 0:
+                self.grad += self.eval_non_geo(n)
+
             if geo is True:
                 Td_matrix,Td = self.H_imp[n].init_mps_transfers()
-                #tensors needed for geosum not dependent on d
-                leftEnv_h_tilde = self.H_imp[n].buildLeftEnv(H=self.H_imp[n].h_tilde)
                 for d in range(0,100):
-                    gradRun = np.zeros(self.grad.shape).astype(complex)
-                    #d dependant tensors needed
                     if d > 0:
                         Td_matrix,Td = self.H_imp[n].apply_mps_transfers(Td_matrix)
                     rightFP_d = self.H_imp[n].getFixedPoints(d,Td) #bottleneck of algo
                     outers_d = self.H_imp[n].getOuterContracts(Td)
 
-                    # terms below Hamiltonian
-                    env = self.H_imp[n].buildTopEnvGeo(rightFP_d,outers_d)
-                    # # right quadrant lower
-                    env += self.H_imp[n].buildTopEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
-                    gradRun += self.attachBot(env)
-
-                    # # terms above Hamiltonian
-                    env = self.H_imp[n].buildBotEnvGeo(rightFP_d,outers_d)
-                    # right quadrant upper
-                    env += self.H_imp[n].buildBotEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
-                    gradRun += self.attachTop(env)
-
-                    #left quadrants upper and lower
-                    rightEnv = self.H_imp[n].buildRightEnvGeo_quadrants(rightFP_d,outers_d)
-                    gradRun += self.H_imp[n].attachLeftSingle(rightEnv)
+                    gradRun = self.eval_geo(n,Td,rightFP_d,outers_d)
 
                     #check geometric sum decayed
                     mag = np.einsum('ijab,ijab',gradRun,gradRun.conj())
@@ -257,8 +266,7 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
                     if np.abs(mag)<envTol:
                         break
                 print("d: ",d,mag)
-        self.grad = np.einsum('ijab->jiab',self.grad)
-
+            
     def projectTDVP(self):
         self.grad = project_mpoTangentVector(self.grad,self.psi.mps,self.psi.mpo,self.psi.T,self.psi.R)
 
@@ -378,21 +386,82 @@ class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater):
     def __init__(self,psi,H):
         self.psi = psi
         self.H = H
-    def eval(self):
+
+    def fetch_implementation(self):
+        pass
+
+    def eval(self,geo=True,envTol=1e-5):
         self.grad = dict()
         gradEvaluater_11 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=1,grad_index=1)
         gradEvaluater_12 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=1,grad_index=2)
         gradEvaluater_21 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=2,grad_index=1)
         gradEvaluater_22 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=2,grad_index=2)
 
-        gradEvaluater_11.eval()
-        gradEvaluater_12.eval()
-        gradEvaluater_21.eval()
-        gradEvaluater_22.eval()
-        self.grad[1] = 1/2*(gradEvaluater_11.grad + gradEvaluater_21.grad)
-        self.grad[2] = 1/2*(gradEvaluater_12.grad + gradEvaluater_22.grad)
-    def fetch_implementation(self):
-        pass
+        grad_11 = gradEvaluater_11.eval_non_geo(0)
+        grad_12 = gradEvaluater_12.eval_non_geo(0)
+        grad_21 = gradEvaluater_21.eval_non_geo(0)
+        grad_22 = gradEvaluater_22.eval_non_geo(0)
+        for n in range(0,len(self.H.terms)):
+            if n > 0:
+                grad_11 += gradEvaluater_11.eval_non_geo(n)
+                grad_12 += gradEvaluater_12.eval_non_geo(n)
+                grad_21 += gradEvaluater_21.eval_non_geo(n)
+                grad_22 += gradEvaluater_22.eval_non_geo(n)
+
+            grad_11_breaker, grad_12_breaker, grad_21_breaker, grad_22_breaker = False,False,False,False
+            d_11,d_12,d_21,d_22 = -1, -1 , -1, -1
+            if geo is True:
+                #just use one evaluater to calc d dep quantites (including fixed points)
+                #they are the same for all, so no need to bother calculating fixed points 4 times...
+                Td_matrix,Td = gradEvaluater_11.H_imp[n].init_mps_transfers()
+                for d in range(0,100):
+                    #d dependant tensors needed
+                    if d > 0:
+                        Td_matrix,Td = gradEvaluater_11.H_imp[n].apply_mps_transfers(Td_matrix)
+                    rightFP_d = gradEvaluater_11.H_imp[n].getFixedPoints(d,Td) #bottleneck of algo
+                    outers_d = gradEvaluater_11.H_imp[n].getOuterContracts(Td)
+
+                    if grad_11_breaker is False:
+                        gradRun_11 = gradEvaluater_11.eval_geo(n,Td,rightFP_d,outers_d)
+                        grad_11 += gradRun_11
+                        d_11 += 1
+                        mag_11 = np.einsum('ijab,ijab',gradRun_11,gradRun_11.conj())
+                        if np.abs(mag_11)<envTol:
+                            grad_11_breaker = True
+
+                    if grad_12_breaker is False:
+                        gradRun_12 = gradEvaluater_12.eval_geo(n,Td,rightFP_d,outers_d)
+                        grad_12 += gradRun_12
+                        d_12 += 1
+                        mag_12 = np.einsum('ijab,ijab',gradRun_12,gradRun_12.conj())
+                        if np.abs(mag_12)<envTol:
+                            grad_12_breaker = True
+
+                    if grad_21_breaker is False:
+                        gradRun_21 = gradEvaluater_21.eval_geo(n,Td,rightFP_d,outers_d)
+                        grad_21 += gradRun_21
+                        d_21 += 1
+                        mag_21 = np.einsum('ijab,ijab',gradRun_21,gradRun_21.conj())
+                        if np.abs(mag_21)<envTol:
+                            grad_21_breaker = True
+
+                    if grad_22_breaker is False:
+                        gradRun_22 = gradEvaluater_22.eval_geo(n,Td,rightFP_d,outers_d)
+                        grad_22 += gradRun_22
+                        d_22 += 1
+                        mag_22 = np.einsum('ijab,ijab',gradRun_22,gradRun_22.conj())
+                        if np.abs(mag_22)<envTol:
+                            grad_22_breaker = True
+
+                    if grad_11_breaker is True and grad_12_breaker is True and grad_21_breaker is True and grad_22_breaker is True:
+                        break
+                print("d_11: ",d_11,mag_11)
+                print("d_12: ",d_12,mag_12)
+                print("d_21: ",d_21,mag_21)
+                print("d_22: ",d_22,mag_22)
+        self.grad[1] = 1/2*(grad_11 + grad_21)
+        self.grad[2] = 1/2*(grad_12 + grad_22)
+
     def projectTDVP(self):
         self.grad[1] = project_mpoTangentVector(self.grad[1],self.psi.mps[1],self.psi.mpo[1],self.psi.T[1],self.psi.R[1])
         self.grad[2] = project_mpoTangentVector(self.grad[2],self.psi.mps[2],self.psi.mpo[2],self.psi.T[2],self.psi.R[2])
