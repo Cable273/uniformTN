@@ -475,130 +475,123 @@ def grad_mpu_horizontalBip(twoBodyH,mps1,mps2,mpo1,mpo2,T1,T2,R1,R2,RR1,RR2,Ta_1
     grad_121 += ncon([mpo1,centreContractRight,outerContract1],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
     del centreContractRight
 
-    #RRd geometric sums...
-    # h_tilde = (twoBodyH.reshape(4,4)-np.eye(4)*exp).reshape(2,2,2,2)
-    # for d in range(0,100):
-        # gradRun_121 = np.zeros(np.shape(mpo1),dtype=complex)
-        # gradRun_122 = np.zeros(np.shape(mpo1),dtype=complex)
-        # if d == 0:
-            # Td_12 = np.eye(D_mps**2).astype(complex)
-            # Td_21 = np.eye(D_mps**2).astype(complex)
-            # Td_12_tensor = Td_12.reshape(D_mps,D_mps,D_mps,D_mps)
-            # Td_21_tensor = Td_21.reshape(D_mps,D_mps,D_mps,D_mps)
-        # else:
-            # Td_12 = np.dot(Td_12,Ta_12.matrix)
-            # Td_21 = np.dot(Td_21,Ta_21.matrix)
-            # Td_12_tensor = Td_12.reshape(D_mps,D_mps,D_mps,D_mps)
-            # Td_21_tensor = Td_21.reshape(D_mps,D_mps,D_mps,D_mps)
+    # #RRd geometric sums...
+    h_tilde = (twoBodyH.reshape(4,4)-np.eye(4)*exp).reshape(2,2,2,2)
+    for d in range(0,100):
+        gradRun_121 = np.zeros(np.shape(mpo1),dtype=complex)
+        gradRun_122 = np.zeros(np.shape(mpo1),dtype=complex)
+        if d == 0:
+            Td_12 = np.eye(D_mps**2).astype(complex)
+            Td_21 = np.eye(D_mps**2).astype(complex)
+            Td_12_tensor = Td_12.reshape(D_mps,D_mps,D_mps,D_mps)
+            Td_21_tensor = Td_21.reshape(D_mps,D_mps,D_mps,D_mps)
+        else:
+            Td_12 = np.dot(Td_12,Ta_12.matrix)
+            Td_21 = np.dot(Td_21,Ta_21.matrix)
+            Td_12_tensor = Td_12.reshape(D_mps,D_mps,D_mps,D_mps)
+            Td_21_tensor = Td_21.reshape(D_mps,D_mps,D_mps,D_mps)
 
-        # #get new fixed points (RRd_1, RRd_2, RRd_1+1, RRd_2+1)
-        # TT_d_12 = mpsu1Transfer_left_twoLayerWithMpsInsertBip(mps1,mps2,mpo1,mpo2,T1,T2,Td_12_tensor,Td_21_tensor)
-        # RR_d_1 = TT_d_12.findRightEig()
-        # RR_d_1.norm_pairedCanon()
-        # del TT_d_12
+        #get new fixed points (RRd_1, RRd_2, RRd_1+1, RRd_2+1)
+        TT_d_12 = mpsu1Transfer_left_twoLayerWithMpsInsertBip(mps1,mps2,mpo1,mpo2,T1,T2,Td_12_tensor,Td_21_tensor)
+        RR_d_1 = TT_d_12.findRightEig()
+        RR_d_1.norm_pairedCanon()
+        del TT_d_12
 
-        # TT_d_21 = mpsu1Transfer_left_twoLayerWithMpsInsertBip(mps2,mps1,mpo2,mpo1,T2,T1,Td_21_tensor,Td_12_tensor)
-        # RR_d_2 = TT_d_21.findRightEig()
-        # RR_d_2.norm_pairedCanon()
-        # del TT_d_21
+        TT_d_21 = mpsu1Transfer_left_twoLayerWithMpsInsertBip(mps2,mps1,mpo2,mpo1,T2,T1,Td_21_tensor,Td_12_tensor)
+        RR_d_2 = TT_d_21.findRightEig()
+        RR_d_2.norm_pairedCanon()
+        del TT_d_21
 
-        # TT_d_12_p1 = mpsu1Transfer_left_twoLayerWithMpsInsertBip_plusOne(mps1,mps2,mpo1,mpo2,T1,T2,Td_12_tensor,Td_21_tensor)
-        # RR_d_1_p1 = TT_d_12_p1.findRightEig()
-        # RR_d_1_p1.norm_pairedCanon()
-        # del TT_d_12_p1
+        TT_d_12_p1 = mpsu1Transfer_left_twoLayerWithMpsInsertBip_plusOne(mps1,mps2,mpo1,mpo2,T1,T2,Td_12_tensor,Td_21_tensor)
+        RR_d_1_p1 = TT_d_12_p1.findRightEig()
+        RR_d_1_p1.norm_pairedCanon()
+        del TT_d_12_p1
 
-        # TT_d_21_p1 = mpsu1Transfer_left_twoLayerWithMpsInsertBip_plusOne(mps2,mps1,mpo2,mpo1,T2,T1,Td_21_tensor,Td_12_tensor)
-        # RR_d_2_p1 = TT_d_21_p1.findRightEig()
-        # RR_d_2_p1.norm_pairedCanon()
-        # del TT_d_21_p1
+        TT_d_21_p1 = mpsu1Transfer_left_twoLayerWithMpsInsertBip_plusOne(mps2,mps1,mpo2,mpo1,T2,T1,Td_21_tensor,Td_12_tensor)
+        RR_d_2_p1 = TT_d_21_p1.findRightEig()
+        RR_d_2_p1.norm_pairedCanon()
+        del TT_d_21_p1
 
-        # innerContract = ncon([mpo1,mpo2,h_tilde,mpo1.conj(),mpo2.conj()],((2,-1,9,10),(6,-5,10,-11),(3,7,2,6),(3,-4,9,13),(7,-8,13,-12)),forder=(-4,-8,-1,-5,-12,-11),order=(9,2,3,10,13,6,7))
+        innerContract = ncon([mpo1,mpo2,h_tilde,mpo1.conj(),mpo2.conj()],((2,-1,9,10),(6,-5,10,-11),(3,7,2,6),(3,-4,9,13),(7,-8,13,-12)),forder=(-4,-8,-1,-5,-12,-11),order=(9,2,3,10,13,6,7))
         # #need several outer rings... 
-        # outerContract_double1 = ncon([mps1,mps2,mps1.conj(),mps2.conj(),Td_21_tensor,T1.tensor],((-1,5,6),(-3,7,8),(-2,5,11),(-4,10,9),(11,6,10,7),(9,8)),forder=(-2,-4,-1,-3),order=(5,6,11,7,10,8,9))
-        # outerContract_double2 = ncon([mps2,mps1,mps2.conj(),mps1.conj(),Td_12_tensor,T2.tensor],((-1,5,6),(-3,7,8),(-2,5,11),(-4,10,9),(11,6,10,7),(9,8)),forder=(-2,-4,-1,-3),order=(5,6,11,7,10,8,9))
-        # outerContract_double1_p1 = ncon([mps1,mps2,mps1,mps1.conj(),mps2.conj(),mps1.conj(),Td_21_tensor,T2.tensor],((-1,6,7),(3,8,9),(-4,9,10),(-2,6,14),(3,13,12),(-5,12,11),(14,7,13,8),(11,10)),forder=(-2,-5,-1,-4),order=(6,7,14,8,13,3,9,12,10,11))
-        # outerContract_double2_p1 = ncon([mps2,mps1,mps2,mps2.conj(),mps1.conj(),mps2.conj(),Td_12_tensor,T1.tensor],((-1,6,7),(3,8,9),(-4,9,10),(-2,6,14),(3,13,12),(-5,12,11),(14,7,13,8),(11,10)),forder=(-2,-5,-1,-4),order=(6,7,14,8,13,3,9,12,10,11))
+        outerContract_double1 = ncon([mps1,mps2,mps1.conj(),mps2.conj(),Td_21_tensor,T1.tensor],((-1,5,6),(-3,7,8),(-2,5,11),(-4,10,9),(11,6,10,7),(9,8)),forder=(-2,-4,-1,-3),order=(5,6,11,7,10,8,9))
+        outerContract_double2 = ncon([mps2,mps1,mps2.conj(),mps1.conj(),Td_12_tensor,T2.tensor],((-1,5,6),(-3,7,8),(-2,5,11),(-4,10,9),(11,6,10,7),(9,8)),forder=(-2,-4,-1,-3),order=(5,6,11,7,10,8,9))
+        outerContract_double1_p1 = ncon([mps1,mps2,mps1,mps1.conj(),mps2.conj(),mps1.conj(),Td_21_tensor,T2.tensor],((-1,6,7),(3,8,9),(-4,9,10),(-2,6,14),(3,13,12),(-5,12,11),(14,7,13,8),(11,10)),forder=(-2,-5,-1,-4),order=(6,7,14,8,13,3,9,12,10,11))
+        outerContract_double2_p1 = ncon([mps2,mps1,mps2,mps2.conj(),mps1.conj(),mps2.conj(),Td_12_tensor,T1.tensor],((-1,6,7),(3,8,9),(-4,9,10),(-2,6,14),(3,13,12),(-5,12,11),(14,7,13,8),(11,10)),forder=(-2,-5,-1,-4),order=(6,7,14,8,13,3,9,12,10,11))
 
 
         # #4 terms with mpo removed vertical to hamiltonian
-        # gradRun_121 += ncon([innerContract,mpo2,mpo1,mpo2.conj(),RR_d_1_p1.tensor,outerContract_double1_p1,outerContract_double2_p1],((1,2,3,4,5,6),(11,10,15,13),(-8,7,-17,15),(11,12,-16,14),(14,13,5,6),(-9,1,7,3),(12,2,10,4)),forder=(-9,-8,-17,-16),order=(5,6,13,14,15,4,2,10,12,3,1,7))
-        # gradRun_122 += ncon([innerContract,mpo1,mpo2,mpo1.conj(),RR_d_2.tensor,outerContract_double2,outerContract_double1],((1,2,3,4,5,6),(11,10,15,13),(-8,7,-17,15),(11,12,-16,14),(14,13,5,6),(-9,1,7,3),(12,2,10,4)),forder=(-9,-8,-17,-16),order=(5,6,13,14,15,4,2,10,12,3,1,7))
-        # gradRun_121 += ncon([innerContract,mpo1,RR_d_2.tensor,outerContract1,outerContract_double1],((1,2,3,4,5,6),(-8,7,-12,10),(-11,10,5,6),(1,3),(-9,2,7,4)),forder=(-9,-8,-12,-11),order=(5,6,10,1,3,2,4,7))
-        # gradRun_122 += ncon([innerContract,mpo2,RR_d_1_p1.tensor,outerContract1,outerContract_double2_p1],((1,2,3,4,5,6),(-8,7,-12,10),(-11,10,5,6),(1,3),(-9,2,7,4)),forder=(-9,-8,-12,-11),order=(5,6,10,1,3,2,4,7))
-        # gradRun_121 += ncon([innerContract,mpo1,RR_d_1.tensor,outerContract1_p1,outerContract_double2],((1,2,3,4,5,6),(-8,7,-10,11),(5,6,-12,11),(1,3),(2,-9,4,7)),forder=(-9,-8,-10,-12),order=(5,6,11,1,3,2,4,7))
-        # gradRun_122 += ncon([innerContract,mpo2,RR_d_1_p1.tensor,outerContract1,outerContract_double2_p1],((1,2,3,4,5,6),(-8,7,-10,11),(5,6,-12,11),(1,3),(2,-9,4,7)),forder=(-9,-8,-10,-12),order=(5,6,11,1,3,2,4,7))
-        # gradRun_121 += ncon([innerContract,mpo2,mpo1,mpo2.conj(),RR_d_1_p1.tensor,outerContract_double1_p1,outerContract_double2_p1],((1,2,3,4,5,6),(11,10,14,15),(-8,7,-13,14),(11,12,-17,16),(5,6,16,15),(1,-9,3,7),(2,12,4,10)),forder=(-9,-8,-13,-17),order=(5,6,15,16,14,2,4,12,10,1,3,7))
-        # gradRun_122 += ncon([innerContract,mpo1,mpo2,mpo1.conj(),RR_d_1.tensor,outerContract_double1,outerContract_double2],((1,2,3,4,5,6),(11,10,14,15),(-8,7,-13,14),(11,12,-17,16),(5,6,16,15),(1,-9,3,7),(2,12,4,10)),forder=(-9,-8,-13,-17),order=(5,6,15,16,14,2,4,12,10,1,3,7))
+        # #bottom left
+        gradRun_121 += ncon([innerContract,mpo2,mpo1,mpo2.conj(),RR_d_1_p1.tensor,outerContract_double1_p1,outerContract_double2_p1],((1,2,3,4,5,6),(11,10,15,13),(-8,7,-17,15),(11,12,-16,14),(14,13,5,6),(-9,1,7,3),(12,2,10,4)),forder=(-9,-8,-17,-16),order=(5,6,13,14,15,4,2,10,12,3,1,7))
+        temp = ncon([innerContract,mpo2,mpo1,mpo2.conj(),RR_d_1_p1.tensor,outerContract_double1_p1,outerContract_double2_p1],((1,2,3,4,5,6),(11,10,15,13),(-8,7,-17,15),(11,12,-16,14),(14,13,5,6),(-9,1,7,3),(12,2,10,4)),forder=(-9,-8,-17,-16),order=(5,6,13,14,15,4,2,10,12,3,1,7))
+        gradRun_122 += ncon([innerContract,mpo1,mpo2,mpo1.conj(),RR_d_2.tensor,outerContract_double2,outerContract_double1],((1,2,3,4,5,6),(11,10,15,13),(-8,7,-17,15),(11,12,-16,14),(14,13,5,6),(-9,1,7,3),(12,2,10,4)),forder=(-9,-8,-17,-16),order=(5,6,13,14,15,4,2,10,12,3,1,7))
+        #bottom right
+        gradRun_121 += ncon([innerContract,mpo1,RR_d_2.tensor,outerContract1,outerContract_double1],((1,2,3,4,5,6),(-8,7,-12,10),(-11,10,5,6),(1,3),(-9,2,7,4)),forder=(-9,-8,-12,-11),order=(5,6,10,1,3,2,4,7))
+        gradRun_122 += ncon([innerContract,mpo2,RR_d_1_p1.tensor,outerContract1,outerContract_double2_p1],((1,2,3,4,5,6),(-8,7,-12,10),(-11,10,5,6),(1,3),(-9,2,7,4)),forder=(-9,-8,-12,-11),order=(5,6,10,1,3,2,4,7))
+        # top right
+        gradRun_121 += ncon([innerContract,mpo1,RR_d_1.tensor,outerContract1_p1,outerContract_double2],((1,2,3,4,5,6),(-8,7,-10,11),(5,6,-12,11),(1,3),(2,-9,4,7)),forder=(-9,-8,-10,-12),order=(5,6,11,1,3,2,4,7))
+        gradRun_122 += ncon([innerContract,mpo2,RR_d_1_p1.tensor,outerContract1,outerContract_double2_p1],((1,2,3,4,5,6),(-8,7,-10,11),(5,6,-12,11),(1,3),(2,-9,4,7)),forder=(-9,-8,-10,-12),order=(5,6,11,1,3,2,4,7))
+        #top left
+        gradRun_121 += ncon([innerContract,mpo2,mpo1,mpo2.conj(),RR_d_1_p1.tensor,outerContract_double1_p1,outerContract_double2_p1],((1,2,3,4,5,6),(11,10,14,15),(-8,7,-13,14),(11,12,-17,16),(5,6,16,15),(1,-9,3,7),(2,12,4,10)),forder=(-9,-8,-13,-17),order=(5,6,15,16,14,2,4,12,10,1,3,7))
+        gradRun_122 += ncon([innerContract,mpo1,mpo2,mpo1.conj(),RR_d_1.tensor,outerContract_double1,outerContract_double2],((1,2,3,4,5,6),(11,10,14,15),(-8,7,-13,14),(11,12,-17,16),(5,6,16,15),(1,-9,3,7),(2,12,4,10)),forder=(-9,-8,-13,-17),order=(5,6,15,16,14,2,4,12,10,1,3,7))
 
         # #4 terms from 4 quadrants off diagonal 
 
         # #right half of plane
-        # centreContractLeft = ncon([innerContract,outerContract1,outerContract2],((1,2,3,4,-5,-6),(1,3),(2,4)),forder=(-5,-6))
-        # centreContractLeft = Tw_12_inv.applyRight(centreContractLeft.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
+        centreContractLeft = ncon([innerContract,outerContract1,outerContract2],((1,2,3,4,-5,-6),(1,3),(2,4)),forder=(-5,-6))
+        centreContractLeft = Tw_12_inv.applyRight(centreContractLeft.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
         # #right upper
-        # gradRun_121 += ncon([mpo1,mpo1,mpo1.conj(),centreContractLeft,RR_d_2_p1.tensor,outerContract_double1_p1],((-2,1,-7,8),(5,4,10,11),(5,6,12,13),(12,10),(13,11,-9,8),(6,-3,4,1)),forder=(-3,-2,-7,-9),order=(11,13,5,10,12,8,4,6,1))
-        # #right lower
-        # gradRun_121 += ncon([mpo1,mpo1.conj(),mpo1,centreContractLeft,RR_d_2_p1.tensor,outerContract_double1_p1],((2,1,7,8),(2,3,9,10),(-5,4,-11,12),(9,7),(-13,12,10,8),(-6,3,4,1)),forder=(-6,-5,-11,-13),order=(8,10,2,7,9,12,1,3,4))
-        # gradRun_122 += ncon([mpo1,mpo1.conj(),mpo2,centreContractLeft,RR_d_1.tensor,outerContract_double2],((2,1,7,8),(2,3,9,10),(-5,4,-11,12),(9,7),(-13,12,10,8),(-6,3,4,1)),forder=(-6,-5,-11,-13),order=(8,10,2,7,9,12,1,3,4))
+        gradRun_121 += ncon([mpo1,mpo1,mpo1.conj(),centreContractLeft,RR_d_2_p1.tensor,outerContract_double1_p1],((-2,1,-7,8),(5,4,10,11),(5,6,12,13),(12,10),(13,11,-9,8),(6,-3,4,1)),forder=(-3,-2,-7,-9),order=(11,13,5,10,12,8,4,6,1))
+        #right lower
+        gradRun_121 += ncon([mpo1,mpo1.conj(),mpo1,centreContractLeft,RR_d_2_p1.tensor,outerContract_double1_p1],((2,1,7,8),(2,3,9,10),(-5,4,-11,12),(9,7),(-13,12,10,8),(-6,3,4,1)),forder=(-6,-5,-11,-13),order=(8,10,2,7,9,12,1,3,4))
+        gradRun_122 += ncon([mpo1,mpo1.conj(),mpo2,centreContractLeft,RR_d_1.tensor,outerContract_double2],((2,1,7,8),(2,3,9,10),(-5,4,-11,12),(9,7),(-13,12,10,8),(-6,3,4,1)),forder=(-6,-5,-11,-13),order=(8,10,2,7,9,12,1,3,4))
 
-        # #extra site
-        # transfer = mpsu1Transfer_left_oneLayer(mps1,mpo1,T2)
-        # centreContractLeft = transfer.applyRight(centreContractLeft.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # #right upper
-        # gradRun_122 += ncon([mpo2,mpo2,mpo2.conj(),centreContractLeft,RR_d_1_p1.tensor,outerContract_double2_p1],((-2,1,-7,8),(5,4,10,11),(5,6,12,13),(12,10),(13,11,-9,8),(6,-3,4,1)),forder=(-3,-2,-7,-9),order=(11,13,5,10,12,8,4,6,1))
-        # #right lower
-        # gradRun_121 += ncon([mpo2,mpo2.conj(),mpo1,centreContractLeft,RR_d_2.tensor,outerContract_double1],((2,1,7,8),(2,3,9,10),(-5,4,-11,12),(9,7),(-13,12,10,8),(-6,3,4,1)),forder=(-6,-5,-11,-13),order=(8,10,2,7,9,12,1,3,4))
-        # gradRun_122 += ncon([mpo2,mpo2.conj(),mpo2,centreContractLeft,RR_d_1_p1.tensor,outerContract_double2_p1],((2,1,7,8),(2,3,9,10),(-5,4,-11,12),(9,7),(-13,12,10,8),(-6,3,4,1)),forder=(-6,-5,-11,-13),order=(8,10,2,7,9,12,1,3,4))
+        #extra site
+        transfer = mpsu1Transfer_left_oneLayer(mps1,mpo1,T2)
+        centreContractLeft = transfer.applyRight(centreContractLeft.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
+        #right upper
+        gradRun_122 += ncon([mpo2,mpo2,mpo2.conj(),centreContractLeft,RR_d_1_p1.tensor,outerContract_double2_p1],((-2,1,-7,8),(5,4,10,11),(5,6,12,13),(12,10),(13,11,-9,8),(6,-3,4,1)),forder=(-3,-2,-7,-9),order=(11,13,5,10,12,8,4,6,1))
+        #right lower
+        gradRun_121 += ncon([mpo2,mpo2.conj(),mpo1,centreContractLeft,RR_d_2.tensor,outerContract_double1],((2,1,7,8),(2,3,9,10),(-5,4,-11,12),(9,7),(-13,12,10,8),(-6,3,4,1)),forder=(-6,-5,-11,-13),order=(8,10,2,7,9,12,1,3,4))
+        gradRun_122 += ncon([mpo2,mpo2.conj(),mpo2,centreContractLeft,RR_d_1_p1.tensor,outerContract_double2_p1],((2,1,7,8),(2,3,9,10),(-5,4,-11,12),(9,7),(-13,12,10,8),(-6,3,4,1)),forder=(-6,-5,-11,-13),order=(8,10,2,7,9,12,1,3,4))
 
-        # #right side terms with modified horizontal transfer matrix (Tw_12_p1)
-        # centreContractLeft = ncon([innerContract,outerContract1_p1,outerContract2_p1],((1,2,3,4,-5,-6),(1,3),(2,4)),forder=(-5,-6))
-        # centreContractLeft = Tw_12_p1_inv.applyRight(centreContractLeft.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # #right upper
-        # gradRun_122 += ncon([mpo2,mpo1,mpo1.conj(),centreContractLeft,RR_d_2.tensor,outerContract_double1],((-2,1,-7,8),(5,4,10,11),(5,6,12,13),(12,10),(13,11,-9,8),(6,-3,4,1)),forder=(-3,-2,-7,-9),order=(11,13,5,10,12,8,4,6,1))
-        # #extra site
-        # transfer = mpsu1Transfer_left_oneLayer(mps1,mpo1,T2_mod)
-        # centreContractLeft = transfer.applyRight(centreContractLeft.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # #right upper
-        # gradRun_121 += ncon([mpo1,mpo2,mpo2.conj(),centreContractLeft,RR_d_1.tensor,outerContract_double2],((-2,1,-7,8),(5,4,10,11),(5,6,12,13),(12,10),(13,11,-9,8),(6,-3,4,1)),forder=(-3,-2,-7,-9),order=(11,13,5,10,12,8,4,6,1))
+        #right side terms with modified horizontal transfer matrix (Tw_12_p1)
+        centreContractLeft = ncon([innerContract,outerContract1_p1,outerContract2_p1],((1,2,3,4,-5,-6),(1,3),(2,4)),forder=(-5,-6))
+        centreContractLeft = Tw_12_p1_inv.applyRight(centreContractLeft.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
+        #right upper
+        gradRun_122 += ncon([mpo2,mpo1,mpo1.conj(),centreContractLeft,RR_d_2.tensor,outerContract_double1],((-2,1,-7,8),(5,4,10,11),(5,6,12,13),(12,10),(13,11,-9,8),(6,-3,4,1)),forder=(-3,-2,-7,-9),order=(11,13,5,10,12,8,4,6,1))
+        #extra site
+        transfer = mpsu1Transfer_left_oneLayer(mps1,mpo1,T2_mod)
+        centreContractLeft = transfer.applyRight(centreContractLeft.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
+        #right upper
+        gradRun_121 += ncon([mpo1,mpo2,mpo2.conj(),centreContractLeft,RR_d_1.tensor,outerContract_double2],((-2,1,-7,8),(5,4,10,11),(5,6,12,13),(12,10),(13,11,-9,8),(6,-3,4,1)),forder=(-3,-2,-7,-9),order=(11,13,5,10,12,8,4,6,1))
 
         # #left half of plane
         # #left lower
-        # rightEnv = ncon([innerContract,RR_d_2.tensor,mpo1,mpo2,mpo1.conj(),mpo2.conj(),outerContract_double2,outerContract_double1],((1,2,3,4,5,6),(18,15,5,6),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(9,1,7,3),(12,2,10,4)),forder=(-16,-13),order=(5,6,15,18,11,4,2,10,12,14,17,8,1,3,7,9))
-        # rightEnv = Tw_21_p1.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_121 += ncon([mpo1,rightEnv,outerContract1_p1],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-        # transfer = mpsu1Transfer_left_oneLayer(mps1,mpo1,T2_mod)
-        # rightEnv = transfer.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_122 += ncon([mpo2,rightEnv,outerContract2_p1],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
+        rightEnv = ncon([innerContract,RR_d_1_p1.tensor,mpo2,mpo1,mpo2.conj(),mpo1.conj(),outerContract_double1_p1,outerContract_double2_p1],((1,2,3,4,5,6),(18,15,5,6),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(9,1,7,3),(12,2,10,4)),forder=(-16,-13),order=(5,6,15,18,11,4,2,10,12,14,17,8,1,3,7,9))
+        rightEnv += ncon([innerContract,RR_d_1_p1.tensor,mpo2,mpo1,mpo2.conj(),mpo1.conj(),outerContract_double1_p1,outerContract_double2_p1],((1,2,3,4,5,6),(5,6,18,15),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(1,9,3,7),(2,12,4,10)),forder=(-16,-13),order=(5,6,18,15,11,10,12,4,2,14,17,8,7,9,3,1))
+        rightEnv = Tw_12_inv.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
+        gradRun_122 += ncon([mpo2,rightEnv,outerContract2],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
+        transfer = mpsu1Transfer_left_oneLayer(mps2,mpo2,T1)
+        rightEnv = transfer.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
+        gradRun_121 += ncon([mpo1,rightEnv,outerContract1],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
 
-        # rightEnv = ncon([innerContract,RR_d_1_p1.tensor,mpo2,mpo1,mpo2.conj(),mpo1.conj(),outerContract_double1_p1,outerContract_double2_p1],((1,2,3,4,5,6),(18,15,5,6),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(9,1,7,3),(12,2,10,4)),forder=(-16,-13),order=(5,6,15,18,11,4,2,10,12,14,17,8,1,3,7,9))
-        # rightEnv = Tw_12_inv.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_122 += ncon([mpo2,rightEnv,outerContract2],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-        # transfer = mpsu1Transfer_left_oneLayer(mps2,mpo2,T1)
-        # rightEnv = transfer.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_121 += ncon([mpo1,rightEnv,outerContract1],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
+        #left upper
+        rightEnv = ncon([innerContract,RR_d_1.tensor,mpo1,mpo2,mpo1.conj(),mpo2.conj(),outerContract_double1,outerContract_double2],((1,2,3,4,5,6),(5,6,18,15),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(1,9,3,7),(2,12,4,10)),forder=(-16,-13),order=(5,6,18,15,11,10,12,4,2,14,17,8,7,9,3,1))
+        rightEnv += ncon([innerContract,RR_d_2.tensor,mpo1,mpo2,mpo1.conj(),mpo2.conj(),outerContract_double2,outerContract_double1],((1,2,3,4,5,6),(18,15,5,6),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(9,1,7,3),(12,2,10,4)),forder=(-16,-13),order=(5,6,15,18,11,4,2,10,12,14,17,8,1,3,7,9))
+        rightEnv = Tw_21_inv.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
+        gradRun_121 += ncon([mpo1,rightEnv,outerContract1],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
+        transfer = mpsu1Transfer_left_oneLayer(mps1,mpo1,T2)
+        rightEnv = transfer.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
+        gradRun_122 += ncon([mpo2,rightEnv,outerContract2],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
 
-        # #left upper
-        # rightEnv = ncon([innerContract,RR_d_1.tensor,mpo1,mpo2,mpo1.conj(),mpo2.conj(),outerContract_double1,outerContract_double2],((1,2,3,4,5,6),(5,6,18,15),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(1,9,3,7),(2,12,4,10)),forder=(-16,-13),order=(5,6,18,15,11,10,12,4,2,14,17,8,7,9,3,1))
-        # rightEnv = Tw_21_inv.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_121 += ncon([mpo1,rightEnv,outerContract1],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-        # transfer = mpsu1Transfer_left_oneLayer(mps1,mpo1,T2)
-        # rightEnv = transfer.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_122 += ncon([mpo2,rightEnv,outerContract2],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-
-        # rightEnv = ncon([innerContract,RR_d_1_p1.tensor,mpo2,mpo1,mpo2.conj(),mpo1.conj(),outerContract_double1_p1,outerContract_double2_p1],((1,2,3,4,5,6),(5,6,18,15),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(1,9,3,7),(2,12,4,10)),forder=(-16,-13),order=(5,6,18,15,11,10,12,4,2,14,17,8,7,9,3,1))
-        # rightEnv = Tw_12_inv.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_122 += ncon([mpo2,rightEnv,outerContract2],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-        # transfer = mpsu1Transfer_left_oneLayer(mps2,mpo2,T1)
-        # rightEnv = transfer.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_121 += ncon([mpo1,rightEnv,outerContract1],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-
-        # mag1 = np.real(np.einsum('ijab,ijab',gradRun_121,gradRun_121.conj()))
-        # mag2 = np.real(np.einsum('ijab,ijab',gradRun_122,gradRun_122.conj()))
-        # grad_121 += gradRun_121
-        # grad_122 += gradRun_122
-        # if np.abs(mag1)<envTol and np.abs(mag2)<envTol:
-            # break
-    # print("(horizontal) d: ",d,mag1,mag2)
+        mag1 = np.real(np.einsum('ijab,ijab',gradRun_121,gradRun_121.conj()))
+        mag2 = np.real(np.einsum('ijab,ijab',gradRun_122,gradRun_122.conj()))
+        grad_121 += gradRun_121
+        grad_122 += gradRun_122
+        if np.abs(mag1)<envTol and np.abs(mag2)<envTol:
+            break
+    print("(horizontal) d: ",d,mag1,mag2)
 
     grad_121 = np.einsum('ijab->jiab',grad_121)
     grad_122 = np.einsum('ijab->jiab',grad_122)
@@ -641,14 +634,14 @@ def grad_mpu_verticalBip(twoBodyH,mps1,mps2,mpo1,mpo2,T1,T2,R1,R2,RR1,RR2,Ta_12,
     grad_121 += ncon([mpo1,mpo2,twoBodyH,mpo2.conj(),RR2.tensor,outerContract_double1],((2,1,-9,10),(4,3,11,12),(-5,7,2,4),(7,8,11,14),(-13,10,14,12),(-6,8,1,3)),forder=(-6,-5,-9,-13),order=(12,14,11,4,7,3,8,10,2,1))
     grad_122 += ncon([mpo1,mpo2,twoBodyH,mpo1.conj(),RR2.tensor,outerContract_double1],((2,1,9,10),(6,5,-11,12),(3,-7,2,6),(3,4,9,13),(13,10,-14,12),(4,-8,1,5)),forder=(-8,-7,-11,-14),order=(10,13,9,2,3,1,4,12,5))
 
-    #4 terms with mpo removed horizontally in line with hamiltonian
+    # #4 terms with mpo removed horizontally in line with hamiltonian
     leftEnv = ncon([mpo1,mpo2,twoBodyH,mpo1.conj(),mpo2.conj(),outerContract_double1],((2,1,9,-10),(6,5,11,-12),(3,7,2,6),(3,4,9,-13),(7,8,11,-14),(4,8,1,5)),forder=(-13,-10,-14,-12),order=(9,1,2,3,4,11,5,6,7,8))
     exp = np.einsum('abcd,abcd',leftEnv,RR2.tensor)
     leftEnv = Tw2_21_inv.applyRight(leftEnv.reshape(D_mpo**4)).reshape(D_mpo,D_mpo,D_mpo,D_mpo)
     grad_121 += ncon([leftEnv,mpo1,mpo2,mpo2.conj(),RR1.tensor,outerContract_double2],((13,11,-9,7),(-2,1,7,8),(5,4,11,12),(5,6,13,14),(14,12,-10,8),(6,-3,4,1)),forder=(-3,-2,-9,-10),order=(14,12,5,4,6,8,1,13,11,7))
     grad_122 += ncon([leftEnv,mpo1,mpo1.conj(),mpo2,RR1.tensor,outerContract_double2],((-10,9,8,7),(2,1,7,11),(2,3,8,12),(-5,4,9,13),(-14,13,12,11),(-6,3,4,1)),forder=(-6,-5,-10,-14),order=(11,12,2,1,3,7,8,9,13,4))
 
-    #extra site
+    # extra site
     leftEnv = ncon([mpo1,mpo1.conj(),mpo2,mpo2.conj(),leftEnv,outerContract_double2],((2,1,7,-8),(2,3,9,-10),(5,4,11,-12),(5,6,13,-14),(13,11,9,7),(6,3,4,1)),forder=(-14,-12,-10,-8),order=(7,9,2,11,13,5,1,3,4,6))
 
     grad_121 += ncon([leftEnv,mpo2,mpo2.conj(),mpo1,RR2.tensor,outerContract_double1],((-10,9,8,7),(2,1,7,11),(2,3,8,12),(-5,4,9,13),(-14,13,12,11),(-6,3,4,1)),forder=(-6,-5,-10,-14),order=(11,12,2,1,3,7,8,9,13,4))
@@ -656,158 +649,149 @@ def grad_mpu_verticalBip(twoBodyH,mps1,mps2,mpo1,mpo2,T1,T2,R1,R2,RR1,RR2,Ta_12,
 
     rightEnv = ncon([mpo1,mpo2,twoBodyH,mpo1.conj(),mpo2.conj(),RR2.tensor,outerContract_double1],((2,1,-9,10),(6,5,-11,12),(3,7,2,6),(3,4,-13,14),(7,8,-15,16),(14,10,16,12),(4,8,1,5)),forder=(-13,-9,-15,-11),order=(12,16,5,6,7,8,10,14,1,2,3,4))
     rightEnv = Tw2_12_inv.applyLeft(rightEnv.reshape(D_mpo**4)).reshape(D_mpo,D_mpo,D_mpo,D_mpo)
+    temp = ncon([mpo1,rightEnv,outerContract1],((-2,1,-4,5),(7,7,-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(7,5,1))
     grad_121 += ncon([mpo1,rightEnv,outerContract1],((-2,1,-4,5),(7,7,-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(7,5,1))
     grad_122 += ncon([mpo2,rightEnv,outerContract2_p1],((-2,1,-4,5),(-6,5,7,7),(-3,1)),forder=(-3,-2,-4,-6),order=(7,5,1))
 
     #extra site
     rightEnv = ncon([mpo1,mpo1.conj(),mpo2,mpo2.conj(),rightEnv,outerContract_double2],((2,1,-7,8),(2,3,-9,10),(5,4,-11,12),(5,6,-13,14),(14,12,10,8),(6,3,4,1)),forder=(-13,-11,-9,-7),order=(8,10,2,12,14,5,6,3,4,1))
+    temp += ncon([mpo1,rightEnv,outerContract1_p1],((-2,1,-4,5),(-6,5,7,7),(-3,1)),forder=(-3,-2,-4,-6),order=(7,5,1))
     grad_121 += ncon([mpo1,rightEnv,outerContract1_p1],((-2,1,-4,5),(-6,5,7,7),(-3,1)),forder=(-3,-2,-4,-6),order=(7,5,1))
     grad_122 += ncon([mpo2,rightEnv,outerContract2],((-2,1,-4,5),(7,7,-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(7,5,1))
 
     #RRd geometric sums...
     #this is where big transfer matrices are necessary,D^12 !!
     #at most will have 2*D^12 arrays in memory at a time
-    # h_tilde = (twoBodyH.reshape(4,4)-np.eye(4)*exp).reshape(2,2,2,2)
-    # for d in range(0,100):
-        # gradRun_121 = np.zeros(np.shape(mpo1),dtype=complex)
-        # gradRun_122 = np.zeros(np.shape(mpo1),dtype=complex)
-        # if d == 0:
-            # Td_12 = np.eye(D_mps**2).astype(complex)
-            # Td_21 = np.eye(D_mps**2).astype(complex)
-            # Td_12_tensor = Td_12.reshape(D_mps,D_mps,D_mps,D_mps)
-            # Td_21_tensor = Td_21.reshape(D_mps,D_mps,D_mps,D_mps)
-        # else:
-            # Td_12 = np.dot(Td_12,Ta_12.matrix)
-            # Td_21 = np.dot(Td_21,Ta_21.matrix)
-            # Td_12_tensor = Td_12.reshape(D_mps,D_mps,D_mps,D_mps)
-            # Td_21_tensor = Td_21.reshape(D_mps,D_mps,D_mps,D_mps)
+    h_tilde = (twoBodyH.reshape(4,4)-np.eye(4)*exp).reshape(2,2,2,2)
+    for d in range(0,100):
+        gradRun_121 = np.zeros(np.shape(mpo1),dtype=complex)
+        gradRun_122 = np.zeros(np.shape(mpo1),dtype=complex)
+        if d == 0:
+            Td_12 = np.eye(D_mps**2).astype(complex)
+            Td_21 = np.eye(D_mps**2).astype(complex)
+            Td_12_tensor = Td_12.reshape(D_mps,D_mps,D_mps,D_mps)
+            Td_21_tensor = Td_21.reshape(D_mps,D_mps,D_mps,D_mps)
+        else:
+            Td_12 = np.dot(Td_12,Ta_12.matrix)
+            Td_21 = np.dot(Td_21,Ta_21.matrix)
+            Td_12_tensor = Td_12.reshape(D_mps,D_mps,D_mps,D_mps)
+            Td_21_tensor = Td_21.reshape(D_mps,D_mps,D_mps,D_mps)
 
-        # #get new fixed points 
-        # TTT_d_u_12 = mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip(mps1,mps2,mpo1,mpo2,T1,T2,Td_12_tensor,Td_21_tensor)
-        # RRR_d_u_1 = TTT_d_u_12.findRightEig()
-        # RRR_d_u_1.norm_pairedCanon()
-        # del TTT_d_u_12
+        #get new fixed points 
+        TTT_d_u_12 = mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip(mps1,mps2,mpo1,mpo2,T1,T2,Td_12_tensor,Td_21_tensor)
+        RRR_d_u_1 = TTT_d_u_12.findRightEig()
+        RRR_d_u_1.norm_pairedCanon()
+        del TTT_d_u_12
 
-        # TTT_d_u_21 = mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip(mps2,mps1,mpo2,mpo1,T2,T1,Td_21_tensor,Td_12_tensor)
-        # RRR_d_u_2 = TTT_d_u_21.findRightEig()
-        # RRR_d_u_2.norm_pairedCanon()
-        # del TTT_d_u_21
+        TTT_d_u_21 = mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip(mps2,mps1,mpo2,mpo1,T2,T1,Td_21_tensor,Td_12_tensor)
+        RRR_d_u_2 = TTT_d_u_21.findRightEig()
+        RRR_d_u_2.norm_pairedCanon()
+        del TTT_d_u_21
 
-        # TTT_d_u_12_p1 = mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip_plusOne(mps1,mps2,mpo1,mpo2,T1,T2,Td_12_tensor,Td_21_tensor)
-        # RRR_d_u_1_p1 = TTT_d_u_12_p1.findRightEig()
-        # RRR_d_u_1_p1.norm_pairedCanon()
-        # del TTT_d_u_12_p1
+        TTT_d_u_12_p1 = mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip_plusOne(mps1,mps2,mpo1,mpo2,T1,T2,Td_12_tensor,Td_21_tensor)
+        RRR_d_u_1_p1 = TTT_d_u_12_p1.findRightEig()
+        RRR_d_u_1_p1.norm_pairedCanon()
+        del TTT_d_u_12_p1
 
-        # TTT_d_u_21_p1 = mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip_plusOne(mps2,mps1,mpo2,mpo1,T2,T1,Td_21_tensor,Td_12_tensor)
-        # RRR_d_u_2_p1 = TTT_d_u_21_p1.findRightEig()
-        # RRR_d_u_2_p1.norm_pairedCanon()
-        # del TTT_d_u_21_p1
+        TTT_d_u_21_p1 = mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip_plusOne(mps2,mps1,mpo2,mpo1,T2,T1,Td_21_tensor,Td_12_tensor)
+        RRR_d_u_2_p1 = TTT_d_u_21_p1.findRightEig()
+        RRR_d_u_2_p1.norm_pairedCanon()
+        del TTT_d_u_21_p1
 
-        # TTT_d_l_12 = mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip(mps1,mps2,mpo1,mpo2,T1,T2,Td_12_tensor,Td_21_tensor)
-        # RRR_d_l_1 = TTT_d_l_12.findRightEig()
-        # RRR_d_l_1.norm_pairedCanon()
-        # del TTT_d_l_12
+        TTT_d_l_12 = mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip(mps1,mps2,mpo1,mpo2,T1,T2,Td_12_tensor,Td_21_tensor)
+        RRR_d_l_1 = TTT_d_l_12.findRightEig()
+        RRR_d_l_1.norm_pairedCanon()
+        del TTT_d_l_12
 
-        # TTT_d_l_21 = mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip(mps2,mps1,mpo2,mpo1,T2,T1,Td_21_tensor,Td_12_tensor)
-        # RRR_d_l_2 = TTT_d_l_21.findRightEig()
-        # RRR_d_l_2.norm_pairedCanon()
-        # del TTT_d_l_21
+        TTT_d_l_21 = mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip(mps2,mps1,mpo2,mpo1,T2,T1,Td_21_tensor,Td_12_tensor)
+        RRR_d_l_2 = TTT_d_l_21.findRightEig()
+        RRR_d_l_2.norm_pairedCanon()
+        del TTT_d_l_21
 
-        # TTT_d_l_12_p1 = mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip_plusOne(mps1,mps2,mpo1,mpo2,T1,T2,Td_12_tensor,Td_21_tensor)
-        # RRR_d_l_1_p1 = TTT_d_l_12_p1.findRightEig()
-        # RRR_d_l_1_p1.norm_pairedCanon()
-        # del TTT_d_l_12_p1
+        TTT_d_l_12_p1 = mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip_plusOne(mps1,mps2,mpo1,mpo2,T1,T2,Td_12_tensor,Td_21_tensor)
+        RRR_d_l_1_p1 = TTT_d_l_12_p1.findRightEig()
+        RRR_d_l_1_p1.norm_pairedCanon()
+        del TTT_d_l_12_p1
 
-        # TTT_d_l_21_p1 = mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip_plusOne(mps2,mps1,mpo2,mpo1,T2,T1,Td_21_tensor,Td_12_tensor)
-        # RRR_d_l_2_p1 = TTT_d_l_21_p1.findRightEig()
-        # RRR_d_l_2_p1.norm_pairedCanon()
-        # del TTT_d_l_21_p1
+        TTT_d_l_21_p1 = mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip_plusOne(mps2,mps1,mpo2,mpo1,T2,T1,Td_21_tensor,Td_12_tensor)
+        RRR_d_l_2_p1 = TTT_d_l_21_p1.findRightEig()
+        RRR_d_l_2_p1.norm_pairedCanon()
+        del TTT_d_l_21_p1
 
-        # innerContract = ncon([mpo1,mpo2,h_tilde,mpo1.conj(),mpo2.conj()],((2,-1,9,-10),(6,-5,11,-12),(3,7,2,6),(3,-4,9,-13),(7,-8,11,-14)),forder=(-4,-8,-1,-5,-13,-10,-14,-12),order=(9,2,3,11,6,7))
-        # outerContract_triple_upper1 = ncon([mps1,mps2,mps1,mps1.conj(),mps2.conj(),mps1.conj(),Td_12_tensor,T2.tensor],((-1,7,8),(-3,8,9),(-5,10,11),(-2,7,15),(-4,15,14),(-6,13,12),(14,9,13,10),(12,11)),forder=(-2,-4,-6,-1,-3,-5),order=(7,8,15,9,14,10,13,11,12))
-        # outerContract_triple_upper2 = ncon([mps2,mps1,mps2,mps2.conj(),mps1.conj(),mps2.conj(),Td_21_tensor,T1.tensor],((-1,7,8),(-3,8,9),(-5,10,11),(-2,7,15),(-4,15,14),(-6,13,12),(14,9,13,10),(12,11)),forder=(-2,-4,-6,-1,-3,-5),order=(7,8,15,9,14,10,13,11,12))
-        # outerContract_triple_lower1 = ncon([mps1,mps2,mps1,mps1.conj(),mps2.conj(),mps1.conj(),Td_21_tensor,T2.tensor],((-1,7,8),(-3,9,10),(-5,10,11),(-2,7,15),(-4,14,13),(-6,13,12),(15,8,14,9),(12,11)),forder=(-2,-4,-6,-1,-3,-5),order=(7,8,15,9,14,10,13,11,12))
-        # outerContract_triple_lower2 = ncon([mps2,mps1,mps2,mps2.conj(),mps1.conj(),mps2.conj(),Td_12_tensor,T1.tensor],((-1,7,8),(-3,9,10),(-5,10,11),(-2,7,15),(-4,14,13),(-6,13,12),(15,8,14,9),(12,11)),forder=(-2,-4,-6,-1,-3,-5),order=(7,8,15,9,14,10,13,11,12))
+        innerContract = ncon([mpo1,mpo2,h_tilde,mpo1.conj(),mpo2.conj()],((2,-1,9,-10),(6,-5,11,-12),(3,7,2,6),(3,-4,9,-13),(7,-8,11,-14)),forder=(-4,-8,-1,-5,-13,-10,-14,-12),order=(9,2,3,11,6,7))
+        outerContract_triple_upper1 = ncon([mps1,mps2,mps1,mps1.conj(),mps2.conj(),mps1.conj(),Td_12_tensor,T2.tensor],((-1,7,8),(-3,8,9),(-5,10,11),(-2,7,15),(-4,15,14),(-6,13,12),(14,9,13,10),(12,11)),forder=(-2,-4,-6,-1,-3,-5),order=(7,8,15,9,14,10,13,11,12))
+        outerContract_triple_upper2 = ncon([mps2,mps1,mps2,mps2.conj(),mps1.conj(),mps2.conj(),Td_21_tensor,T1.tensor],((-1,7,8),(-3,8,9),(-5,10,11),(-2,7,15),(-4,15,14),(-6,13,12),(14,9,13,10),(12,11)),forder=(-2,-4,-6,-1,-3,-5),order=(7,8,15,9,14,10,13,11,12))
+        outerContract_triple_lower1 = ncon([mps1,mps2,mps1,mps1.conj(),mps2.conj(),mps1.conj(),Td_21_tensor,T2.tensor],((-1,7,8),(-3,9,10),(-5,10,11),(-2,7,15),(-4,14,13),(-6,13,12),(15,8,14,9),(12,11)),forder=(-2,-4,-6,-1,-3,-5),order=(7,8,15,9,14,10,13,11,12))
+        outerContract_triple_lower2 = ncon([mps2,mps1,mps2,mps2.conj(),mps1.conj(),mps2.conj(),Td_12_tensor,T1.tensor],((-1,7,8),(-3,9,10),(-5,10,11),(-2,7,15),(-4,14,13),(-6,13,12),(15,8,14,9),(12,11)),forder=(-2,-4,-6,-1,-3,-5),order=(7,8,15,9,14,10,13,11,12))
 
-        # outerContract_triple_upper1_p1 = ncon([mps1,mps2,mps1,mps2,mps1.conj(),mps2.conj(),mps1.conj(),mps2.conj(),Td_12_tensor,T1.tensor],((-1,8,9),(-3,9,10),(5,11,12),(-6,12,13),(-2,8,18),(-4,18,17),(5,16,15),(-7,15,14),(17,10,16,11),(14,13),),forder=(-2,-4,-7,-1,-3,-6),order=(8,9,18,10,17,11,16,5,12,15,13,14))
-        # outerContract_triple_upper2_p1 = ncon([mps2,mps1,mps2,mps1,mps2.conj(),mps1.conj(),mps2.conj(),mps1.conj(),Td_21_tensor,T2.tensor],((-1,8,9),(-3,9,10),(5,11,12),(-6,12,13),(-2,8,18),(-4,18,17),(5,16,15),(-7,15,14),(17,10,16,11),(14,13),),forder=(-2,-4,-7,-1,-3,-6),order=(8,9,18,10,17,11,16,5,12,15,13,14))
-        # outerContract_triple_lower1_p1 = ncon([mps1,mps2,mps1,mps2,mps1.conj(),mps2.conj(),mps1.conj(),mps2.conj(),Td_21_tensor,T1.tensor],((-1,8,9),(3,10,11),(-4,11,12),(-6,12,13),(-2,8,18),(3,17,16),(-5,16,15),(-7,15,14),(18,9,17,10),(14,13)),forder=(-2,-5,-7,-1,-4,-6),order=(8,9,18,10,17,3,11,16,12,15,13,14))
-        # outerContract_triple_lower2_p1 = ncon([mps2,mps1,mps2,mps1,mps2.conj(),mps1.conj(),mps2.conj(),mps1.conj(),Td_12_tensor,T2.tensor],((-1,8,9),(3,10,11),(-4,11,12),(-6,12,13),(-2,8,18),(3,17,16),(-5,16,15),(-7,15,14),(18,9,17,10),(14,13)),forder=(-2,-5,-7,-1,-4,-6),order=(8,9,18,10,17,3,11,16,12,15,13,14))
+        outerContract_triple_upper1_p1 = ncon([mps1,mps2,mps1,mps2,mps1.conj(),mps2.conj(),mps1.conj(),mps2.conj(),Td_12_tensor,T1.tensor],((-1,8,9),(-3,9,10),(5,11,12),(-6,12,13),(-2,8,18),(-4,18,17),(5,16,15),(-7,15,14),(17,10,16,11),(14,13),),forder=(-2,-4,-7,-1,-3,-6),order=(8,9,18,10,17,11,16,5,12,15,13,14))
+        outerContract_triple_upper2_p1 = ncon([mps2,mps1,mps2,mps1,mps2.conj(),mps1.conj(),mps2.conj(),mps1.conj(),Td_21_tensor,T2.tensor],((-1,8,9),(-3,9,10),(5,11,12),(-6,12,13),(-2,8,18),(-4,18,17),(5,16,15),(-7,15,14),(17,10,16,11),(14,13),),forder=(-2,-4,-7,-1,-3,-6),order=(8,9,18,10,17,11,16,5,12,15,13,14))
+        outerContract_triple_lower1_p1 = ncon([mps1,mps2,mps1,mps2,mps1.conj(),mps2.conj(),mps1.conj(),mps2.conj(),Td_21_tensor,T1.tensor],((-1,8,9),(3,10,11),(-4,11,12),(-6,12,13),(-2,8,18),(3,17,16),(-5,16,15),(-7,15,14),(18,9,17,10),(14,13)),forder=(-2,-5,-7,-1,-4,-6),order=(8,9,18,10,17,3,11,16,12,15,13,14))
+        outerContract_triple_lower2_p1 = ncon([mps2,mps1,mps2,mps1,mps2.conj(),mps1.conj(),mps2.conj(),mps1.conj(),Td_12_tensor,T2.tensor],((-1,8,9),(3,10,11),(-4,11,12),(-6,12,13),(-2,8,18),(3,17,16),(-5,16,15),(-7,15,14),(18,9,17,10),(14,13)),forder=(-2,-5,-7,-1,-4,-6),order=(8,9,18,10,17,3,11,16,12,15,13,14))
 
-        # #vertical about hamiltonian
-        # #above
-        # gradRun_121 += ncon([innerContract,mpo1,outerContract_triple_upper1,RRR_d_u_2.tensor],((1,2,3,4,5,6,7,8),(-10,9,-12,13),(1,2,-11,3,4,9),(5,6,7,8,-14,13)),forder=(-11,-10,-12,-14),order=(5,6,1,3,7,8,4,2,13,9))
-        # gradRun_122 += ncon([innerContract,mpo2,outerContract_triple_upper1_p1,RRR_d_u_2_p1.tensor],((1,2,3,4,5,6,7,8),(-10,9,-12,13),(1,2,-11,3,4,9),(5,6,7,8,-14,13)),forder=(-11,-10,-12,-14),order=(5,6,1,3,7,8,4,2,13,9))
-        # #below
-        # gradRun_121 += ncon([innerContract,mpo1,outerContract_triple_lower1_p1,RRR_d_l_2_p1.tensor],((1,2,3,4,5,6,7,8),(-10,9,-12,13),(-11,1,2,9,3,4),(-14,13,5,6,7,8)),forder=(-11,-10,-12,-14),order=(5,6,1,3,7,8,2,4,13,9))
-        # gradRun_122 += ncon([innerContract,mpo2,outerContract_triple_lower2,RRR_d_l_1.tensor],((1,2,3,4,5,6,7,8),(-10,9,-12,13),(-11,1,2,9,3,4),(-14,13,5,6,7,8)),forder=(-11,-10,-12,-14),order=(5,6,1,3,7,8,2,4,13,9))
+        #vertical about hamiltonian
+        #above
+        gradRun_121 += ncon([innerContract,mpo1,outerContract_triple_upper1,RRR_d_u_2.tensor],((1,2,3,4,5,6,7,8),(-10,9,-12,13),(1,2,-11,3,4,9),(5,6,7,8,-14,13)),forder=(-11,-10,-12,-14),order=(5,6,1,3,7,8,4,2,13,9))
+        gradRun_122 += ncon([innerContract,mpo2,outerContract_triple_upper1_p1,RRR_d_u_2_p1.tensor],((1,2,3,4,5,6,7,8),(-10,9,-12,13),(1,2,-11,3,4,9),(5,6,7,8,-14,13)),forder=(-11,-10,-12,-14),order=(5,6,1,3,7,8,4,2,13,9))
+        #below
+        gradRun_121 += ncon([innerContract,mpo1,outerContract_triple_lower1_p1,RRR_d_l_2_p1.tensor],((1,2,3,4,5,6,7,8),(-10,9,-12,13),(-11,1,2,9,3,4),(-14,13,5,6,7,8)),forder=(-11,-10,-12,-14),order=(5,6,1,3,7,8,2,4,13,9))
+        gradRun_122 += ncon([innerContract,mpo2,outerContract_triple_lower2,RRR_d_l_1.tensor],((1,2,3,4,5,6,7,8),(-10,9,-12,13),(-11,1,2,9,3,4),(-14,13,5,6,7,8)),forder=(-11,-10,-12,-14),order=(5,6,1,3,7,8,2,4,13,9))
 
         # #right half of plane
-        # leftEnv = ncon([mpo1,mpo2,h_tilde,mpo1.conj(),mpo2.conj(),outerContract_double1],((2,1,9,-10),(6,5,11,-12),(3,7,2,6),(3,4,9,-13),(7,8,11,-14),(4,8,1,5)),forder=(-13,-10,-14,-12),order=(9,1,2,3,4,11,5,6,7,8))
-        # leftEnv = Tw2_21_inv.applyRight(leftEnv.reshape(D_mpo**4)).reshape(D_mpo,D_mpo,D_mpo,D_mpo)
-        # #right upper
-        # gradRun_121 += ncon([leftEnv,mpo1,mpo1,mpo1.conj(),mpo2,mpo2.conj(),RRR_d_u_1_p1.tensor,outerContract_triple_upper2_p1],((19,17,15,13),(-2,1,-10,11),(5,4,13,14),(5,6,15,16),(8,7,17,18),(8,9,19,20),(20,18,16,14,-12,11),(9,6,-3,7,4,1)),forder=(-3,-2,-10,-12),order=(13,15,4,5,6,17,19,7,8,9,14,16,18,20,11))
-        # #right lower
-        # gradRun_121 += ncon([leftEnv,mpo1,mpo1.conj(),mpo2,mpo2.conj(),mpo1,RRR_d_l_2.tensor,outerContract_triple_lower1],((16,14,12,10),(2,1,10,11),(2,3,12,13),(5,4,14,15),(5,6,16,17),(-8,7,-18,19),(-20,19,17,15,13,11),(-9,6,3,7,4,1)),forder=(-9,-8,-18,-20),order=(10,12,1,2,3,14,16,4,5,6,11,13,15,17,19,7))
-        # gradRun_122 += ncon([leftEnv,mpo1,mpo1.conj(),mpo2,mpo2.conj(),mpo2,RRR_d_l_1_p1.tensor,outerContract_triple_lower2_p1],((16,14,12,10),(2,1,10,11),(2,3,12,13),(5,4,14,15),(5,6,16,17),(-8,7,-18,19),(-20,19,17,15,13,11),(-9,6,3,7,4,1)),forder=(-9,-8,-18,-20),order=(10,12,1,2,3,14,16,4,5,6,11,13,15,17,19,7))
+        leftEnv = ncon([mpo1,mpo2,h_tilde,mpo1.conj(),mpo2.conj(),outerContract_double1],((2,1,9,-10),(6,5,11,-12),(3,7,2,6),(3,4,9,-13),(7,8,11,-14),(4,8,1,5)),forder=(-13,-10,-14,-12),order=(9,1,2,3,4,11,5,6,7,8))
+        leftEnv = Tw2_21_inv.applyRight(leftEnv.reshape(D_mpo**4)).reshape(D_mpo,D_mpo,D_mpo,D_mpo)
+        #right upper
+        gradRun_121 += ncon([leftEnv,mpo1,mpo1,mpo1.conj(),mpo2,mpo2.conj(),RRR_d_u_1_p1.tensor,outerContract_triple_upper2_p1],((19,17,15,13),(-2,1,-10,11),(5,4,13,14),(5,6,15,16),(8,7,17,18),(8,9,19,20),(20,18,16,14,-12,11),(9,6,-3,7,4,1)),forder=(-3,-2,-10,-12),order=(13,15,4,5,6,17,19,7,8,9,14,16,18,20,11))
+        #right lower
+        gradRun_121 += ncon([leftEnv,mpo1,mpo1.conj(),mpo2,mpo2.conj(),mpo1,RRR_d_l_2.tensor,outerContract_triple_lower1],((16,14,12,10),(2,1,10,11),(2,3,12,13),(5,4,14,15),(5,6,16,17),(-8,7,-18,19),(-20,19,17,15,13,11),(-9,6,3,7,4,1)),forder=(-9,-8,-18,-20),order=(10,12,1,2,3,14,16,4,5,6,11,13,15,17,19,7))
+        gradRun_122 += ncon([leftEnv,mpo1,mpo1.conj(),mpo2,mpo2.conj(),mpo2,RRR_d_l_1_p1.tensor,outerContract_triple_lower2_p1],((16,14,12,10),(2,1,10,11),(2,3,12,13),(5,4,14,15),(5,6,16,17),(-8,7,-18,19),(-20,19,17,15,13,11),(-9,6,3,7,4,1)),forder=(-9,-8,-18,-20),order=(10,12,1,2,3,14,16,4,5,6,11,13,15,17,19,7))
 
-        # #extra site
-        # transfer = ncon([mps2,mps1,mpo2,mpo1,mpo2.conj(),mpo1.conj(),mps2.conj(),mps1.conj(),T2.tensor],((1,7,8),(4,8,9),(2,1,-12,-14),(5,4,-16,-18),(2,3,-13,-15),(5,6,-17,-19),(3,7,11),(6,11,10),(10,9)),forder=(-13,-12,-17,-16,-15,-14,-19,-18),order=(7,8,9,10,11,1,2,3,4,5,6)).reshape(D_mpo**4,D_mpo**4)
-        # leftEnv = np.dot(leftEnv.reshape(D_mpo**4),transfer).reshape(D_mpo,D_mpo,D_mpo,D_mpo)
-        # # right upper
-        # gradRun_122 += ncon([leftEnv,mpo2,mpo2,mpo2.conj(),mpo1,mpo1.conj(),RRR_d_u_2_p1.tensor,outerContract_triple_upper1_p1],((19,17,15,13),(-2,1,-10,11),(5,4,13,14),(5,6,15,16),(8,7,17,18),(8,9,19,20),(20,18,16,14,-12,11),(9,6,-3,7,4,1)),forder=(-3,-2,-10,-12),order=(13,15,4,5,6,17,19,7,8,9,14,16,18,20,11))
-        # #right lower
-        # gradRun_121 += ncon([leftEnv,mpo2,mpo2.conj(),mpo1,mpo1.conj(),mpo1,RRR_d_l_2_p1.tensor,outerContract_triple_lower1_p1],((16,14,12,10),(2,1,10,11),(2,3,12,13),(5,4,14,15),(5,6,16,17),(-8,7,-18,19),(-20,19,17,15,13,11),(-9,6,3,7,4,1)),forder=(-9,-8,-18,-20),order=(10,12,1,2,3,14,16,4,5,6,11,13,15,17,19,7))
-        # gradRun_122 += ncon([leftEnv,mpo2,mpo2.conj(),mpo1,mpo1.conj(),mpo2,RRR_d_l_1.tensor,outerContract_triple_lower2],((16,14,12,10),(2,1,10,11),(2,3,12,13),(5,4,14,15),(5,6,16,17),(-8,7,-18,19),(-20,19,17,15,13,11),(-9,6,3,7,4,1)),forder=(-9,-8,-18,-20),order=(10,12,1,2,3,14,16,4,5,6,11,13,15,17,19,7))
+        #extra site
+        transfer = ncon([mps2,mps1,mpo2,mpo1,mpo2.conj(),mpo1.conj(),mps2.conj(),mps1.conj(),T2.tensor],((1,7,8),(4,8,9),(2,1,-12,-14),(5,4,-16,-18),(2,3,-13,-15),(5,6,-17,-19),(3,7,11),(6,11,10),(10,9)),forder=(-13,-12,-17,-16,-15,-14,-19,-18),order=(7,8,9,10,11,1,2,3,4,5,6)).reshape(D_mpo**4,D_mpo**4)
+        leftEnv = np.dot(leftEnv.reshape(D_mpo**4),transfer).reshape(D_mpo,D_mpo,D_mpo,D_mpo)
+        # right upper
+        gradRun_122 += ncon([leftEnv,mpo2,mpo2,mpo2.conj(),mpo1,mpo1.conj(),RRR_d_u_2_p1.tensor,outerContract_triple_upper1_p1],((19,17,15,13),(-2,1,-10,11),(5,4,13,14),(5,6,15,16),(8,7,17,18),(8,9,19,20),(20,18,16,14,-12,11),(9,6,-3,7,4,1)),forder=(-3,-2,-10,-12),order=(13,15,4,5,6,17,19,7,8,9,14,16,18,20,11))
+        #right lower
+        gradRun_121 += ncon([leftEnv,mpo2,mpo2.conj(),mpo1,mpo1.conj(),mpo1,RRR_d_l_2_p1.tensor,outerContract_triple_lower1_p1],((16,14,12,10),(2,1,10,11),(2,3,12,13),(5,4,14,15),(5,6,16,17),(-8,7,-18,19),(-20,19,17,15,13,11),(-9,6,3,7,4,1)),forder=(-9,-8,-18,-20),order=(10,12,1,2,3,14,16,4,5,6,11,13,15,17,19,7))
+        gradRun_122 += ncon([leftEnv,mpo2,mpo2.conj(),mpo1,mpo1.conj(),mpo2,RRR_d_l_1.tensor,outerContract_triple_lower2],((16,14,12,10),(2,1,10,11),(2,3,12,13),(5,4,14,15),(5,6,16,17),(-8,7,-18,19),(-20,19,17,15,13,11),(-9,6,3,7,4,1)),forder=(-9,-8,-18,-20),order=(10,12,1,2,3,14,16,4,5,6,11,13,15,17,19,7))
 
-        # #with shifted transfer matrix
-        # leftEnv = ncon([mpo1,mpo2,h_tilde,mpo1.conj(),mpo2.conj(),outerContract_double1_p1],((2,1,9,-10),(6,5,11,-12),(3,7,2,6),(3,4,9,-13),(7,8,11,-14),(4,8,1,5)),forder=(-13,-10,-14,-12),order=(9,1,2,3,4,11,5,6,7,8))
-        # leftEnv = Tw2_21_p1_inv.applyRight(leftEnv.reshape(D_mpo**4)).reshape(D_mpo,D_mpo,D_mpo,D_mpo)
-        # #right upper
-        # gradRun_122 += ncon([leftEnv,mpo2,mpo1,mpo1.conj(),mpo2,mpo2.conj(),RRR_d_u_1.tensor,outerContract_triple_upper2],((19,17,15,13),(-2,1,-10,11),(5,4,13,14),(5,6,15,16),(8,7,17,18),(8,9,19,20),(20,18,16,14,-12,11),(9,6,-3,7,4,1)),forder=(-3,-2,-10,-12),order=(13,15,4,5,6,17,19,7,8,9,14,16,18,20,11))
-        # #extra site
-        # transfer = ncon([mps2,mps1,mpo2,mpo1,mpo2.conj(),mpo1.conj(),mps2.conj(),mps1.conj(),T2_mod.tensor],((1,7,8),(4,8,9),(2,1,-12,-14),(5,4,-16,-18),(2,3,-13,-15),(5,6,-17,-19),(3,7,11),(6,11,10),(10,9)),forder=(-13,-12,-17,-16,-15,-14,-19,-18),order=(7,8,9,10,11,1,2,3,4,5,6)).reshape(D_mpo**4,D_mpo**4)
-        # leftEnv = np.dot(leftEnv.reshape(D_mpo**4),transfer).reshape(D_mpo,D_mpo,D_mpo,D_mpo)
-        # #right upper
-        # gradRun_121 += ncon([leftEnv,mpo1,mpo2,mpo2.conj(),mpo1,mpo1.conj(),RRR_d_u_2.tensor,outerContract_triple_upper1],((19,17,15,13),(-2,1,-10,11),(5,4,13,14),(5,6,15,16),(8,7,17,18),(8,9,19,20),(20,18,16,14,-12,11),(9,6,-3,7,4,1)),forder=(-3,-2,-10,-12),order=(13,15,4,5,6,17,19,7,8,9,14,16,18,20,11))
+        #with shifted transfer matrix
+        leftEnv = ncon([mpo1,mpo2,h_tilde,mpo1.conj(),mpo2.conj(),outerContract_double1_p1],((2,1,9,-10),(6,5,11,-12),(3,7,2,6),(3,4,9,-13),(7,8,11,-14),(4,8,1,5)),forder=(-13,-10,-14,-12),order=(9,1,2,3,4,11,5,6,7,8))
+        leftEnv = Tw2_21_p1_inv.applyRight(leftEnv.reshape(D_mpo**4)).reshape(D_mpo,D_mpo,D_mpo,D_mpo)
+        #right upper
+        gradRun_122 += ncon([leftEnv,mpo2,mpo1,mpo1.conj(),mpo2,mpo2.conj(),RRR_d_u_1.tensor,outerContract_triple_upper2],((19,17,15,13),(-2,1,-10,11),(5,4,13,14),(5,6,15,16),(8,7,17,18),(8,9,19,20),(20,18,16,14,-12,11),(9,6,-3,7,4,1)),forder=(-3,-2,-10,-12),order=(13,15,4,5,6,17,19,7,8,9,14,16,18,20,11))
+        #extra site
+        transfer = ncon([mps2,mps1,mpo2,mpo1,mpo2.conj(),mpo1.conj(),mps2.conj(),mps1.conj(),T2_mod.tensor],((1,7,8),(4,8,9),(2,1,-12,-14),(5,4,-16,-18),(2,3,-13,-15),(5,6,-17,-19),(3,7,11),(6,11,10),(10,9)),forder=(-13,-12,-17,-16,-15,-14,-19,-18),order=(7,8,9,10,11,1,2,3,4,5,6)).reshape(D_mpo**4,D_mpo**4)
+        leftEnv = np.dot(leftEnv.reshape(D_mpo**4),transfer).reshape(D_mpo,D_mpo,D_mpo,D_mpo)
+        #right upper
+        gradRun_121 += ncon([leftEnv,mpo1,mpo2,mpo2.conj(),mpo1,mpo1.conj(),RRR_d_u_2.tensor,outerContract_triple_upper1],((19,17,15,13),(-2,1,-10,11),(5,4,13,14),(5,6,15,16),(8,7,17,18),(8,9,19,20),(20,18,16,14,-12,11),(9,6,-3,7,4,1)),forder=(-3,-2,-10,-12),order=(13,15,4,5,6,17,19,7,8,9,14,16,18,20,11))
 
-        # #left half of plane
-        # #left upper
-        # rightEnv = ncon([innerContract,mpo2,mpo2.conj(),RRR_d_u_2_p1.tensor,outerContract_triple_upper1_p1],((1,2,3,4,5,6,7,8),(10,9,-12,13),(10,11,-14,15),(5,6,7,8,15,13),(1,2,11,3,4,9)),forder=(-14,-12),order=(5,6,1,3,7,8,2,4,15,13,9,10,11))
-        # rightEnv = Tw_21_inv.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_121 += ncon([mpo1,rightEnv,outerContract1],((-2,1,-4,5),(5,-6),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-        # transfer = mpsu1Transfer_left_oneLayer(mps1,mpo1,T2)
-        # rightEnv = transfer.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_122 += ncon([mpo2,rightEnv,outerContract2],((-2,1,-4,5),(5,-6),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
+        #left half of plane
+        #left upper
+        rightEnv = ncon([innerContract,mpo2,mpo2.conj(),RRR_d_u_2_p1.tensor,outerContract_triple_upper1_p1],((1,2,3,4,5,6,7,8),(10,9,-12,13),(10,11,-14,15),(5,6,7,8,15,13),(1,2,11,3,4,9)),forder=(-14,-12),order=(5,6,1,3,7,8,2,4,15,13,9,10,11))
+        #left lower
+        rightEnv += ncon([innerContract,mpo2,mpo2.conj(),RRR_d_l_1.tensor,outerContract_triple_lower2],((1,2,3,4,5,6,7,8),(10,9,-12,13),(10,11,-14,15),(15,13,5,6,7,8),(11,1,2,9,3,4)),forder=(-14,-12),order=(7,8,2,4,5,6,3,1,13,15,9,10,11))
+        rightEnv = Tw_21_inv.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
+        gradRun_121 += ncon([mpo1,rightEnv,outerContract1],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
+        transfer = mpsu1Transfer_left_oneLayer(mps1,mpo1,T2)
+        rightEnv = transfer.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
+        gradRun_122 += ncon([mpo2,rightEnv,outerContract2],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
 
-        # rightEnv = ncon([innerContract,mpo1,mpo1.conj(),RRR_d_u_2.tensor,outerContract_triple_upper1],((1,2,3,4,5,6,7,8),(10,9,-12,13),(10,11,-14,15),(5,6,7,8,15,13),(1,2,11,3,4,9)),forder=(-14,-12),order=(5,6,1,3,7,8,2,4,15,13,9,10,11))
-        # rightEnv = Tw_12_inv.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_122 += ncon([mpo2,rightEnv,outerContract2],((-2,1,-4,5),(5,-6),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-        # transfer = mpsu1Transfer_left_oneLayer(mps2,mpo2,T1)
-        # rightEnv = transfer.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_121 += ncon([mpo1,rightEnv,outerContract1],((-2,1,-4,5),(5,-6),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
+        rightEnv = ncon([innerContract,mpo1,mpo1.conj(),RRR_d_u_2.tensor,outerContract_triple_upper1],((1,2,3,4,5,6,7,8),(10,9,-12,13),(10,11,-14,15),(5,6,7,8,15,13),(1,2,11,3,4,9)),forder=(-14,-12),order=(5,6,1,3,7,8,2,4,15,13,9,10,11))
+        rightEnv += ncon([innerContract,mpo1,mpo1.conj(),RRR_d_l_2_p1.tensor,outerContract_triple_lower1_p1],((1,2,3,4,5,6,7,8),(10,9,-12,13),(10,11,-14,15),(15,13,5,6,7,8),(11,1,2,9,3,4)),forder=(-14,-12),order=(7,8,2,4,5,6,3,1,13,15,9,10,11))
+        rightEnv = Tw_12_inv.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
+        gradRun_122 += ncon([mpo2,rightEnv,outerContract2],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
+        transfer = mpsu1Transfer_left_oneLayer(mps2,mpo2,T1)
+        rightEnv = transfer.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
+        gradRun_121 += ncon([mpo1,rightEnv,outerContract1],((-2,1,-4,5),(-6,5),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
 
-        # #left lower
-        # rightEnv = ncon([innerContract,mpo2,mpo2.conj(),RRR_d_l_1.tensor,outerContract_triple_lower2],((1,2,3,4,5,6,7,8),(10,9,-12,13),(10,11,-14,15),(15,13,5,6,7,8),(11,1,2,9,3,4)),forder=(-14,-12),order=(7,8,2,4,5,6,3,1,13,15,9,10,11))
-        # rightEnv = Tw_21_inv.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_121 += ncon([mpo1,rightEnv,outerContract1],((-2,1,-4,5),(5,-6),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-        # transfer = mpsu1Transfer_left_oneLayer(mps1,mpo1,T2)
-        # rightEnv = transfer.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_122 += ncon([mpo2,rightEnv,outerContract2],((-2,1,-4,5),(5,-6),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-
-        # rightEnv = ncon([innerContract,mpo1,mpo1.conj(),RRR_d_l_2_p1.tensor,outerContract_triple_lower1_p1],((1,2,3,4,5,6,7,8),(10,9,-12,13),(10,11,-14,15),(15,13,5,6,7,8),(11,1,2,9,3,4)),forder=(-14,-12),order=(7,8,2,4,5,6,3,1,13,15,9,10,11))
-        # rightEnv = Tw_12_p1_inv.applyLeft(rightEnv.reshape(D_mpo**2)).reshape(D_mpo,D_mpo)
-        # gradRun_122 += ncon([mpo2,rightEnv,outerContract2_p1],((-2,1,-4,5),(5,-6),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-        # transfer = mpsu1Transfer_left_oneLayer(mps2,mpo2,T1_mod)
-        # gradRun_121 += ncon([mpo1,rightEnv,outerContract1_p1],((-2,1,-4,5),(5,-6),(-3,1)),forder=(-3,-2,-4,-6),order=(5,1))
-
-        # mag1 = np.real(np.einsum('ijab,ijab',gradRun_121,gradRun_121.conj()))
-        # mag2 = np.real(np.einsum('ijab,ijab',gradRun_122,gradRun_122.conj()))
-        # grad_121 += gradRun_121
-        # grad_122 += gradRun_122
-        # if np.abs(mag1)<envTol and np.abs(mag2)<envTol:
-            # break
-    # print("(vertical) d: ",d,mag1,mag2)
+        mag1 = np.real(np.einsum('ijab,ijab',gradRun_121,gradRun_121.conj()))
+        mag2 = np.real(np.einsum('ijab,ijab',gradRun_122,gradRun_122.conj()))
+        grad_121 += gradRun_121
+        grad_122 += gradRun_122
+        if np.abs(mag1)<envTol and np.abs(mag2)<envTol:
+            break
+    print("(vertical) d: ",d,mag1,mag2)
     grad_121 = np.einsum('ijab->jiab',grad_121)
     grad_122 = np.einsum('ijab->jiab',grad_122)
     return grad_121,grad_122
