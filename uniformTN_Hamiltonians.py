@@ -118,8 +118,8 @@ class twoBodyH_vert(twoBodyH):
         return E
 
     def exp_2d_left_bipartite(self,psi):
-        E =  self.exp_2d_left_bipartite_ind(psi.mps1,psi.mps2,psi.mpo1,psi.mpo2,psi.T1,psi.RR2)
-        E +=  self.exp_2d_left_bipartite_ind(psi.mps2,psi.mps1,psi.mpo2,psi.mpo1,psi.T2,psi.RR1)
+        E =  self.exp_2d_left_bipartite_ind(psi.mps[1],psi.mps[2],psi.mpo[1],psi.mpo[2],psi.T[1],psi.RR[2])
+        E +=  self.exp_2d_left_bipartite_ind(psi.mps[2],psi.mps[1],psi.mpo[2],psi.mpo[1],psi.T[2],psi.RR[1])
         return E/2
 
 class plaquetteH(localH_term):
