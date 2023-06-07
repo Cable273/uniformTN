@@ -416,6 +416,9 @@ class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater):
         gradEvaluater_21 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=2,grad_index=1)
         gradEvaluater_22 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=2,grad_index=2)
 
+        #use eval_non_geo, eval_geo methods seperately rather than eval
+        #so can just use one gradEvaluater to calc d dep fixed points, which are the same for all gradEvaluaters
+        #so don't have to repeat the bottleneck of the algo 4 times for no reason
         grad_11 = gradEvaluater_11.eval_non_geo(0)
         grad_12 = gradEvaluater_12.eval_non_geo(0)
         grad_21 = gradEvaluater_21.eval_non_geo(0)
@@ -430,13 +433,12 @@ class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater):
             grad_11_breaker, grad_12_breaker, grad_21_breaker, grad_22_breaker = False,False,False,False
             d_11,d_12,d_21,d_22 = -1, -1 , -1, -1
             if geo is True:
-                #just use one evaluater to calc d dep quantites (including fixed points)
-                #they are the same for all, so no need to bother calculating fixed points 4 times...
                 Td_matrix,Td = gradEvaluater_11.H_imp[n].init_mps_transfers()
                 for d in range(0,100):
                     #d dependant tensors needed
                     if d > 0:
                         Td_matrix,Td = gradEvaluater_11.H_imp[n].apply_mps_transfers(Td_matrix)
+                    #just use gradEvaluater_11 to calc d dep fixed points, which are the same for all gradEvaluaters
                     rightFP_d = gradEvaluater_11.H_imp[n].getFixedPoints(d,Td) #bottleneck of algo
                     outers_d = gradEvaluater_11.H_imp[n].getOuterContracts(Td)
 
