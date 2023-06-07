@@ -239,10 +239,11 @@ class uMPSU1_2d_left_bipartite(uMPSU1_2d_left):
             self.Tb_inv[n] = inverseTransfer_left(self.Tb[n],self.R[n].vector)
             self.Tb2_inv[n] = inverseTransfer_left(self.Tb2[n],self.RR[n].vector)
     def gaugeTDVP(self):
+        Ta = dict()
         Ta[1] = mpsTransferBip(self.mps[1],self.mps[2])
         Ta[2] = mpsTransferBip(self.mps[2],self.mps[1])
-        T1 = Ta_12.findRightEig()
-        T2 = Ta_21.findRightEig()
+        T1 = Ta[1].findRightEig()
+        T2 = Ta[2].findRightEig()
         T1.norm_pairedCanon()
         T2.norm_pairedCanon()
 
