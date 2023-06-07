@@ -160,19 +160,16 @@ class gradEvaluater_bipartite_1d_left_ind(gradEvaluater_uniform_1d):
         rightEnv = self.psi.Ta_inv[self.index2].applyLeft(rightEnv.reshape(self.psi.D**2)).reshape(self.psi.D,self.psi.D)
         return ncon([self.psi.mps[self.index1],rightEnv],((-1,-2,3),(-4,3)),forder=(-1,-2,-4))
 # -------------------------------------------------------------------------------------------------------------------------------------
-#2d uniform
-class gradEvaluater_mpso_2d_uniform(gradEvaluater):
-    def fetch_implementation(self):
-        pass
+#2d ansatz
+class gradEvaluater_mpso_2d(gradEvaluater):
     def __init__(self,psi,H):
         self.psi = psi
         self.H = H
-        self.gradA_evaluater = gradEvaluater_mpso_2d_mps_uniform(psi,H)
-        self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_uniform(psi,H)
         self.grad = dict()
+    def fetch_implementation(self):
+        pass
     def copyEvaluaters(self):
-        self.grad['mps'] = self.gradA_evaluater.grad
-        self.grad['mpo'] = self.gradB_evaluater.grad
+        pass
     def eval(self,geo=True):
         self.gradA_evaluater.eval()
         self.gradB_evaluater.eval(geo=geo)
@@ -182,28 +179,25 @@ class gradEvaluater_mpso_2d_uniform(gradEvaluater):
         self.gradB_evaluater.projectTDVP()
         self.copyEvaluaters()
 
-class gradEvaluater_mpso_2d_bipartite(gradEvaluater):
-    def fetch_implementation(self):
-        pass
+class gradEvaluater_mpso_2d_uniform(gradEvaluater_mpso_2d):
     def __init__(self,psi,H):
-        self.psi = psi
-        self.H = H
+        super().__init__(psi,H)
+        self.gradA_evaluater = gradEvaluater_mpso_2d_mps_uniform(psi,H)
+        self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_uniform(psi,H)
+    def copyEvaluaters(self):
+        self.grad['mps'] = self.gradA_evaluater.grad
+        self.grad['mpo'] = self.gradB_evaluater.grad
+
+class gradEvaluater_mpso_2d_bipartite(gradEvaluater_mpso_2d):
+    def __init__(self,psi,H):
+        super().__init__(psi,H)
         self.gradA_evaluater = gradEvaluater_mpso_2d_mps_bipartite(psi,H)
         self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_bipartite(psi,H)
-        self.grad = dict()
     def copyEvaluaters(self):
         self.grad['mps1'] = self.gradA_evaluater.grad[1]
         self.grad['mps2'] = self.gradA_evaluater.grad[2]
         self.grad['mpo1'] = self.gradB_evaluater.grad[1]
         self.grad['mpo2'] = self.gradB_evaluater.grad[2]
-    def eval(self,geo=True):
-        self.gradA_evaluater.eval()
-        self.gradB_evaluater.eval(geo=geo)
-        self.copyEvaluaters()
-    def projectTDVP(self):
-        self.gradA_evaluater.projectTDVP()
-        self.gradB_evaluater.projectTDVP()
-        self.copyEvaluaters()
 
 class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater):
     #gradient of the mps tensor of 2d uniform MPSO ansatz
