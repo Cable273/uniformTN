@@ -109,6 +109,31 @@ class mpsu1Transfer_left_oneLayer(regularTransfer):
         self.D = np.size(W,axis=2)
         self.noLegs = 2
         self.matrix = ncon([A,W,W.conj(),A.conj(),T.tensor],((1,4,5),(2,1,-7,-9),(2,3,-8,-10),(3,4,6),(6,5)),forder=(-8,-7,-10,-9),order=(4,5,6,1,2,3)).reshape(self.D**2,self.D**2)
+class mpsu1Transfer_left_oneLayer_twoSite(regularTransfer): #twoSite unit cell mpso
+    def __init__(self,A,B,T,style):
+        self.D = np.size(B,axis=4)
+        self.noLegs = 2
+        if style == "bot":
+            outerContract= ncon([A,A.conj(),T.tensor],((-1,3,4,5),(-2,3,4,6),(6,5)),forder=(-2,-1),order=(4,3,5,6))
+        elif style == "top":
+            outerContract= ncon([A,A.conj(),T.tensor],((1,-2,4,5),(1,-3,4,6),(6,5)),forder=(-3,-2),order=(4,1,5,6))
+        else:
+            print("ERROR: mpsu1Transfer_left_oneLayer_twoSite style not valid")
+            return 1
+        self.matrix = ncon([B,B.conj(),outerContract,outerContract],((2,5,1,4,-7,-8),(2,5,3,6,-9,-10),(3,1),(6,4)),forder=(-9,-7,-10,-8),order=(1,2,3,4,5,6)).reshape(self.D**2,self.D**2)
+class mpsu1Transfer_left_twoLayer_twoSite(regularTransfer): #twoSite unit cell mpso
+    def __init__(self,A,B,T,style):
+        self.D = np.size(B,axis=4)
+        self.noLegs = 4
+        if style == "square":
+            outerContract= ncon([A,A.conj(),T.tensor],((-1,-3,5,6),(-2,-4,5,7),(6,7)),forder=(-2,-4,-1,-3),order=(5,6,7))
+        elif style == "prong":
+            outerContract= ncon([A,A,A.conj(),A.conj(),T.tensor],((1,-2,7,8),(-4,6,8,9),(1,-3,7,11),(-5,6,11,10),(10,9)),forder=(-3,-5,-2,-4),order=(7,1,8,11,6,9,10))
+        else:
+            print("ERROR: mpsu1Transfer_left_twoLayer_twoSite style not valid")
+            return 1
+        innerContract = ncon([B,B.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-8,-10),order=(2,5))
+        self.matrix = ncon([innerContract,innerContract,outerContract,outerContract],((1,2,3,4,-5,-6,-7,-8),(9,10,11,12,-13,-14,-15,-16),(9,1,11,3),(10,2,12,4)),forder=(-13,-14,-5,-6,-15,-16,-7,-8),order=(3,1,4,2,11,9,12,10)).reshape(self.D**4,self.D**4)
 class mpsu1Transfer_left_twoLayer(regularTransfer):
     def __init__(self,A,W,T):
         self.D = np.size(W,axis=2)
