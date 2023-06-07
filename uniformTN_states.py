@@ -52,8 +52,10 @@ class stateAnsatz(ABC):
         if subtractExp is True:
             for n in range(0,len(H_new.terms)):
                 H_new.terms[n].tensor = H.terms[n].subtractExp(self)
+
         gradEvaluater = gradFactory(self,H_new)
         gradEvaluater.eval()
+
         if TDVP is True:
             gradEvaluater.projectTDVP()
         self.shiftTensors(-learningRate,gradEvaluater.grad)
@@ -141,6 +143,21 @@ class uMPSU_2d(stateAnsatz):
         self.mpo= mpo
         self.D_mps = D_mps
         self.D_mpo = D_mpo
+    def del_transfers(self):
+        del self.Ta
+        del self.Tb
+        del self.Tb2
+    def del_fixedPoints(self):
+        del self.T
+        del self.R
+        del self.RR
+    def del_inverses(self):
+        del self.Ta_inv
+        del self.Tb_inv
+        del self.Tb2_inv
+    def shiftTensors(self,coef,tensorDict):
+        self.mps += coef*tensorDict['mps']
+        self.mpo += coef*tensorDict['mpo']
         
 class uMPSU1_2d_left(uMPSU_2d):
     def randoInit(self):
@@ -165,18 +182,6 @@ class uMPSU1_2d_left(uMPSU_2d):
         self.Tb2_inv = inverseTransfer_left(self.Tb2,self.RR.vector)
         self.Ta_inv.genInverse()
         self.Ta_inv.genTensor()
-    def del_transfers(self):
-        del self.Ta
-        del self.Tb
-        del self.Tb2
-    def del_fixedPoints(self):
-        del self.T
-        del self.R
-        del self.RR
-    def del_inverses(self):
-        del self.Ta_inv
-        del self.Tb_inv
-        del self.Tb2_inv
     def gaugeTDVP(self):
         Ta = mpsTransfer(self.mps)
         T = Ta.findRightEig()
@@ -193,11 +198,52 @@ class uMPSU1_2d_left(uMPSU_2d):
         #polar decomp to ensure left canon still
         self.mps = polarDecomp(self.mps.reshape(2*self.D_mps,self.D_mps)).reshape(2,self.D_mps,self.D_mps)
         self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo).reshape(2*self.D_mpo,2*self.D_mpo)).reshape(2,self.D_mpo,2,self.D_mpo))
-    def shiftTensors(self,coef,tensorDict):
-        self.mps += coef*tensorDict['mps']
-        self.mpo += coef*tensorDict['mpo']
 
-class uMPSU1_2d_left_bipartite(uMPSU1_2d_left):
+class uMPSU1_2d_left_twoSite(uMPSU_2d):
+    def randoInit(self):
+        self.mps = randoUnitary(4*self.D_mps,self.D_mps).reshape(2,2,self.D_mps,self.D_mps)
+        self.mpo = np.einsum('iajb->ijab',randoUnitary(4*self.D_mpo,4*self.D_mpo).reshape(4,self.D_mpo,4,self.D_mpo)).reshape(2,2,2,2,self.D_mpo,self.D_mpo)
+    def get_transfers(self):
+        self.Ta = mpsTransfer_twoSite(self.mps)
+        self.Tb = dict()
+        self.Tb2 = dict()
+        T = self.Ta.findRightEig()
+        T.norm_pairedCanon()
+        #label refers to which side of the mps tensor is attached to the mpo underneath
+        self.Tb['bot'] = mpsu1Transfer_left_oneLayer_twoSite(self.mps,self.mpo,T,"bot")
+        self.Tb['top'] = mpsu1Transfer_left_oneLayer_twoSite(self.mps,self.mpo,T,"top")
+        #label refers style of transfer (unit cells make a square vs prongs to either side)
+        self.Tb2['square'] = mpsu1Transfer_left_twoLayer_twoSite(self.mps,self.mpo,T,"square")
+        self.Tb2['prong'] = mpsu1Transfer_left_twoLayer_twoSite(self.mps,self.mpo,T,"prong")
+    def get_fixedPoints(self):
+        self.T = self.Ta.findRightEig()
+        self.T.norm_pairedCanon()
+        self.R = dict()
+        self.RR = dict()
+        self.R['bot'] = self.Tb['bot'].findRightEig()
+        self.R['top'] = self.Tb['top'].findRightEig()
+        self.RR['square'] = self.Tb2['square'].findRightEig()
+        self.RR['prong'] = self.Tb2['prong'].findRightEig()
+        self.R['bot'].norm_pairedCanon()
+        self.R['top'].norm_pairedCanon()
+        self.RR['square'].norm_pairedCanon()
+        self.RR['prong'].norm_pairedCanon()
+    def get_inverses(self):
+        self.Ta_inv = inverseTransfer_left(self.Ta,self.T.vector)
+        self.Tb_inv = dict()
+        self.Tb2_inv = dict()
+        self.Tb_inv['top'] = inverseTransfer_left(self.Tb['top'],self.R['top'].vector)
+        self.Tb_inv['bot'] = inverseTransfer_left(self.Tb['bot'],self.R['bot'].vector)
+        self.Tb2_inv['square'] = inverseTransfer_left(self.Tb2['square'],self.RR['square'].vector)
+        self.Tb2_inv['prong'] = inverseTransfer_left(self.Tb2['prong'],self.RR['prong'].vector)
+    def gaugeTDVP(self):
+        pass
+    def norm(self):
+        #polar decomp to ensure left canon still
+        self.mps = polarDecomp(self.mps.reshape(4*self.D_mps,self.D_mps)).reshape(2,2,self.D_mps,self.D_mps)
+        self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(4,4,self.D_mpo,self.D_mpo)).reshape(4*self.D_mpo,4*self.D_mpo)).reshape(4,self.D_mpo,4,self.D_mpo)).reshape(2,2,2,2,self.D_mpo,self.D_mpo)
+
+class uMPSU1_2d_left_bipartite(uMPSU_2d):
     def randoInit(self):
         self.mps = dict()
         self.mpo = dict()
