@@ -119,11 +119,7 @@ class mpsu1Transfer_left_twoLayerWithMpsInsert(regularTransfer):
         self.D = np.size(W,axis=2)
         self.noLegs = 4
         self.matrix = ncon([A,A,W,W,W.conj(),W.conj(),A.conj(),A.conj(),T.tensor,T_insert],((1,7,8),(4,9,10),(2,1,-14,-16),(5,4,-18,-20),(2,3,-15,-17),(5,6,-19,-21),(3,7,13),(6,12,11),(11,10),(13,8,12,9)),forder=(-15,-14,-19,-18,-17,-16,-21,-20),order=(7,8,13,9,12,10,11,1,2,3,4,5,6)).reshape(self.D**4,self.D**4)
-class Td(regularTransfer):
-    def __init__(self,A,W,T,Td):
-        self.D = np.size(W,axis=2)
-        self.noLegs = 4
-        self.matrix = ncon([A,A,W,W,W.conj(),W.conj(),A.conj(),A.conj(),T.tensor,Td],((1,7,8),(4,9,10),(2,1,-14,-16),(5,4,-18,-20),(2,3,-15,-17),(5,6,-19,-21),(3,7,13),(6,12,11),(11,10),(13,8,12,9)),forder=(-15,-14,-19,-18,-17,-16,-21,-20),order=(7,8,13,9,12,10,11,1,2,3,4,5,6)).reshape(self.D**4,self.D**4)
+
 class mpsu1Transfer_left_threeLayerWithMpsInsert_lower(regularTransfer):
     def __init__(self,A,W,T,T_insert):
         self.D = np.size(W,axis=2)
@@ -142,6 +138,7 @@ class mpsTransferBip(regularTransfer):
         #no legs on each side of tensor (tensor is equiv to D^noLegs,D^noLegs array)
         self.noLegs = 2
         self.matrix = ncon([A,B,A.conj(),B.conj()],((1,-3,4),(2,4,-5),(1,-6,7),(2,7,-8)),forder=(-6,-3,-8,-5),order=(1,4,7,2)).reshape(self.D**2,self.D**2)
+
 class mpsu1Transfer_left_oneLayerBip(regularTransfer):
     def __init__(self,A1,A2,B1,B2,T1,T2):
         self.D = np.size(B1,axis=2)
@@ -173,8 +170,8 @@ class mpsu1Transfer_left_twoLayerWithMpsInsertBip_plusOne(regularTransfer):
     def __init__(self,A1,A2,B1,B2,T1,T2,T_12,T_21):
         self.D = np.size(B1,axis=2)
         self.noLegs = 4
-        matrix1 = ncon([A1,B1,B1.conj(),A1.conj(),A2,A2.conj(),A1,B1,B1.conj(),A1.conj(),T_21,T2.tensor],((1,8,9),(2,1,-17,-18),(2,3,-19,-20),(3,8,16),(4,10,11),(4,15,14),(5,11,12),(6,5,-21,-22),(6,7,-23,-24),(7,14,13),(16,9,15,10),(13,12)),forder=(-19,-17,-23,-21,-20,-18,-24,-22),order=(8,1,2,3,9,16,10,15,4,11,14,1,5,6,7,12,13)).reshape(self.D**4,self.D**4)
-        matrix2 = ncon([A2,B2,B2.conj(),A2.conj(),A1,A1.conj(),A2,B2,B2.conj(),A2.conj(),T_12,T1.tensor],((1,8,9),(2,1,-17,-18),(2,3,-19,-20),(3,8,16),(4,10,11),(4,15,14),(5,11,12),(6,5,-21,-22),(6,7,-23,-24),(7,14,13),(16,9,15,10),(13,12)),forder=(-19,-17,-23,-21,-20,-18,-24,-22),order=(8,1,2,3,9,16,10,15,4,11,14,1,5,6,7,12,13)).reshape(self.D**4,self.D**4)
+        matrix1 = ncon([A1,B1,B1.conj(),A1.conj(),A2,A2.conj(),A1,B1,B1.conj(),A1.conj(),T_21,T2.tensor],((1,8,9),(2,1,-17,-18),(2,3,-19,-20),(3,8,16),(4,10,11),(4,15,14),(5,11,12),(6,5,-21,-22),(6,7,-23,-24),(7,14,13),(16,9,15,10),(13,12)),forder=(-19,-17,-23,-21,-20,-18,-24,-22),order=(8,9,16,10,15,4,11,14,12,13,1,2,3,5,6,7)).reshape(self.D**4,self.D**4)
+        matrix2 = ncon([A2,B2,B2.conj(),A2.conj(),A1,A1.conj(),A2,B2,B2.conj(),A2.conj(),T_12,T1.tensor],((1,8,9),(2,1,-17,-18),(2,3,-19,-20),(3,8,16),(4,10,11),(4,15,14),(5,11,12),(6,5,-21,-22),(6,7,-23,-24),(7,14,13),(16,9,15,10),(13,12)),forder=(-19,-17,-23,-21,-20,-18,-24,-22),order=(8,9,16,10,15,4,11,14,12,13,1,2,3,5,6,7)).reshape(self.D**4,self.D**4)
         self.matrix = np.dot(matrix1,matrix2)
         del matrix1
         del matrix2
@@ -200,8 +197,8 @@ class mpsu1Transfer_left_threeLayerWithMpsInsert_upperBip_plusOne(regularTransfe
     def __init__(self,mps1,mps2,mpo1,mpo2,T1,T2,T_12,T_21):
         self.D = np.size(mpo1,axis=2)
         self.noLegs = 6
-        matrix1 = ncon([mps1,mpo1,mpo1.conj(),mps1.conj(),mps2,mpo2,mpo2.conj(),mps2.conj(),mps1,mps1.conj(),mps2,mpo2,mpo2.conj(),mps2.conj(),T_12,T1.tensor],((1,11,12),(2,1,-22,-23),(2,3,-24,-25),(3,11,21),(4,12,13),(5,4,-26,-27),(5,6,-28,-29),(6,21,20),(7,14,15),(7,19,18),(8,15,16),(9,8,-30,-31),(9,10,-32,-33),(10,18,17),(20,13,19,14),(17,16)),forder=(-24,-22,-28,-26,-32,-30,-25,-23,-29,-27,-33,-31),order=(11,1,2,3,12,21,4,5,6,13,20,14,19,7,15,18,8,9,10,16,17)).reshape(self.D**6,self.D**6)
-        matrix2 = ncon([mps2,mpo2,mpo2.conj(),mps2.conj(),mps1,mpo1,mpo1.conj(),mps1.conj(),mps2,mps2.conj(),mps1,mpo1,mpo1.conj(),mps1.conj(),T_21,T2.tensor],((1,11,12),(2,1,-22,-23),(2,3,-24,-25),(3,11,21),(4,12,13),(5,4,-26,-27),(5,6,-28,-29),(6,21,20),(7,14,15),(7,19,18),(8,15,16),(9,8,-30,-31),(9,10,-32,-33),(10,18,17),(20,13,19,14),(17,16)),forder=(-24,-22,-28,-26,-32,-30,-25,-23,-29,-27,-33,-31),order=(11,1,2,3,12,21,4,5,6,13,20,14,19,7,15,18,8,9,10,16,17)).reshape(self.D**6,self.D**6)
+        matrix1 = ncon([mps1,mpo1,mpo1.conj(),mps1.conj(),mps2,mpo2,mpo2.conj(),mps2.conj(),mps1,mps1.conj(),mps2,mpo2,mpo2.conj(),mps2.conj(),T_12,T1.tensor],((1,11,12),(2,1,-22,-23),(2,3,-24,-25),(3,11,21),(4,12,13),(5,4,-26,-27),(5,6,-28,-29),(6,21,20),(7,14,15),(7,19,18),(8,15,16),(9,8,-30,-31),(9,10,-32,-33),(10,18,17),(20,13,19,14),(17,16)),forder=(-24,-22,-28,-26,-32,-30,-25,-23,-29,-27,-33,-31),order=(11,12,21,13,20,14,19,7,15,18,16,17,1,2,3,4,5,6,8,9,10)).reshape(self.D**6,self.D**6)
+        matrix2 = ncon([mps2,mpo2,mpo2.conj(),mps2.conj(),mps1,mpo1,mpo1.conj(),mps1.conj(),mps2,mps2.conj(),mps1,mpo1,mpo1.conj(),mps1.conj(),T_21,T2.tensor],((1,11,12),(2,1,-22,-23),(2,3,-24,-25),(3,11,21),(4,12,13),(5,4,-26,-27),(5,6,-28,-29),(6,21,20),(7,14,15),(7,19,18),(8,15,16),(9,8,-30,-31),(9,10,-32,-33),(10,18,17),(20,13,19,14),(17,16)),forder=(-24,-22,-28,-26,-32,-30,-25,-23,-29,-27,-33,-31),order=(11,12,21,13,20,14,19,7,15,18,16,17,1,2,3,4,5,6,8,9,10)).reshape(self.D**6,self.D**6)
         self.matrix = np.dot(matrix1,matrix2)
         del matrix1
         del matrix2
@@ -209,9 +206,8 @@ class mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip_plusOne(regularTransfe
     def __init__(self,mps1,mps2,mpo1,mpo2,T1,T2,T_12,T_21):
         self.D = np.size(mpo1,axis=2)
         self.noLegs = 6
-        matrix1 = ncon([mps1,mpo1,mpo1.conj(),mps1.conj(),mps2,mps2.conj(),mps1,mpo1,mpo1.conj(),mps1.conj(),mps2,mpo2,mpo2.conj(),mps2.conj(),T_12,T1.tensor],((1,11,12),(2,1,-22,-23),(2,3,-24,-25),(3,11,21),(4,12,13),(4,21,20),(5,14,15),(6,5,-26,-27),(6,7,-28,-29),(7,19,18),(8,15,16),(9,8,-30,-31),(9,10,-32,-33),(10,18,17),(20,13,19,14),(17,16)),forder=(-24,-22,-28,-26,-32,-30,-25,-23,-29,-27,-33,-31),order=(11,1,2,3,12,21,4,13,20,14,19,5,6,7,15,18,8,9,10,16,17)).reshape(self.D**6,self.D**6)
-        matrix2 = ncon([mps2,mpo2,mpo2.conj(),mps2.conj(),mps1,mps1.conj(),mps2,mpo2,mpo2.conj(),mps2.conj(),mps1,mpo1,mpo1.conj(),mps1.conj(),T_21,T2.tensor],((1,11,12),(2,1,-22,-23),(2,3,-24,-25),(3,11,21),(4,12,13),(4,21,20),(5,14,15),(6,5,-26,-27),(6,7,-28,-29),(7,19,18),(8,15,16),(9,8,-30,-31),(9,10,-32,-33),(10,18,17),(20,13,19,14),(17,16)),forder=(-24,-22,-28,-26,-32,-30,-25,-23,-29,-27,-33,-31),order=(11,1,2,3,12,21,4,13,20,14,19,5,6,7,15,18,8,9,10,16,17)).reshape(self.D**6,self.D**6)
+        matrix1 = ncon([mps1,mpo1,mpo1.conj(),mps1.conj(),mps2,mps2.conj(),mps1,mpo1,mpo1.conj(),mps1.conj(),mps2,mpo2,mpo2.conj(),mps2.conj(),T_12,T1.tensor],((1,11,12),(2,1,-22,-23),(2,3,-24,-25),(3,11,21),(4,12,13),(4,21,20),(5,14,15),(6,5,-26,-27),(6,7,-28,-29),(7,19,18),(8,15,16),(9,8,-30,-31),(9,10,-32,-33),(10,18,17),(20,13,19,14),(17,16)),forder=(-24,-22,-28,-26,-32,-30,-25,-23,-29,-27,-33,-31),order=(11,12,21,13,20,14,19,15,18,16,17,1,2,3,5,6,7,8,9,10)).reshape(self.D**6,self.D**6)
+        matrix2 = ncon([mps2,mpo2,mpo2.conj(),mps2.conj(),mps1,mps1.conj(),mps2,mpo2,mpo2.conj(),mps2.conj(),mps1,mpo1,mpo1.conj(),mps1.conj(),T_21,T2.tensor],((1,11,12),(2,1,-22,-23),(2,3,-24,-25),(3,11,21),(4,12,13),(4,21,20),(5,14,15),(6,5,-26,-27),(6,7,-28,-29),(7,19,18),(8,15,16),(9,8,-30,-31),(9,10,-32,-33),(10,18,17),(20,13,19,14),(17,16)),forder=(-24,-22,-28,-26,-32,-30,-25,-23,-29,-27,-33,-31),order=(11,12,21,13,20,14,19,15,18,16,17,1,2,3,5,6,7,8,9,10)).reshape(self.D**6,self.D**6)
         self.matrix = np.dot(matrix1,matrix2)
         del matrix1
         del matrix2
-
