@@ -33,7 +33,7 @@ def gradFactory(psi,H):
         return gradEvaluater_mpso_2d_uniform(psi,H)
 
     elif type(psi) == uMPSU1_2d_left_bipartite:
-        return gradEvaluater_mpso_2d_mpo_bipartite(psi,H)
+        return gradEvaluater_mpso_2d_bipartite(psi,H)
 
 class gradEvaluater(ABC):
     def __init__(self,psi,H):
@@ -169,17 +169,41 @@ class gradEvaluater_mpso_2d_uniform(gradEvaluater):
         self.H = H
         self.gradA_evaluater = gradEvaluater_mpso_2d_mps_uniform(psi,H)
         self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_uniform(psi,H)
+        self.grad = dict()
+    def copyEvaluaters(self):
+        self.grad['mps'] = self.gradA_evaluater.grad
+        self.grad['mpo'] = self.gradB_evaluater.grad
     def eval(self,geo=True):
         self.gradA_evaluater.eval()
         self.gradB_evaluater.eval(geo=geo)
-        self.grad = dict()
-        self.grad['mps'] = self.gradA_evaluater.grad
-        self.grad['mpo'] = self.gradB_evaluater.grad
+        self.copyEvaluaters()
     def projectTDVP(self):
         self.gradA_evaluater.projectTDVP()
         self.gradB_evaluater.projectTDVP()
-        self.grad['mps'] = self.gradA_evaluater.grad
-        self.grad['mpo'] = self.gradB_evaluater.grad
+        self.copyEvaluaters()
+
+class gradEvaluater_mpso_2d_bipartite(gradEvaluater):
+    def fetch_implementation(self):
+        pass
+    def __init__(self,psi,H):
+        self.psi = psi
+        self.H = H
+        self.gradA_evaluater = gradEvaluater_mpso_2d_mps_bipartite(psi,H)
+        self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_bipartite(psi,H)
+        self.grad = dict()
+    def copyEvaluaters(self):
+        self.grad['mps1'] = self.gradA_evaluater.grad[1]
+        self.grad['mps2'] = self.gradA_evaluater.grad[2]
+        self.grad['mpo1'] = self.gradB_evaluater.grad[1]
+        self.grad['mpo2'] = self.gradB_evaluater.grad[2]
+    def eval(self,geo=True):
+        self.gradA_evaluater.eval()
+        self.gradB_evaluater.eval(geo=geo)
+        self.copyEvaluaters()
+    def projectTDVP(self):
+        self.gradA_evaluater.projectTDVP()
+        self.gradB_evaluater.projectTDVP()
+        self.copyEvaluaters()
 
 class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater):
     #gradient of the mps tensor of 2d uniform MPSO ansatz
@@ -228,13 +252,13 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
         leftEnv_h_tilde = self.H_imp[n].buildLeftEnv(H=self.H_imp[n].h_tilde)
         # terms below Hamiltonian
         env = self.H_imp[n].buildTopEnvGeo(rightFP_d,outers_d)
-        # # right quadrant lower
+        #right quadrant lower
         env += self.H_imp[n].buildTopEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
         grad = self.attachBot(env)
 
-        # # terms above Hamiltonian
+        #terms above Hamiltonian
         env = self.H_imp[n].buildBotEnvGeo(rightFP_d,outers_d)
-        # right quadrant upper
+        #right quadrant upper
         env += self.H_imp[n].buildBotEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
         grad += self.attachTop(env)
 
@@ -244,7 +268,7 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
         return np.einsum('ijab->jiab',grad)
 
 
-    def eval(self,geo=True,envTol=1e-5):
+    def eval(self,geo=True,envTol=1e-5,printEnv=False):
         self.grad = self.eval_non_geo(0)
         for n in range(0,len(self.H.terms)):
             if n > 0:
@@ -265,7 +289,8 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
                     self.grad += gradRun
                     if np.abs(mag)<envTol:
                         break
-                print("d: ",d,mag)
+                if printEnv is True:
+                    print("d: ",d,mag)
             
     def projectTDVP(self):
         self.grad = project_mpoTangentVector(self.grad,self.psi.mps,self.psi.mpo,self.psi.T,self.psi.R)
@@ -390,7 +415,7 @@ class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater):
     def fetch_implementation(self):
         pass
 
-    def eval(self,geo=True,envTol=1e-5):
+    def eval(self,geo=True,envTol=1e-5,printEnv=False):
         self.grad = dict()
         gradEvaluater_11 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=1,grad_index=1)
         gradEvaluater_12 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=1,grad_index=2)
@@ -455,10 +480,11 @@ class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater):
 
                     if grad_11_breaker is True and grad_12_breaker is True and grad_21_breaker is True and grad_22_breaker is True:
                         break
-                print("d_11: ",d_11,mag_11)
-                print("d_12: ",d_12,mag_12)
-                print("d_21: ",d_21,mag_21)
-                print("d_22: ",d_22,mag_22)
+                if printEnv is True:
+                    print("d_11: ",d_11,mag_11)
+                    print("d_12: ",d_12,mag_12)
+                    print("d_21: ",d_21,mag_21)
+                    print("d_22: ",d_22,mag_22)
         self.grad[1] = 1/2*(grad_11 + grad_21)
         self.grad[2] = 1/2*(grad_12 + grad_22)
 
