@@ -116,9 +116,13 @@ class gradEvaluater_uniform_1d_oneSiteLeft(gradEvaluater_uniform_1d):
 class gradEvaluater_uniform_1d_twoSiteLeft(gradEvaluater_uniform_1d):
     def fetch_implementation(self,H):
         if type(H) == oneBodyH:
-            return gradImplementation_uniform_1d_twoSiteLeft_oneBodyH(self.psi,H.tensor)
+            imp1 =  gradImplementation_uniform_1d_twoSiteLeft_oneBodyH_site1(self.psi,H.tensor)
+            imp2 =  gradImplementation_uniform_1d_twoSiteLeft_oneBodyH_site2(self.psi,H.tensor)
+            return gradImplementation_uniform_1d_twoSiteLeft(self.psi,H.tensor,imp1,imp2)
         elif type(H) == twoBodyH or type(H) == twoBodyH_hori or type(H) == twoBodyH_vert:
-            return gradImplementation_uniform_1d_twoSiteLeft_twoBodyH(self.psi,H.tensor)
+            imp1 =  gradImplementation_uniform_1d_twoSiteLeft_twoBodyH_site1(self.psi,H.tensor)
+            imp2 =  gradImplementation_uniform_1d_twoSiteLeft_twoBodyH_site2(self.psi,H.tensor)
+            return gradImplementation_uniform_1d_twoSiteLeft(self.psi,H.tensor,imp1,imp2)
 
     def projectTDVP(self):
         gradA = self.grad.reshape(4,self.psi.D,self.psi.D)
