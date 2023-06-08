@@ -274,10 +274,7 @@ class gradEvaluater_mpso_2d_mps_twoSite(gradEvaluater_mpso_2d_mps):
 
 class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
     @abstractmethod
-    def attachBot(self):
-        pass
-    @abstractmethod
-    def attachTop(self):
+    def attachVertical(self):
         pass
 
     def eval_non_geo(self,H_term_index):
@@ -299,21 +296,18 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
         leftEnv_h_tilde = self.H_imp[n].buildLeftEnv(H=self.H_imp[n].h_tilde)
         # terms below Hamiltonian
         env = self.H_imp[n].buildTopEnvGeo(rightFP_d,outers_d)
-        #right quadrant lower
-        env += self.H_imp[n].buildTopEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
-        grad = self.attachBot(env)
-
         #terms above Hamiltonian
-        env = self.H_imp[n].buildBotEnvGeo(rightFP_d,outers_d)
-        #right quadrant upper
+        env += self.H_imp[n].buildBotEnvGeo(rightFP_d,outers_d)
+        # #right quadrant lower
+        env += self.H_imp[n].buildTopEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
+        # #right quadrant upper
         env += self.H_imp[n].buildBotEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
-        grad += self.attachTop(env)
+        grad = self.attachVertical(env)
 
         #left quadrants upper and lower
         rightEnv = self.H_imp[n].buildRightEnvGeo_quadrants(rightFP_d,outers_d)
         grad += self.H_imp[n].attachLeftSingle(rightEnv)
         return np.einsum('ijab->jiab',grad)
-
 
     def eval(self,geo=True,envTol=1e-5,printEnv=True):
         self.grad = self.eval_non_geo(0)
@@ -400,11 +394,8 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo_uniform):
         elif type(H) == twoBodyH_vert:
             return gradImplementation_mpso_2d_mpo_uniform_twoBodyH_vert(self.psi,H.tensor)
 
-    def attachTop(self,env):
-        return ncon([env,self.psi.mps,self.psi.mpo,self.psi.mps.conj(),self.psi.T.tensor],((9,-8,7,4),(1,4,5),(-2,1,-6,7),(-3,9,10),(10,5)),forder=(-3,-2,-6,-8),order=(4,9,5,10,1,7))
-
-    def attachBot(self,env):
-        return ncon([env,self.psi.mps,self.psi.mpo,self.psi.mps.conj()],((9,-8,7,5),(1,4,5),(-2,1,-6,7),(-3,4,9)),forder=(-3,-2,-6,-8),order=(9,5,4,7,1))
+    def attachVertical(self,env):
+        return ncon([self.psi.mpo,env],((-2,1,-4,5),(-3,1,-6,5)),forder=(-3,-2,-4,-6),order=(5,1))
 # -------------------------------------------------------------------------------------------------------------------------------------
 #bipartite Wrappers
 class gradEvaluater_bipartite_1d_left(gradEvaluater):
