@@ -35,6 +35,9 @@ def gradFactory(psi,H):
     elif type(psi) == uMPSU1_2d_left_bipartite:
         return gradEvaluater_mpso_2d_bipartite(psi,H)
 
+    elif type(psi) == uMPSU1_2d_left_twoSite:
+        return gradEvaluater_mpso_2d_mps_twoSite(psi,H)
+
 class gradEvaluater(ABC):
     def __init__(self,psi,H):
         self.psi = psi
@@ -169,7 +172,8 @@ class gradEvaluater_mpso_2d(gradEvaluater):
     def fetch_implementation(self):
         pass
     def copyEvaluaters(self):
-        pass
+        self.grad['mps'] = self.gradA_evaluater.grad
+        self.grad['mpo'] = self.gradB_evaluater.grad
     def eval(self,geo=True):
         self.gradA_evaluater.eval()
         self.gradB_evaluater.eval(geo=geo)
@@ -184,10 +188,11 @@ class gradEvaluater_mpso_2d_uniform(gradEvaluater_mpso_2d):
         super().__init__(psi,H)
         self.gradA_evaluater = gradEvaluater_mpso_2d_mps_uniform(psi,H)
         self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_uniform(psi,H)
-    def copyEvaluaters(self):
-        self.grad['mps'] = self.gradA_evaluater.grad
-        self.grad['mpo'] = self.gradB_evaluater.grad
-
+class gradEvaluater_mpso_2d_twoSite(gradEvaluater_mpso_2d):
+    def __init__(self,psi,H):
+        super().__init__(psi,H)
+        self.gradA_evaluater = gradEvaluater_mpso_2d_mps_twoSite(psi,H)
+        self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_twoSite(psi,H)
 class gradEvaluater_mpso_2d_bipartite(gradEvaluater_mpso_2d):
     def __init__(self,psi,H):
         super().__init__(psi,H)
@@ -199,11 +204,14 @@ class gradEvaluater_mpso_2d_bipartite(gradEvaluater_mpso_2d):
         self.grad['mpo1'] = self.gradB_evaluater.grad[1]
         self.grad['mpo2'] = self.gradB_evaluater.grad[2]
 
-class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater):
-    #gradient of the mps tensor of 2d uniform MPSO ansatz
-    #this may be constructed as the gradient of a uniform mps in 1d with an effective Hamiltonian
-    #so just find effective Hamiltonians, then reuse gradEvaluater_uniform_1d to compute gradient terms
-    def eval(self):
+class gradEvaluater_mpso_2d_mps(gradEvaluater):
+    #gradient of the mps tensor of 2d MPSO ansatz
+    #this may be constructed as the gradient of a mps in 1d with an effective Hamiltonian
+    #so just find effective Hamiltonians, then reuse 1d code to compute gradient terms
+    def __init__(self,psi,H):
+        super().__init__(psi,H)
+        self.effEvaluater = self.getEffective_1d_evaluater()
+    def getEffective_1d_setup(self):
         effH= []
         for n in range(0,len(self.H.terms)):
             effH.append(self.H_imp[n].getEffectiveH())
@@ -211,13 +219,26 @@ class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater):
         eff_psi = copy.deepcopy(self.psi)
         eff_psi.D = self.psi.D_mps
         eff_psi.R = self.psi.T #abuse syntax of fixed points to reuse gradEvaluater_uniform_1d code (bad code..)
-
-        eff_gradEval = gradEvaluater_uniform_1d_oneSiteLeft(eff_psi,effH)
-        eff_gradEval.eval()
-        self.grad = eff_gradEval.grad
-
+        return eff_psi,effH
+    def eval(self):
+        self.effEvaluater.eval()
+        self.grad = self.effEvaluater.grad
     def projectTDVP(self):
-        self.grad = project_mpsTangentVector(self.grad,self.psi.mps,self.psi.T)
+        self.effEvaluater.projectTDVP()
+        self.grad = self.effEvaluater.grad
+
+    @abstractmethod
+    def getEffective_1d_evaluater(self):
+        pass
+
+class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps):
+    def getEffective_1d_evaluater(self):
+        eff_psi,effH = self.getEffective_1d_setup()
+        return gradEvaluater_uniform_1d_oneSiteLeft(eff_psi,effH)
+class gradEvaluater_mpso_2d_mps_twoSite(gradEvaluater_mpso_2d_mps):
+    def getEffective_1d_evaluater(self):
+        eff_psi,effH = self.getEffective_1d_setup()
+        return gradEvaluater_uniform_1d_twoSiteLeft(eff_psi,effH)
 
 class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
     @abstractmethod
@@ -328,6 +349,15 @@ class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps_uniform):
             return gradImplementation_mpso_2d_mps_uniform_twoBodyH_hori(self.psi,H.tensor)
         elif type(H) == twoBodyH_vert:
             return gradImplementation_mpso_2d_mps_uniform_twoBodyH_vert(self.psi,H.tensor)
+
+class gradEvaluater_mpso_2d_mps_twoSite(gradEvaluater_mpso_2d_mps_twoSite):
+    def fetch_implementation(self,H):
+        if type(H) == oneBodyH:
+            return gradImplementation_mpso_2d_mps_twoSite_oneBodyH(self.psi,H.tensor)
+        elif type(H) == twoBodyH_hori:
+            return gradImplementation_mpso_2d_mps_twoSite_twoBodyH_hori(self.psi,H.tensor)
+        elif type(H) == twoBodyH_vert:
+            return gradImplementation_mpso_2d_mps_twoSite_twoBodyH_vert(self.psi,H.tensor)
 
 class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo_uniform):
     def fetch_implementation(self,H):
