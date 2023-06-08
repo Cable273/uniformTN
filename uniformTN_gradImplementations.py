@@ -643,10 +643,6 @@ class gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_hori(gradImplementation_
     def getOuterContracts(self,Td):
         outerContractDouble = dict()
         outerContractDouble_p1 = dict()
-        outerContract_open_top = dict()
-        outerContract_open_bot = dict()
-        outerContract_open_top_p1 = dict()
-        outerContract_open_bot_p1 = dict()
 
         outerContractDouble[1] = ncon([self.psi.mps[1],self.psi.mps[2],self.psi.mps[1].conj(),self.psi.mps[2].conj(),Td[2],self.psi.T[1].tensor],((-1,5,6),(-3,7,8),(-2,5,11),(-4,10,9),(11,6,10,7),(9,8)),forder=(-2,-4,-1,-3),order=(5,6,11,7,10,8,9))
         outerContractDouble[2] = ncon([self.psi.mps[2],self.psi.mps[1],self.psi.mps[2].conj(),self.psi.mps[1].conj(),Td[1],self.psi.T[2].tensor],((-1,5,6),(-3,7,8),(-2,5,11),(-4,10,9),(11,6,10,7),(9,8)),forder=(-2,-4,-1,-3),order=(5,6,11,7,10,8,9))
@@ -654,23 +650,9 @@ class gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_hori(gradImplementation_
         outerContractDouble_p1[1] = ncon([self.psi.mps[1],self.psi.mps[2],self.psi.mps[1],self.psi.mps[1].conj(),self.psi.mps[2].conj(),self.psi.mps[1].conj(),Td[2],self.psi.T[2].tensor],((-1,6,7),(3,8,9),(-4,9,10),(-2,6,14),(3,13,12),(-5,12,11),(14,7,13,8),(11,10)),forder=(-2,-5,-1,-4),order=(6,7,14,8,13,3,9,12,10,11))
         outerContractDouble_p1[2] = ncon([self.psi.mps[2],self.psi.mps[1],self.psi.mps[2],self.psi.mps[2].conj(),self.psi.mps[1].conj(),self.psi.mps[2].conj(),Td[1],self.psi.T[1].tensor],((-1,6,7),(3,8,9),(-4,9,10),(-2,6,14),(3,13,12),(-5,12,11),(14,7,13,8),(11,10)),forder=(-2,-5,-1,-4),order=(6,7,14,8,13,3,9,12,10,11))
 
-        outerContract_open_top[1] = ncon([self.psi.mps[1],self.psi.mps[1].conj(),self.psi.T[2].tensor,Td[1]],((-1,4,5),(-2,7,6),(6,5),(-8,-3,7,4)),forder=(-2,-1,-8,-3),order=(5,6,4,7))
-        outerContract_open_top[2] = ncon([self.psi.mps[2],self.psi.mps[2].conj(),self.psi.T[1].tensor,Td[2]],((-1,4,5),(-2,7,6),(6,5),(-8,-3,7,4)),forder=(-2,-1,-8,-3),order=(5,6,4,7))
-        outerContract_open_bot[1] = ncon([self.psi.mps[1],self.psi.mps[1].conj(),Td[2]],((-1,3,4),(-2,3,5),(5,4,-7,-6)),forder=(-2,-1,-7,-6),order=(3,4,5))
-        outerContract_open_bot[2] = ncon([self.psi.mps[2],self.psi.mps[2].conj(),Td[1]],((-1,3,4),(-2,3,5),(5,4,-7,-6)),forder=(-2,-1,-7,-6),order=(3,4,5))
-
-        outerContract_open_top_p1[1] = ncon([self.psi.mps[1],self.psi.mps[1].conj(),self.psi.mps[2],self.psi.mps[2].conj(),self.psi.T[2].tensor,Td[2]],((-1,6,7),(-2,9,8),(3,5,6),(3,10,9),(8,7),(-11,-4,10,5)),forder=(-2,-1,-11,-4),order=(8,7,6,9,3,5,10))
-        outerContract_open_top_p1[2] = ncon([self.psi.mps[2],self.psi.mps[2].conj(),self.psi.mps[1],self.psi.mps[1].conj(),self.psi.T[1].tensor,Td[1]],((-1,6,7),(-2,9,8),(3,5,6),(3,10,9),(8,7),(-11,-4,10,5)),forder=(-2,-1,-11,-4),order=(8,7,6,9,3,5,10))
-        outerContract_open_bot_p1[1] = ncon([self.psi.mps[1],self.psi.mps[1].conj(),self.psi.mps[2],self.psi.mps[2].conj(),Td[1]],((-1,4,5),(-2,4,10),(3,5,6),(3,10,9),(9,6,-8,-7)),forder=(-2,-1,-8,-7),order=(4,5,10,3,6,9))
-        outerContract_open_bot_p1[2] = ncon([self.psi.mps[2],self.psi.mps[2].conj(),self.psi.mps[1],self.psi.mps[1].conj(),Td[2]],((-1,4,5),(-2,4,10),(3,5,6),(3,10,9),(9,6,-8,-7)),forder=(-2,-1,-8,-7),order=(4,5,10,3,6,9))
-
         fp = dict()
         fp['outerContractDouble'] = outerContractDouble
-        fp['outerContract_open_top'] = outerContract_open_top
-        fp['outerContract_open_bot'] = outerContract_open_bot
         fp['outerContractDouble_p1'] = outerContractDouble_p1
-        fp['outerContract_open_top_p1'] = outerContract_open_top_p1
-        fp['outerContract_open_bot_p1'] = outerContract_open_bot_p1
         return fp
 
     def getCentralTerms(self):
