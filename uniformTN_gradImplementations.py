@@ -261,7 +261,18 @@ class gradImplementation_mpso_2d_mps_uniform_twoBodyH_vert(gradImplementation_mp
         return twoBodyH(H_eff_centre + H_eff_shifted)
 
 # -----------------------------
-
+class gradImplementation_mpso_2d_mps_twoSite_oneBodyH(gradImplementation_mpso_2d_mps_uniform):
+    def getEffectiveH(self):
+        pass
+class gradImplementation_mpso_2d_mps_twoSite_twoBodyH_hori(gradImplementation_mpso_2d_mps_uniform):
+    def getEffectiveH(self):
+        outerContract = dict()
+        outerContract['bot'] = ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((-1,3,4,5),(-2,3,4,6),(6,5)),forder=(-2,-1),order=(4,3,5,6))
+        outerContract['top'] = ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((1,-2,4,5),(1,-3,4,6),(6,5)),forder=(-3,-2),order=(4,1,5,6))
+class gradImplementation_mpso_2d_mps_twoSite_twoBodyH_vert(gradImplementation_mpso_2d_mps_uniform):
+    def getEffectiveH(self):
+        pass
+# -----------------------------
 class gradImplementation_mpso_2d_mps_bipartite_oneBodyH(gradImplementation_mpso_2d_mps_uniform):
     def getEffectiveH(self,index):
         if index == 1:
