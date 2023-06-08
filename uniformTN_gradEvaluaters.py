@@ -315,7 +315,7 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
         return np.einsum('ijab->jiab',grad)
 
 
-    def eval(self,geo=True,envTol=1e-5,printEnv=False):
+    def eval(self,geo=True,envTol=1e-5,printEnv=True):
         self.grad = self.eval_non_geo(0)
         for n in range(0,len(self.H.terms)):
             if n > 0:
