@@ -298,9 +298,9 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
         env = self.H_imp[n].buildTopEnvGeo(rightFP_d,outers_d)
         #terms above Hamiltonian
         env += self.H_imp[n].buildBotEnvGeo(rightFP_d,outers_d)
-        # #right quadrant lower
+        #right quadrant lower
         env += self.H_imp[n].buildTopEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
-        # #right quadrant upper
+        #right quadrant upper
         env += self.H_imp[n].buildBotEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
         grad = self.attachVertical(env)
 
@@ -361,11 +361,8 @@ class gradEvaluater_mpso_2d_mpo_bipartite_ind(gradEvaluater_mpso_2d_mpo_uniform)
     def projectTDVP(self):
         self.grad = project_mpsTangentVector(self.grad,self.psi.mps[self.index1],self.psi.mpo[self.index1],self.psi.T[self.index1],self.psi.R[self.index1])
 
-    def attachTop(self,env):
-        return ncon([env,self.psi.mps[self.index1],self.psi.mpo[self.index1],self.psi.mps[self.index1].conj(),self.psi.T[self.index2].tensor],((9,-8,7,4),(1,4,5),(-2,1,-6,7),(-3,9,10),(10,5)),forder=(-3,-2,-6,-8),order=(4,9,5,10,1,7))
-
-    def attachBot(self,env):
-        return ncon([env,self.psi.mps[self.index1],self.psi.mpo[self.index1],self.psi.mps[self.index1].conj()],((9,-8,7,5),(1,4,5),(-2,1,-6,7),(-3,4,9)),forder=(-3,-2,-6,-8),order=(9,5,4,7,1))
+    def attachVertical(self,env):
+        return ncon([self.psi.mpo[self.index1],env],((-2,1,-4,5),(-3,1,-6,5)),forder=(-3,-2,-4,-6),order=(5,1))
 
 class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps_uniform):
     def fetch_implementation(self,H):
