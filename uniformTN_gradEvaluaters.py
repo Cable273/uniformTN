@@ -69,16 +69,16 @@ class gradEvaluater_uniform_1d(gradEvaluater):
 
     def eval(self):
         self.grad = self.H_imp[0].getCentralTerms()
-        for n in range(1,len(self.H.terms)):
+        for n in range(1,len(self.H_imp)):
             self.grad += self.H_imp[n].getCentralTerms()
 
         leftEnv = self.H_imp[0].buildLeftEnv()
-        for n in range(1,len(self.H.terms)):
+        for n in range(1,len(self.H_imp)):
             leftEnv += self.H_imp[n].buildLeftEnv()
         self.grad += self.attachRight(leftEnv)
 
         rightEnv = self.H_imp[0].buildRightEnv()
-        for n in range(1,len(self.H.terms)):
+        for n in range(1,len(self.H_imp)):
             rightEnv += self.H_imp[n].buildRightEnv()
         self.grad += self.attachLeft(rightEnv)
 
@@ -114,15 +114,38 @@ class gradEvaluater_uniform_1d_oneSiteLeft(gradEvaluater_uniform_1d):
         return ncon([self.psi.mps,rightEnv],((-1,-2,3),(-4,3)),forder=(-1,-2,-4))
 
 class gradEvaluater_uniform_1d_twoSiteLeft(gradEvaluater_uniform_1d):
-    def fetch_implementation(self,H):
-        if type(H) == oneBodyH:
-            imp1 =  gradImplementation_uniform_1d_twoSiteLeft_oneBodyH_site1(self.psi,H.tensor)
-            imp2 =  gradImplementation_uniform_1d_twoSiteLeft_oneBodyH_site2(self.psi,H.tensor)
-            return gradImplementation_uniform_1d_twoSiteLeft(self.psi,H.tensor,imp1,imp2)
-        elif type(H) == twoBodyH or type(H) == twoBodyH_hori or type(H) == twoBodyH_vert:
-            imp1 =  gradImplementation_uniform_1d_twoSiteLeft_twoBodyH_site1(self.psi,H.tensor)
-            imp2 =  gradImplementation_uniform_1d_twoSiteLeft_twoBodyH_site2(self.psi,H.tensor)
-            return gradImplementation_uniform_1d_twoSiteLeft(self.psi,H.tensor,imp1,imp2)
+    def __init__(self,psi,H,H2=None):
+        self.psi = psi
+        #allow for freedom of having two different Hamiltonians which begin at site 1 of the unit cell or site 2
+        #useful for 2d mpso mps two site unit cell gradient, which has two different effective H on each sublattice
+        self.H_site1 = H
+        if H2 is None:
+            self.H_site2 = H
+        else:
+            self.H_site2 = H2
+        self.H_imp = dict()
+        for n in range(0,len(self.H_site1.terms)):
+            self.H_imp[n] = self.fetch_implementation(self.H_site1.terms[n],self.H_site2.terms[n])
+
+    def fetch_implementation(self,H_site1,H_site2):
+        if type(H_site1) == oneBodyH and type(H_site2) == oneBodyH:
+            imp1 =  gradImplementation_uniform_1d_twoSiteLeft_oneBodyH_site1(self.psi,H_site1.tensor)
+            imp2 =  gradImplementation_uniform_1d_twoSiteLeft_oneBodyH_site2(self.psi,H_site2.tensor)
+            return gradImplementation_uniform_1d_twoSiteLeft(self.psi,imp1,imp2)
+        elif type(H_site1) == twoBodyH or type(H_site1) == twoBodyH_hori or type(H_site1) == twoBodyH_vert:
+            if type(H_site2) == twoBodyH or type(H_site2) == twoBodyH_hori or type(H_site2) == twoBodyH_vert:
+                imp1 =  gradImplementation_uniform_1d_twoSiteLeft_twoBodyH_site1(self.psi,H_site1.tensor)
+                imp2 =  gradImplementation_uniform_1d_twoSiteLeft_twoBodyH_site2(self.psi,H_site2.tensor)
+                return gradImplementation_uniform_1d_twoSiteLeft(self.psi,imp1,imp2)
+            else:
+                error = 1
+        else:
+            error = 1
+        if error == 1:
+            print("Error: Incompatible Hamiltonian types at differing sites for two site unit cell ansatz")
+            print(type(H_site1))
+            print(type(H_site2))
+            return 1
 
     def projectTDVP(self):
         gradA = self.grad.reshape(4,self.psi.D,self.psi.D)
@@ -214,16 +237,12 @@ class gradEvaluater_mpso_2d_mps(gradEvaluater):
     #so just find effective Hamiltonians, then reuse 1d code to compute gradient terms
     def __init__(self,psi,H):
         super().__init__(psi,H)
+        #effective 1d mps
+        self.eff_psi = copy.deepcopy(self.psi)
+        self.eff_psi.D = self.psi.D_mps
+        self.eff_psi.R = self.psi.T #abuse syntax of fixed points to reuse gradEvaluater_uniform_1d code (bad code..)
+        #effective 1d gradEvaluater
         self.effEvaluater = self.getEffective_1d_evaluater()
-    def getEffective_1d_setup(self):
-        effH= []
-        for n in range(0,len(self.H.terms)):
-            effH.append(self.H_imp[n].getEffectiveH())
-        effH = localH(effH)
-        eff_psi = copy.deepcopy(self.psi)
-        eff_psi.D = self.psi.D_mps
-        eff_psi.R = self.psi.T #abuse syntax of fixed points to reuse gradEvaluater_uniform_1d code (bad code..)
-        return eff_psi,effH
     def eval(self):
         self.effEvaluater.eval()
         self.grad = self.effEvaluater.grad
@@ -237,12 +256,21 @@ class gradEvaluater_mpso_2d_mps(gradEvaluater):
 
 class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps):
     def getEffective_1d_evaluater(self):
-        eff_psi,effH = self.getEffective_1d_setup()
-        return gradEvaluater_uniform_1d_oneSiteLeft(eff_psi,effH)
+        effH= []
+        for n in range(0,len(self.H.terms)):
+            effH.append(self.H_imp[n].getEffectiveH())
+        effH = localH(effH)
+        return gradEvaluater_uniform_1d_oneSiteLeft(self.eff_psi,effH)
 class gradEvaluater_mpso_2d_mps_twoSite(gradEvaluater_mpso_2d_mps):
     def getEffective_1d_evaluater(self):
-        eff_psi,effH = self.getEffective_1d_setup()
-        return gradEvaluater_uniform_1d_twoSiteLeft(eff_psi,effH)
+        effH1 = [] #Hamiltonian acting on first site
+        effH2 = [] #"" on second site
+        for n in range(0,len(self.H.terms)):
+            effH1.append(self.H_imp[n].getEffectiveH(site=1))
+            effH2.append(self.H_imp[n].getEffectiveH(site=2))
+        effH1 = localH(effH1)
+        effH2 = localH(effH2)
+        return gradEvaluater_uniform_1d_twoSiteLeft(self.eff_psi,effH1,effH2)
 
 class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
     @abstractmethod
