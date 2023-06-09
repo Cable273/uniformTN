@@ -277,16 +277,20 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
     def attachVertical(self):
         pass
 
+    @abstractmethod
+    def attachVerticalRight(self):
+        pass
+
     def eval_non_geo(self,H_term_index):
         n = H_term_index
         #terms under H
         grad = self.H_imp[n].getCentralTerms()
         #terms to left of H
         rightEnv = self.H_imp[n].buildRightEnv()
-        grad += self.H_imp[n].attachLeftMax(rightEnv)
+        grad += self.attachVertical(rightEnv)
         #terms to right of H
-        leftEnv = self.H_imp[n].buildLeftEnv()
-        grad += self.H_imp[n].attachRightMax(leftEnv)
+        leftEnv = self.H_imp[n].buildLeftEnv(wrapAround=True)
+        grad += self.attachVerticalRight(leftEnv)
         return np.einsum('ijab->jiab',grad)
 
     #geometric sum
@@ -360,6 +364,8 @@ class gradEvaluater_mpso_2d_mpo_bipartite_ind(gradEvaluater_mpso_2d_mpo_uniform)
 
     def attachVertical(self,env):
         return ncon([self.psi.mpo[self.index1],env],((-2,1,-4,5),(-3,1,-6,5)),forder=(-3,-2,-4,-6),order=(5,1))
+    def attachVerticalRight(self,env):
+        return ncon([self.psi.mpo[self.index1],env],((-2,1,4,5),(-3,1,-6,4,-7,5)),forder=(-3,-2,-6,-7),order=(4,1,5))
 
 class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps_uniform):
     def fetch_implementation(self,H):
@@ -390,6 +396,8 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo_uniform):
 
     def attachVertical(self,env):
         return ncon([self.psi.mpo,env],((-2,1,-4,5),(-3,1,-6,5)),forder=(-3,-2,-4,-6),order=(5,1))
+    def attachVerticalRight(self,env):
+        return ncon([self.psi.mpo,env],((-2,1,4,5),(-3,1,-6,4,-7,5)),forder=(-3,-2,-6,-7),order=(4,1,5))
 # -------------------------------------------------------------------------------------------------------------------------------------
 #bipartite Wrappers
 class gradEvaluater_bipartite_1d_left(gradEvaluater):
