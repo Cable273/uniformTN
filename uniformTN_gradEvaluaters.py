@@ -302,12 +302,9 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
         env += self.H_imp[n].buildTopEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
         #right quadrant upper
         env += self.H_imp[n].buildBotEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
-        grad = self.attachVertical(env)
-
-        #left quadrants upper and lower
-        rightEnv = self.H_imp[n].buildRightEnvGeo_quadrants(rightFP_d,outers_d)
-        grad += self.H_imp[n].attachLeftSingle(rightEnv)
-        return np.einsum('ijab->jiab',grad)
+        #left half of plane, upper and lower quadrants
+        env += self.H_imp[n].buildRightEnvGeo_quadrants(rightFP_d,outers_d)
+        return np.einsum('ijab->jiab',self.attachVertical(env))
 
     def eval(self,geo=True,envTol=1e-5,printEnv=True):
         self.grad = self.eval_non_geo(0)

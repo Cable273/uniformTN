@@ -485,6 +485,7 @@ class gradImplementation_mpso_2d_mpo_uniform_twoBodyH_hori(gradImplementation_mp
         env = ncon([self.innerContract,fixedPoints['RR_d'],self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),outers['outerContractDouble'],outers['outerContractDouble']],((1,2,3,4,5,6),(18,15,5,6),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(9,1,7,3),(12,2,10,4)),forder=(-16,-13),order=(5,6,15,18,11,4,2,10,12,14,17,8,1,3,7,9))
         env += ncon([self.innerContract,fixedPoints['RR_d'],self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),outers['outerContractDouble'],outers['outerContractDouble']],((1,2,3,4,5,6),(5,6,18,15),(11,10,14,15),(8,7,-13,14),(11,12,17,18),(8,9,-16,17),(1,9,3,7),(2,12,4,10)),forder=(-16,-13),order=(5,6,18,15,11,10,12,4,2,14,17,8,7,9,3,1))
         env = self.psi.Tb_inv.applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
+        env = ncon([self.outerContract,env],((-1,-2),(-3,-4)),forder=(-1,-2,-3,-4))
         return env
 
 # -----------------------------
@@ -565,6 +566,7 @@ class gradImplementation_mpso_2d_mpo_uniform_twoBodyH_vert(gradImplementation_mp
         env2 = ncon([env2,self.psi.mpo,self.psi.mpo.conj()],((3,1,7,5),(2,1,-4,5),(2,3,-6,7)),forder=(-6,-4),order=(5,7,1,2,3))
         env = env1 + env2
         env = self.psi.Tb_inv.applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
+        env = ncon([self.outerContract,env],((-1,-2),(-3,-4)),forder=(-1,-2,-3,-4))
         return env
 # -----------------------------
 class gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_hori(gradImplementation_mpso_2d_mpo_bipartite):
@@ -761,6 +763,8 @@ class gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_hori(gradImplementation_
         env2 = ncon([env2,self.psi.mpo[self.index2],self.psi.mpo[self.index2].conj(),self.outerContract[self.index2]],((7,5),(2,1,-4,5),(2,3,-6,7),(3,1)),forder=(-6,-4),order=(5,7,1,2,3))
         env = env1 + env2
         env = self.psi.Tb_inv[self.index2].applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
+
+        env = ncon([self.outerContract[self.index1],env],((-1,-2),(-3,-4)),forder=(-1,-2,-3,-4))
         return env
 
 # -----------------------------
@@ -1024,4 +1028,5 @@ class gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_vert(gradImplementation_
 
         env = botEnv + topEnv
         env = self.psi.Tb_inv[self.index2].applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
+        env = ncon([self.outerContract[self.index1],env],((-1,-2),(-3,-4)),forder=(-1,-2,-3,-4))
         return env
