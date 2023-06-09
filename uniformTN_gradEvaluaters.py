@@ -274,11 +274,11 @@ class gradEvaluater_mpso_2d_mps_twoSite(gradEvaluater_mpso_2d_mps):
 
 class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
     @abstractmethod
-    def attachVertical(self):
+    def wrapAroundLeft(self):
         pass
 
     @abstractmethod
-    def attachVerticalRight(self):
+    def wrapAroundRight(self):
         pass
 
     def eval_non_geo(self,H_term_index):
@@ -287,10 +287,10 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
         grad = self.H_imp[n].getCentralTerms()
         #terms to left of H
         rightEnv = self.H_imp[n].buildRightEnv()
-        grad += self.attachVertical(rightEnv)
+        grad += self.wrapAroundLeft(rightEnv)
         #terms to right of H
         leftEnv = self.H_imp[n].buildLeftEnv(wrapAround=True)
-        grad += self.attachVerticalRight(leftEnv)
+        grad += self.wrapAroundRight(leftEnv)
         return np.einsum('ijab->jiab',grad)
 
     #geometric sum
@@ -308,7 +308,7 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
         env += self.H_imp[n].buildBotEnvGeo_quadrants(rightFP_d,outers_d,leftEnv_h_tilde)
         #left half of plane, upper and lower quadrants
         env += self.H_imp[n].buildRightEnvGeo_quadrants(rightFP_d,outers_d)
-        return np.einsum('ijab->jiab',self.attachVertical(env))
+        return np.einsum('ijab->jiab',self.wrapAroundLeft(env))
 
     def eval(self,geo=True,envTol=1e-5,printEnv=True):
         self.grad = self.eval_non_geo(0)
@@ -362,9 +362,9 @@ class gradEvaluater_mpso_2d_mpo_bipartite_ind(gradEvaluater_mpso_2d_mpo_uniform)
     def projectTDVP(self):
         self.grad = project_mpsTangentVector(self.grad,self.psi.mps[self.index1],self.psi.mpo[self.index1],self.psi.T[self.index1],self.psi.R[self.index1])
 
-    def attachVertical(self,env):
+    def wrapAroundLeft(self,env):
         return ncon([self.psi.mpo[self.index1],env],((-2,1,-4,5),(-3,1,-6,5)),forder=(-3,-2,-4,-6),order=(5,1))
-    def attachVerticalRight(self,env):
+    def wrapAroundRight(self,env):
         return ncon([self.psi.mpo[self.index1],env],((-2,1,4,5),(-3,1,-6,4,-7,5)),forder=(-3,-2,-6,-7),order=(4,1,5))
 
 class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps_uniform):
@@ -394,9 +394,9 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo_uniform):
         elif type(H) == twoBodyH_vert:
             return gradImplementation_mpso_2d_mpo_uniform_twoBodyH_vert(self.psi,H.tensor)
 
-    def attachVertical(self,env):
+    def wrapAroundLeft(self,env):
         return ncon([self.psi.mpo,env],((-2,1,-4,5),(-3,1,-6,5)),forder=(-3,-2,-4,-6),order=(5,1))
-    def attachVerticalRight(self,env):
+    def wrapAroundRight(self,env):
         return ncon([self.psi.mpo,env],((-2,1,4,5),(-3,1,-6,4,-7,5)),forder=(-3,-2,-6,-7),order=(4,1,5))
 # -------------------------------------------------------------------------------------------------------------------------------------
 #bipartite Wrappers
