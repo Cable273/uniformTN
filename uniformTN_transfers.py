@@ -134,6 +134,26 @@ class mpsu1Transfer_left_twoLayer_twoSite(regularTransfer): #twoSite unit cell m
             return 1
         innerContract = ncon([B,B.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-8,-10),order=(2,5))
         self.matrix = ncon([innerContract,innerContract,outerContract,outerContract],((1,2,3,4,-5,-6,-7,-8),(9,10,11,12,-13,-14,-15,-16),(9,1,11,3),(10,2,12,4)),forder=(-13,-14,-5,-6,-15,-16,-7,-8),order=(3,1,4,2,11,9,12,10)).reshape(self.D**4,self.D**4)
+class mpsu1Transfer_left_twoLayerWithMPSInsert_twoSite(regularTransfer): #twoSite unit cell mpso
+    def __init__(self,A,B,T,style,Td):
+        self.D = np.size(B,axis=4)
+        self.noLegs = 4
+
+        outerContractQuad = ncon([A,A,A.conj(),A.conj(),Td,T.tensor],((-1,-3,9,10),(-5,-7,11,12),(-2,-4,9,15),(-6,-8,14,13),(15,10,14,11),(13,12)),forder=(-2,-4,-6,-8,-1,-3,-5,-7),order=(9,10,15,11,14,13,12))
+        if style == 'bb':
+            outerContract= ncon([outerContractQuad],((-2,3,-5,6,-1,3,-4,6)),forder=(-2,-5,-1,-4))
+        elif style == 'bt':
+            outerContract= ncon([outerContractQuad],((-2,3,4,-6,-1,3,4,-5)),forder=(-2,-6,-1,-5))
+        elif style == 'tb':
+            outerContract= ncon([outerContractQuad],((1,-3,-5,6,1,-2,-4,6)),forder=(-3,-5,-2,-4))
+        elif style == 'tt':
+            outerContract= ncon([outerContractQuad],((1,-3,4,-6,1,-2,4,-5)),forder=(-3,-6,-2,-5))
+        else:
+            print("ERROR: mpsu1Transfer_left_twoLayerWithMpsInsert_twoSite style not valid")
+            return 1
+        innerContract = ncon([B,B.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-8,-10),order=(2,5))
+        self.matrix = ncon([innerContract,innerContract,outerContract,outerContract],((1,2,3,4,-5,-6,-7,-8),(9,10,11,12,-13,-14,-15,-16),(9,1,11,3),(10,2,12,4)),forder=(-13,-14,-5,-6,-15,-16,-7,-8),order=(3,1,4,2,11,9,12,10)).reshape(self.D**4,self.D**4)
+
 class mpsu1Transfer_left_twoLayer(regularTransfer):
     def __init__(self,A,W,T):
         self.D = np.size(W,axis=2)
