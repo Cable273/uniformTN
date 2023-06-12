@@ -14,7 +14,9 @@ from uniformTN_transfers import *
 import copy
 
 from uniformTN_Hamiltonians import *
-from uniformTN_gradImplementations import *
+from gradImp_mps_1d import *
+from gradImp_mpso_2d_mps import *
+from gradImp_mpso_2d_mpo import *
 
 def gradFactory(psi,H):
     if type(psi) == uMPS_1d:
