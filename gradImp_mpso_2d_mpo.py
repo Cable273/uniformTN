@@ -53,8 +53,11 @@ class gradImplementation_mpso_2d_mpo_uniform(ABC):
         @abstractmethod
         def buildBotEnvGeo_quadrants(self):
             pass
+        @abstractmethod
+        def buildRightEnvGeo_quadrants(self,fixedPoints,outers):
+            pass
 
-    #d dep bipartite transfers for geosum
+    #(Ta)^d d dep transfer matrices, for geosum
     def init_mps_transfers(self):
         Td_matrix = np.eye(self.psi.D_mps**2)
         Td = Td_matrix.reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
@@ -62,35 +65,6 @@ class gradImplementation_mpso_2d_mpo_uniform(ABC):
     def apply_mps_transfers(self,Td_matrix):
         Td_matrix = np.dot(Td_matrix,self.psi.Ta.matrix)
         Td = Td_matrix.reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
-        return Td_matrix,Td
-
-class gradImplementation_mpso_2d_mpo_bipartite(gradImplementation_mpso_2d_mpo_uniform):
-    def __init__(self,psi,H,H_index,grad_index):
-        super().__init__(psi,H)
-        self.H_index = H_index #the index above the first site of H
-        self.grad_index = grad_index #the mps tensor to take gradient of
-        if self.grad_index == 1:
-            self.index1 = 1
-            self.index2 = 2
-        elif self.grad_index == 2:
-            self.index1 = 2
-            self.index2 = 1
-
-    #d dep bipartite transfers for geosum
-    def init_mps_transfers(self):
-        Td_matrix = dict()
-        Td = dict()
-        Td_matrix[1] = np.eye(self.psi.D_mps**2)
-        Td[1] = Td_matrix[1].reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
-        Td_matrix[2] = Td_matrix[1]
-        Td[2] = Td[1]
-        return Td_matrix,Td
-    def apply_mps_transfers(self,Td_matrix):
-        Td_matrix[1] = np.dot(Td_matrix[1],self.psi.Ta[1].matrix)
-        Td_matrix[2] = np.dot(Td_matrix[2],self.psi.Ta[2].matrix)
-        Td = dict()
-        Td[1] = Td_matrix[1].reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
-        Td[2] = Td_matrix[2].reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
         return Td_matrix,Td
 
 # -------------------------------------------------------------------------------------------------------------------------------------
@@ -320,7 +294,37 @@ class gradImplementation_mpso_2d_mpo_uniform_twoBodyH_vert(gradImplementation_mp
         env = self.psi.Tb_inv.applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
         env = ncon([self.outerContract,env],((-1,-2),(-3,-4)),forder=(-1,-2,-3,-4))
         return env
+
 # -----------------------------
+class gradImplementation_mpso_2d_mpo_bipartite(gradImplementation_mpso_2d_mpo_uniform):
+    def __init__(self,psi,H,H_index,grad_index):
+        super().__init__(psi,H)
+        self.H_index = H_index #the index above the first site of H
+        self.grad_index = grad_index #the mps tensor to take gradient of
+        if self.grad_index == 1:
+            self.index1 = 1
+            self.index2 = 2
+        elif self.grad_index == 2:
+            self.index1 = 2
+            self.index2 = 1
+
+    #d dep bipartite transfers for geosum
+    def init_mps_transfers(self):
+        Td_matrix = dict()
+        Td = dict()
+        Td_matrix[1] = np.eye(self.psi.D_mps**2)
+        Td[1] = Td_matrix[1].reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+        Td_matrix[2] = Td_matrix[1]
+        Td[2] = Td[1]
+        return Td_matrix,Td
+    def apply_mps_transfers(self,Td_matrix):
+        Td_matrix[1] = np.dot(Td_matrix[1],self.psi.Ta[1].matrix)
+        Td_matrix[2] = np.dot(Td_matrix[2],self.psi.Ta[2].matrix)
+        Td = dict()
+        Td[1] = Td_matrix[1].reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+        Td[2] = Td_matrix[2].reshape(self.psi.D_mps,self.psi.D_mps,self.psi.D_mps,self.psi.D_mps)
+        return Td_matrix,Td
+
 class gradImplementation_mpso_2d_mpo_bipartite_H_verticalLength_1(gradImplementation_mpso_2d_mpo_bipartite):
     def __init__(self,psi,H,H_index,grad_index):
         super().__init__(psi,H,H_index,grad_index)
