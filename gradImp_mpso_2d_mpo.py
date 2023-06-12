@@ -54,7 +54,7 @@ class gradImplementation_mpso_2d_mpo_uniform(ABC):
         def buildBotEnvGeo_quadrants(self):
             pass
         @abstractmethod
-        def buildRightEnvGeo_quadrants(self,fixedPoints,outers):
+        def buildRightEnvGeo_quadrants(self):
             pass
 
     #(Ta)^d d dep transfer matrices, for geosum
