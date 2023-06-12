@@ -505,92 +505,92 @@ class gradEvaluater_mpso_2d_mps_bipartite(gradEvaluater):
         self.grad[1] = project_mpsTangentVector(self.grad[1],self.psi.mps[1],self.psi.T[1])
         self.grad[2] = project_mpsTangentVector(self.grad[2],self.psi.mps[2],self.psi.T[2])
 
-class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater):
-    def __init__(self,psi,H):
-        self.psi = psi
-        self.H = H
+# class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater):
+    # def __init__(self,psi,H):
+        # self.psi = psi
+        # self.H = H
 
-    def fetch_implementation(self):
-        pass
+    # def fetch_implementation(self):
+        # pass
 
-    def eval(self,geo=True,envTol=1e-5,printEnv=False):
-        self.grad = dict()
-        gradEvaluater_11 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=1,grad_index=1)
-        gradEvaluater_12 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=1,grad_index=2)
-        gradEvaluater_21 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=2,grad_index=1)
-        gradEvaluater_22 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=2,grad_index=2)
+    # def eval(self,geo=True,envTol=1e-5,printEnv=False):
+        # self.grad = dict()
+        # gradEvaluater_11 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=1,grad_index=1)
+        # gradEvaluater_12 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=1,grad_index=2)
+        # gradEvaluater_21 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=2,grad_index=1)
+        # gradEvaluater_22 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=2,grad_index=2)
 
-        #use eval_non_geo, eval_geo methods seperately rather than eval
-        #so can just use one gradEvaluater to calc d dep fixed points, which are the same for all gradEvaluaters
-        #so don't have to repeat the bottleneck of the algo 4 times for no reason
-        grad_11 = gradEvaluater_11.eval_non_geo(0)
-        grad_12 = gradEvaluater_12.eval_non_geo(0)
-        grad_21 = gradEvaluater_21.eval_non_geo(0)
-        grad_22 = gradEvaluater_22.eval_non_geo(0)
-        for n in range(0,len(self.H.terms)):
-            if n > 0:
-                grad_11 += gradEvaluater_11.eval_non_geo(n)
-                grad_12 += gradEvaluater_12.eval_non_geo(n)
-                grad_21 += gradEvaluater_21.eval_non_geo(n)
-                grad_22 += gradEvaluater_22.eval_non_geo(n)
+        # #use eval_non_geo, eval_geo methods seperately rather than eval
+        # #so can just use one gradEvaluater to calc d dep fixed points, which are the same for all gradEvaluaters
+        # #so don't have to repeat the bottleneck of the algo 4 times for no reason
+        # grad_11 = gradEvaluater_11.eval_non_geo(0)
+        # grad_12 = gradEvaluater_12.eval_non_geo(0)
+        # grad_21 = gradEvaluater_21.eval_non_geo(0)
+        # grad_22 = gradEvaluater_22.eval_non_geo(0)
+        # for n in range(0,len(self.H.terms)):
+            # if n > 0:
+                # grad_11 += gradEvaluater_11.eval_non_geo(n)
+                # grad_12 += gradEvaluater_12.eval_non_geo(n)
+                # grad_21 += gradEvaluater_21.eval_non_geo(n)
+                # grad_22 += gradEvaluater_22.eval_non_geo(n)
 
-            grad_11_breaker, grad_12_breaker, grad_21_breaker, grad_22_breaker = False,False,False,False
-            d_11,d_12,d_21,d_22 = -1, -1 , -1, -1
-            if geo is True:
-                Td_matrix,Td = gradEvaluater_11.H_imp[n].init_mps_transfers()
-                for d in range(0,100):
-                    #d dependant tensors needed
-                    if d > 0:
-                        Td_matrix,Td = gradEvaluater_11.H_imp[n].apply_mps_transfers(Td_matrix)
-                    #just use gradEvaluater_11 to calc d dep fixed points, which are the same for all gradEvaluaters
-                    rightFP_d = gradEvaluater_11.H_imp[n].getFixedPoints(d,Td) #bottleneck of algo
-                    outers_d = gradEvaluater_11.H_imp[n].getOuterContracts(Td)
+            # grad_11_breaker, grad_12_breaker, grad_21_breaker, grad_22_breaker = False,False,False,False
+            # d_11,d_12,d_21,d_22 = -1, -1 , -1, -1
+            # if geo is True:
+                # Td_matrix,Td = gradEvaluater_11.H_imp[n].init_mps_transfers()
+                # for d in range(0,100):
+                    # #d dependant tensors needed
+                    # if d > 0:
+                        # Td_matrix,Td = gradEvaluater_11.H_imp[n].apply_mps_transfers(Td_matrix)
+                    # #just use gradEvaluater_11 to calc d dep fixed points, which are the same for all gradEvaluaters
+                    # rightFP_d = gradEvaluater_11.H_imp[n].getFixedPoints(d,Td) #bottleneck of algo
+                    # outers_d = gradEvaluater_11.H_imp[n].getOuterContracts(Td)
 
-                    if grad_11_breaker is False:
-                        gradRun_11 = gradEvaluater_11.eval_geo(n,Td,rightFP_d,outers_d)
-                        grad_11 += gradRun_11
-                        d_11 += 1
-                        mag_11 = np.einsum('ijab,ijab',gradRun_11,gradRun_11.conj())
-                        if np.abs(mag_11)<envTol:
-                            grad_11_breaker = True
+                    # if grad_11_breaker is False:
+                        # gradRun_11 = gradEvaluater_11.eval_geo(n,Td,rightFP_d,outers_d)
+                        # grad_11 += gradRun_11
+                        # d_11 += 1
+                        # mag_11 = np.einsum('ijab,ijab',gradRun_11,gradRun_11.conj())
+                        # if np.abs(mag_11)<envTol:
+                            # grad_11_breaker = True
 
-                    if grad_12_breaker is False:
-                        gradRun_12 = gradEvaluater_12.eval_geo(n,Td,rightFP_d,outers_d)
-                        grad_12 += gradRun_12
-                        d_12 += 1
-                        mag_12 = np.einsum('ijab,ijab',gradRun_12,gradRun_12.conj())
-                        if np.abs(mag_12)<envTol:
-                            grad_12_breaker = True
+                    # if grad_12_breaker is False:
+                        # gradRun_12 = gradEvaluater_12.eval_geo(n,Td,rightFP_d,outers_d)
+                        # grad_12 += gradRun_12
+                        # d_12 += 1
+                        # mag_12 = np.einsum('ijab,ijab',gradRun_12,gradRun_12.conj())
+                        # if np.abs(mag_12)<envTol:
+                            # grad_12_breaker = True
 
-                    if grad_21_breaker is False:
-                        gradRun_21 = gradEvaluater_21.eval_geo(n,Td,rightFP_d,outers_d)
-                        grad_21 += gradRun_21
-                        d_21 += 1
-                        mag_21 = np.einsum('ijab,ijab',gradRun_21,gradRun_21.conj())
-                        if np.abs(mag_21)<envTol:
-                            grad_21_breaker = True
+                    # if grad_21_breaker is False:
+                        # gradRun_21 = gradEvaluater_21.eval_geo(n,Td,rightFP_d,outers_d)
+                        # grad_21 += gradRun_21
+                        # d_21 += 1
+                        # mag_21 = np.einsum('ijab,ijab',gradRun_21,gradRun_21.conj())
+                        # if np.abs(mag_21)<envTol:
+                            # grad_21_breaker = True
 
-                    if grad_22_breaker is False:
-                        gradRun_22 = gradEvaluater_22.eval_geo(n,Td,rightFP_d,outers_d)
-                        grad_22 += gradRun_22
-                        d_22 += 1
-                        mag_22 = np.einsum('ijab,ijab',gradRun_22,gradRun_22.conj())
-                        if np.abs(mag_22)<envTol:
-                            grad_22_breaker = True
+                    # if grad_22_breaker is False:
+                        # gradRun_22 = gradEvaluater_22.eval_geo(n,Td,rightFP_d,outers_d)
+                        # grad_22 += gradRun_22
+                        # d_22 += 1
+                        # mag_22 = np.einsum('ijab,ijab',gradRun_22,gradRun_22.conj())
+                        # if np.abs(mag_22)<envTol:
+                            # grad_22_breaker = True
 
-                    if grad_11_breaker is True and grad_12_breaker is True and grad_21_breaker is True and grad_22_breaker is True:
-                        break
-                if printEnv is True:
-                    print("d_11: ",d_11,mag_11)
-                    print("d_12: ",d_12,mag_12)
-                    print("d_21: ",d_21,mag_21)
-                    print("d_22: ",d_22,mag_22)
-        self.grad[1] = 1/2*(grad_11 + grad_21)
-        self.grad[2] = 1/2*(grad_12 + grad_22)
+                    # if grad_11_breaker is True and grad_12_breaker is True and grad_21_breaker is True and grad_22_breaker is True:
+                        # break
+                # if printEnv is True:
+                    # print("d_11: ",d_11,mag_11)
+                    # print("d_12: ",d_12,mag_12)
+                    # print("d_21: ",d_21,mag_21)
+                    # print("d_22: ",d_22,mag_22)
+        # self.grad[1] = 1/2*(grad_11 + grad_21)
+        # self.grad[2] = 1/2*(grad_12 + grad_22)
 
-    def projectTDVP(self):
-        self.grad[1] = project_mpoTangentVector(self.grad[1],self.psi.mps[1],self.psi.mpo[1],self.psi.T[1],self.psi.R[1])
-        self.grad[2] = project_mpoTangentVector(self.grad[2],self.psi.mps[2],self.psi.mpo[2],self.psi.T[2],self.psi.R[2])
+    # def projectTDVP(self):
+        # self.grad[1] = project_mpoTangentVector(self.grad[1],self.psi.mps[1],self.psi.mpo[1],self.psi.T[1],self.psi.R[1])
+        # self.grad[2] = project_mpoTangentVector(self.grad[2],self.psi.mps[2],self.psi.mpo[2],self.psi.T[2],self.psi.R[2])
 
 class gradEvaluater_mpso_2d_mps_bipartite(gradEvaluater_mpso_2d_mps_bipartite):
     def fetch_implementation(self,H):
@@ -601,34 +601,25 @@ class gradEvaluater_mpso_2d_mps_bipartite(gradEvaluater_mpso_2d_mps_bipartite):
         elif type(H) == twoBodyH_vert:
             return gradImplementation_mpso_2d_mps_bipartite_twoBodyH_vert(self.psi,H.tensor)
 
-class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater):
-    def __init__(self,psi,H):
-        self.psi = psi
-        self.H = H
-        self.gradEvaluater_11 = gradEvaluater_mpso_2d_mpo_twoSite_ind(self.psi,self.H,siteLabel='00')
-        self.gradEvaluater_12 = gradEvaluater_mpso_2d_mpo_twoSite_ind(self.psi,self.H,siteLabel='01')
-        self.gradEvaluater_21 = gradEvaluater_mpso_2d_mpo_twoSite_ind(self.psi,self.H,siteLabel='10')
-        self.gradEvaluater_22 = gradEvaluater_mpso_2d_mpo_twoSite_ind(self.psi,self.H,siteLabel='11')
-
+#for mpso_2d ansatz with 4 individual gradients
+class gradEvaluater_mpso_2d_mpo_twoSiteUnitCell_wrapper(gradEvaluater):
     def fetch_implementation(self):
         pass
 
     def eval(self,geo=True,envTol=1e-5,printEnv=False):
-        self.grad = dict()
-
         #use eval_non_geo, eval_geo methods seperately rather than eval
         #so can just use one gradEvaluater to calc d dep fixed points, which are the same for all gradEvaluaters
         #so don't have to repeat the bottleneck of the algo 4 times for no reason
-        grad_11 = self.gradEvaluater_11.eval_non_geo(0)
-        grad_12 = self.gradEvaluater_12.eval_non_geo(0)
-        grad_21 = self.gradEvaluater_21.eval_non_geo(0)
-        grad_22 = self.gradEvaluater_22.eval_non_geo(0)
+        self.grad_11 = self.gradEvaluater_11.eval_non_geo(0)
+        self.grad_12 = self.gradEvaluater_12.eval_non_geo(0)
+        self.grad_21 = self.gradEvaluater_21.eval_non_geo(0)
+        self.grad_22 = self.gradEvaluater_22.eval_non_geo(0)
         for n in range(0,len(self.H.terms)):
             if n > 0:
-                grad_11 += self.gradEvaluater_11.eval_non_geo(n)
-                grad_12 += self.gradEvaluater_12.eval_non_geo(n)
-                grad_21 += self.gradEvaluater_21.eval_non_geo(n)
-                grad_22 += self.gradEvaluater_22.eval_non_geo(n)
+                self.grad_11 += self.gradEvaluater_11.eval_non_geo(n)
+                self.grad_12 += self.gradEvaluater_12.eval_non_geo(n)
+                self.grad_21 += self.gradEvaluater_21.eval_non_geo(n)
+                self.grad_22 += self.gradEvaluater_22.eval_non_geo(n)
 
             grad_11_breaker, grad_12_breaker, grad_21_breaker, grad_22_breaker = False,False,False,False
             d_11,d_12,d_21,d_22 = -1, -1 , -1, -1
@@ -644,7 +635,7 @@ class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater):
 
                     if grad_11_breaker is False:
                         gradRun_11 = self.gradEvaluater_11.eval_geo(n,Td,rightFP_d,outers_d)
-                        grad_11 += gradRun_11
+                        self.grad_11 += gradRun_11
                         d_11 += 1
                         mag_11 = self.gradEvaluater_11.gradMagnitude(gradRun_11)
                         if np.abs(mag_11)<envTol:
@@ -652,7 +643,7 @@ class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater):
 
                     if grad_12_breaker is False:
                         gradRun_12 = self.gradEvaluater_12.eval_geo(n,Td,rightFP_d,outers_d)
-                        grad_12 += gradRun_12
+                        self.grad_12 += gradRun_12
                         d_12 += 1
                         mag_12 = self.gradEvaluater_12.gradMagnitude(gradRun_12)
                         if np.abs(mag_12)<envTol:
@@ -660,7 +651,7 @@ class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater):
 
                     if grad_21_breaker is False:
                         gradRun_21 = self.gradEvaluater_21.eval_geo(n,Td,rightFP_d,outers_d)
-                        grad_21 += gradRun_21
+                        self.grad_21 += gradRun_21
                         d_21 += 1
                         mag_21 = self.gradEvaluater_21.gradMagnitude(gradRun_21)
                         if np.abs(mag_21)<envTol:
@@ -668,7 +659,7 @@ class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater):
 
                     if grad_22_breaker is False:
                         gradRun_22 = self.gradEvaluater_22.eval_geo(n,Td,rightFP_d,outers_d)
-                        grad_22 += gradRun_22
+                        self.grad_22 += gradRun_22
                         d_22 += 1
                         mag_22 = self.gradEvaluater_22.gradMagnitude(gradRun_22)
                         if np.abs(mag_22)<envTol:
@@ -681,8 +672,38 @@ class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater):
                     print("d_12: ",d_12,mag_12)
                     print("d_21: ",d_21,mag_21)
                     print("d_22: ",d_22,mag_22)
-        self.grad = 1/4*(grad_11 + grad_12 + grad_21 + grad_22)
+        self.buildTotalGrad()
+
+class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater_mpso_2d_mpo_twoSiteUnitCell_wrapper):
+    def __init__(self,psi,H):
+        self.psi = psi
+        self.H = H
+        self.gradEvaluater_11 = gradEvaluater_mpso_2d_mpo_twoSite_ind(self.psi,self.H,siteLabel='00')
+        self.gradEvaluater_12 = gradEvaluater_mpso_2d_mpo_twoSite_ind(self.psi,self.H,siteLabel='01')
+        self.gradEvaluater_21 = gradEvaluater_mpso_2d_mpo_twoSite_ind(self.psi,self.H,siteLabel='10')
+        self.gradEvaluater_22 = gradEvaluater_mpso_2d_mpo_twoSite_ind(self.psi,self.H,siteLabel='11')
+
+    def buildTotalGrad(self):
+        self.grad = 1/4*(self.grad_11 + self.grad_12 + self.grad_21 + self.grad_22)
 
     def projectTDVP(self):
         print("ERROR: 2d mpo two site unit cell TDVP needs implementing")
         pass
+
+class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater_mpso_2d_mpo_twoSiteUnitCell_wrapper):
+    def __init__(self,psi,H):
+        self.psi = psi
+        self.H = H
+        self.gradEvaluater_11 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=1,grad_index=1)
+        self.gradEvaluater_12 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=1,grad_index=2)
+        self.gradEvaluater_21 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=2,grad_index=1)
+        self.gradEvaluater_22 = gradEvaluater_mpso_2d_mpo_bipartite_ind(self.psi,self.H,H_index=2,grad_index=2)
+    
+    def buildTotalGrad(self):
+        self.grad = dict()
+        self.grad[1] = 1/2*(self.grad_11 + self.grad_21)
+        self.grad[2] = 1/2*(self.grad_12 + self.grad_22)
+
+    def projectTDVP(self):
+        self.grad[1] = project_mpoTangentVector(self.grad[1],self.psi.mps[1],self.psi.mpo[1],self.psi.T[1],self.psi.R[1])
+        self.grad[2] = project_mpoTangentVector(self.grad[2],self.psi.mps[2],self.psi.mpo[2],self.psi.T[2],self.psi.R[2])
