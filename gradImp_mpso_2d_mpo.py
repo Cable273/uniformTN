@@ -900,7 +900,7 @@ class gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_vert(gradImplementation_
         env = self.psi.Tb_inv[self.index2].applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
         return ncon([self.outerContract[self.index1],env],((-1,-2),(-3,-4)),forder=(-1,-2,-3,-4))
 # -----------------------------
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori(gradImplementation_mpso_2d_mpo_uniform):
+class gradImplementation_mpso_2d_mpo_twoSite_H_verticalLength_1(gradImplementation_mpso_2d_mpo_uniform):
     def __init__(self,psi,H):
         super().__init__(psi,H)
         #objects needed to construct terms
@@ -938,6 +938,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori(gradImplementation_mp
         fp = dict()
         fp['RR_d'] = RR_d
         return fp
+
     def getOuterContracts(self,Td):
         outerContractDouble = dict()
         outerContractQuad = ncon([self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),Td,self.psi.T.tensor],((-1,-3,9,10),(-5,-7,11,12),(-2,-4,9,15),(-6,-8,14,13),(15,10,14,11),(13,12)),forder=(-2,-4,-6,-8,-1,-3,-5,-7),order=(9,10,15,11,14,13,12))
@@ -949,15 +950,21 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori(gradImplementation_mp
         fp['outerContractDouble'] = outerContractDouble
         return fp
 
-    #building vertical left environment under above/below a two site unit cell (useful for quadrants)
-    def buildTopEnvGeo_single(self,fixedPoints,outers,style,innerContract):
+    def buildTopEnvGeo_H_horiLength_1(self,fixedPoints,outers,style,innerContract):
         return ncon([innerContract,fixedPoints['RR_d'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style]],((1,2,3,4,5,6),(-7,-8,5,6),(-9,1,-10,3),(-11,2,-12,4)),forder=(-9,-11,-10,-12,-7,-8),order=(1,3,4,2,5,6))
-    def buildBotEnvGeo_single(self,fixedPoints,outers,style,innerContract):
+    def buildBotEnvGeo_H_horiLength_1(self,fixedPoints,outers,style,innerContract):
         return ncon([innerContract,fixedPoints['RR_d'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style]],((1,2,3,4,5,6),(5,6,-7,-8),(1,-9,3,-10),(2,-11,4,-12)),forder=(-9,-11,-10,-12,-7,-8),order=(1,3,4,2,5,6))
 
-    #forming wrapAround environment for left quadrants, 
-    # given wrapAround environments env_bot, env_top which need to be acted 
-    #on by Tb_inv['bot'],Tb_inv['top'] respectively
+    def buildTopEnvGeo_H_horiLength_2(self,fixedPoints,outers,style,innerContract):
+        return ncon([innerContract,self.psi.mpo,self.psi.mpo.conj(),fixedPoints['RR_d'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style]],((1,2,3,4,5,6,7,8,9,10),(14,17,13,16,-19,12),(14,17,15,18,-20,11),(11,12,9,10),(18,4,16,8),(15,3,13,7),(-21,2,-22,6),(-23,1,-24,5)),forder=(-23,-21,-24,-22,-20,-19),order=(11,12,14,17,9,10,18,4,16,8,15,3,13,7,2,6,1,5))
+    def buildBotEnvGeo_H_horiLength_2(self,fixedPoints,outers,style,innerContract):
+        return ncon([innerContract,self.psi.mpo,self.psi.mpo.conj(),fixedPoints['RR_d'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style]],((1,2,3,4,5,6,7,8,9,10),(13,16,14,17,-19,12),(14,17,15,18,-20,11),(9,10,11,12),(4,18,8,16),(3,15,7,13),(2,-21,6,-22),(1,-23,5,-24)),forder=(-23,-21,-24,-22,-20,-19),order=(11,12,14,17,9,10,18,4,16,8,15,3,13,7,2,6,1,5))
+
+    def wrapRightEnv(self,env):
+        return ncon([env,self.outerContract[self.style],self.outerContract[self.style]],((-5,-6),(-1,-2),(-3,-4)),forder=(-1,-3,-2,-4,-5,-6))
+    def wrapLeftEnv(self,env):
+        return ncon([env,self.outerContract[self.style],self.outerContract[self.style],self.psi.R[self.style].tensor],((-1,-2),(-5,-6),(-7,-8),(-3,-4)),forder=(-5,-7,-6,-8,-1,-2,-3,-4))
+
     def modifyLeftQuadrant_env(self,env_bot,env_top):
         env_bot = ncon([env_bot,self.psi.mpo,self.psi.mpo.conj()],((3,6,1,4,10,8),(2,5,1,4,-7,8),(2,5,3,6,-9,10)),forder=(-9,-7),order=(10,8,2,5,1,4,3,6))
         env_top = ncon([env_top,self.psi.mpo,self.psi.mpo.conj()],((3,6,1,4,10,8),(2,5,1,4,-7,8),(2,5,3,6,-9,10)),forder=(-9,-7),order=(10,8,2,5,1,4,3,6))
@@ -968,25 +975,25 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori(gradImplementation_mp
         return env_bot + env_top
 
 #terms with the Hamiltonian under site 1 of the mpo ('on centre')
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site1(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori):
+class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site1(gradImplementation_mpso_2d_mpo_twoSite_H_verticalLength_1):
     def __init__(self,psi,H):
         super().__init__(psi,H)
-        #objects needed to construct terms
         innerContract = ncon([self.psi.mpo,self.H,self.psi.mpo.conj()],((2,6,-1,-5,9,-10),(3,7,2,6),(3,7,-4,-8,9,-11)),forder=(-4,-8,-1,-5,-11,-10),order=(9,2,3,6,7))
         exp = ncon([innerContract,self.outerContract[self.style],self.outerContract[self.style],self.psi.R[self.style].tensor],((1,2,3,4,5,6),(1,3),(2,4),(5,6)),order=(1,3,2,4,5,6))
         self.h_tilde = (self.H.reshape(4,4)-exp*np.eye(4)).reshape(2,2,2,2)
+
         self.innerContract = ncon([self.psi.mpo,self.h_tilde,self.psi.mpo.conj()],((2,6,-1,-5,9,-10),(3,7,2,6),(3,7,-4,-8,9,-11)),forder=(-4,-8,-1,-5,-11,-10),order=(9,2,3,6,7))
+        leftEnv = self.buildLeftEnv(H=self.h_tilde)
+        self.innerContract_shiftedRight = ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj()],((9,7),(2,5,-1,-4,7,-8),(2,5,-3,-6,9,-10)),forder=(-3,-6,-1,-4,-10,-8))
 
     def getCentralTerms(self):
         return ncon([self.psi.mpo,self.H,self.outerContract[self.style],self.outerContract[self.style],self.psi.R[self.style].tensor],((2,6,1,5,-9,10),(-3,-7,2,6),(-4,1),(-8,5),(-11,10)),forder=(-3,-7,-4,-8,-9,-11),order=(10,5,6,1,2))
 
-    def buildLeftEnv(self,H=None,wrapAround=False):
+    def buildLeftEnv(self,H=None):
         if H is None:
             H = self.H
         env = ncon([self.psi.mpo,H,self.psi.mpo.conj(),self.outerContract[self.style],self.outerContract[self.style]],((2,6,1,5,9,-10),(3,7,2,6),(3,7,4,8,9,-11),(4,1),(8,5)),forder=(-11,-10),order=(9,2,6,3,7,1,4,5,8))
         env = self.psi.Tb_inv[self.style].applyRight(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
-        if wrapAround == True:
-            env = ncon([env,self.outerContract[self.style],self.outerContract[self.style],self.psi.R[self.style].tensor],((-1,-2),(-5,-6),(-7,-8),(-3,-4)),forder=(-5,-7,-6,-8,-1,-2,-3,-4))
         return env
 
     def buildRightEnv(self,H=None):
@@ -994,31 +1001,31 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site1(gradImplementat
             H = self.H
         env = ncon([self.psi.mpo,H,self.psi.mpo.conj(),self.outerContract[self.style],self.outerContract[self.style],self.psi.R[self.style].tensor],((2,6,1,5,-9,10),(3,7,2,6),(3,7,4,8,-11,12),(4,1),(8,5),(12,10)),forder=(-11,-9),order=(10,12,6,7,2,3,5,8,1,4))
         env = self.psi.Tb_inv[self.style].applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
-        env = ncon([env,self.outerContract[self.style],self.outerContract[self.style]],((-5,-6),(-1,-2),(-3,-4)),forder=(-1,-3,-2,-4,-5,-6))
         return env
 
 #terms with the Hamiltonian under site 2 of the mpo ('off centre')
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site2(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori):
+class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site2(gradImplementation_mpso_2d_mpo_twoSite_H_verticalLength_1):
     def __init__(self,psi,H):
         super().__init__(psi,H)
         #objects needed to construct terms
         innerContract = ncon([self.psi.mpo,self.psi.mpo,self.H,self.psi.mpo.conj(),self.psi.mpo.conj()],((2,5,-1,-4,15,16),(9,13,-8,-12,16,-17),(6,10,5,9),(2,6,-3,-7,15,19),(10,13,-11,-14,19,-18)),forder=(-3,-7,-11,-14,-1,-4,-8,-12,-18,-17),order=(15,2,5,6,16,19,9,10,13))
         exp = ncon([innerContract,self.outerContract[self.style],self.outerContract[self.style],self.outerContract[self.style],self.outerContract[self.style],self.psi.R[self.style].tensor],((1,2,3,4,5,6,7,8,9,10),(1,5),(2,6),(3,7),(4,8),(9,10)),order=(1,5,2,6,3,7,4,8,9,10))
+
         self.h_tilde = (self.H.reshape(4,4)-exp*np.eye(4)).reshape(2,2,2,2)
         self.innerContract = ncon([self.psi.mpo,self.psi.mpo,self.h_tilde,self.psi.mpo.conj(),self.psi.mpo.conj()],((2,5,-1,-4,15,16),(9,13,-8,-12,16,-17),(6,10,5,9),(2,6,-3,-7,15,19),(10,13,-11,-14,19,-18)),forder=(-3,-7,-11,-14,-1,-4,-8,-12,-18,-17),order=(15,2,5,6,16,19,9,10,13))
+        leftEnv = self.buildLeftEnv(H=self.h_tilde)
+        self.innerContract_shiftedRight = ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj()],((9,7),(2,5,-1,-4,7,-8),(2,5,-3,-6,9,-10)),forder=(-3,-6,-1,-4,-10,-8))
 
     def getCentralTerms(self):
         grad = ncon([self.psi.mpo,self.psi.mpo,self.H,self.psi.mpo.conj(),self.outerContract[self.style],self.outerContract[self.style],self.outerContract[self.style],self.outerContract[self.style],self.psi.R[self.style].tensor],((-2,5,1,4,-15,16),(9,13,8,12,16,17),(-6,10,5,9),(10,13,11,14,-19,18),(-3,1),(-7,4),(11,8),(14,12),(18,17)),forder=(-2,-6,-3,-7,-15,-19),order=(18,17,13,9,10,12,14,8,11,16,5,4,1))
         grad += ncon([self.psi.mpo,self.psi.mpo,self.H,self.psi.mpo.conj(),self.outerContract[self.style],self.outerContract[self.style],self.outerContract[self.style],self.outerContract[self.style],self.psi.R[self.style].tensor],((2,5,1,4,15,16),(9,-13,8,12,16,17),(6,-10,5,9),(2,6,3,7,15,-19),(3,1),(7,4),(-11,8),(-14,12),(-18,17)),forder=(-10,-13,-11,-14,-19,-18),order=(15,2,5,6,1,3,4,7,16,9,8,12,17))
         return grad
 
-    def buildLeftEnv(self,H=None,wrapAround=False):
+    def buildLeftEnv(self,H=None):
         if H is None:
             H = self.H
         env = ncon([self.psi.mpo,self.psi.mpo,H,self.psi.mpo.conj(),self.psi.mpo.conj(),self.outerContract[self.style],self.outerContract[self.style],self.outerContract[self.style],self.outerContract[self.style]],((2,5,1,4,15,16),(9,13,8,12,16,-17),(6,10,5,9),(2,6,3,7,15,19),(10,13,11,14,19,-18),(3,1),(7,4),(11,8),(14,12)),forder=(-18,-17),order=(15,2,5,6,1,3,4,7,16,19,9,10,13,8,11,12,14))
         env = self.psi.Tb_inv[self.style].applyRight(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
-        if wrapAround == True:
-            env = ncon([env,self.outerContract[self.style],self.outerContract[self.style],self.psi.R[self.style].tensor],((-1,-2),(-5,-6),(-7,-8),(-3,-4)),forder=(-5,-7,-6,-8,-1,-2,-3,-4))
         return env
 
     def buildRightEnv(self,H=None):
@@ -1026,42 +1033,34 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site2(gradImplementat
             H = self.H
         env = ncon([self.psi.mpo,self.psi.mpo,H,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.R[self.style].tensor,self.outerContract[self.style],self.outerContract[self.style],self.outerContract[self.style],self.outerContract[self.style]],((2,5,1,4,-15,16),(9,13,8,12,16,17),(6,10,5,9),(2,6,3,7,-20,19),(10,13,11,14,19,18),(18,17),(3,1),(7,4),(11,8),(14,12)),forder=(-20,-15),order=(18,17,9,10,13,8,11,12,14,16,19,5,6,2,4,7,1,3))
         env = self.psi.Tb_inv[self.style].applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
-        env = ncon([env,self.outerContract[self.style],self.outerContract[self.style]],((-5,-6),(-1,-2),(-3,-4)),forder=(-1,-3,-2,-4,-5,-6))
         return env
 
-    #for building top env with a inner contract having 8 physical legs (upper left term in gradient)
-    def buildTopEnvGeo_singleLeft(self,fixedPoints,outers,style,innerContract):
-        return ncon([innerContract,self.psi.mpo,self.psi.mpo.conj(),fixedPoints['RR_d'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style]],((1,2,3,4,5,6,7,8,9,10),(14,17,13,16,-19,12),(14,17,15,18,-20,11),(11,12,9,10),(18,4,16,8),(15,3,13,7),(-21,2,-22,6),(-23,1,-24,5)),forder=(-23,-21,-24,-22,-20,-19),order=(11,12,14,17,9,10,18,4,16,8,15,3,13,7,2,6,1,5))
-    def buildBotEnvGeo_singleLeft(self,fixedPoints,outers,style,innerContract):
-        return ncon([innerContract,self.psi.mpo,self.psi.mpo.conj(),fixedPoints['RR_d'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style],outers['outerContractDouble'][style]],((1,2,3,4,5,6,7,8,9,10),(13,16,14,17,-19,12),(14,17,15,18,-20,11),(9,10,11,12),(4,18,8,16),(3,15,7,13),(2,-21,6,-22),(1,-23,5,-24)),forder=(-23,-21,-24,-22,-20,-19),order=(11,12,14,17,9,10,18,4,16,8,15,3,13,7,2,6,1,5))
 
 class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site00(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site1):
     def __init__(self,psi,H):
         self.style = 'bot'
         super().__init__(psi,H)
     def buildTopEnvGeo(self,fixedPoints,outers):
-        env = self.buildTopEnvGeo_single(fixedPoints,outers,'bb',self.innerContract)
-        env += self.buildTopEnvGeo_single(fixedPoints,outers,'tb',self.innerContract)
+        env = self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'bb',self.innerContract)
+        env += self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'tb',self.innerContract)
         return env
     def buildBotEnvGeo(self,fixedPoints,outers):
-        env = self.buildBotEnvGeo_single(fixedPoints,outers,'bb',self.innerContract)
-        env += self.buildBotEnvGeo_single(fixedPoints,outers,'bt',self.innerContract)
+        env = self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'bb',self.innerContract)
+        env += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'bt',self.innerContract)
         return env
-    def buildTopEnvGeo_quadrants(self,fixedPoints,outers,leftEnv):
-        innerContract = ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj()],((4,7),(2,5,-1,-4,7,-8),(2,5,-3,-6,4,-10)),forder=(-3,-6,-1,-4,-10,-8),order=(4,7,2,5))
-        env = self.buildTopEnvGeo_single(fixedPoints,outers,'bb',innerContract)
-        env += self.buildTopEnvGeo_single(fixedPoints,outers,'tb',innerContract)
+    def buildTopEnvGeo_quadrants(self,fixedPoints,outers):
+        env = self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'bb',self.innerContract_shiftedRight)
+        env += self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'tb',self.innerContract_shiftedRight)
         return env
-    def buildBotEnvGeo_quadrants(self,fixedPoints,outers,leftEnv):
-        innerContract = ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj()],((4,7),(2,5,-1,-4,7,-8),(2,5,-3,-6,4,-10)),forder=(-3,-6,-1,-4,-10,-8),order=(4,7,2,5))
-        env = self.buildBotEnvGeo_single(fixedPoints,outers,'bb',innerContract)
-        env += self.buildBotEnvGeo_single(fixedPoints,outers,'bt',innerContract)
+    def buildBotEnvGeo_quadrants(self,fixedPoints,outers):
+        env = self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'bb',self.innerContract_shiftedRight)
+        env += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'bt',self.innerContract_shiftedRight)
         return env
     def buildRightEnvGeo_quadrants(self,fixedPoints,outers):
-        env1 = self.buildTopEnvGeo_single(fixedPoints,outers,'bb',self.innerContract)
-        env1 += self.buildBotEnvGeo_single(fixedPoints,outers,'bb',self.innerContract)
-        env2 = self.buildTopEnvGeo_single(fixedPoints,outers,'tb',self.innerContract)
-        env2 += self.buildBotEnvGeo_single(fixedPoints,outers,'bt',self.innerContract)
+        env1 = self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'bb',self.innerContract)
+        env1 += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'bb',self.innerContract)
+        env2 = self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'tb',self.innerContract)
+        env2 += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'bt',self.innerContract)
         return self.modifyLeftQuadrant_env(env1,env2)
 
 class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site10(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site1):
@@ -1069,28 +1068,26 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site10(gradImplementa
         self.style = 'top'
         super().__init__(psi,H)
     def buildTopEnvGeo(self,fixedPoints,outers):
-        env = self.buildTopEnvGeo_single(fixedPoints,outers,'tt',self.innerContract)
-        env += self.buildTopEnvGeo_single(fixedPoints,outers,'bt',self.innerContract)
+        env = self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'tt',self.innerContract)
+        env += self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'bt',self.innerContract)
         return env
     def buildBotEnvGeo(self,fixedPoints,outers):
-        env = self.buildBotEnvGeo_single(fixedPoints,outers,'tt',self.innerContract)
-        env += self.buildBotEnvGeo_single(fixedPoints,outers,'tb',self.innerContract)
+        env = self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'tt',self.innerContract)
+        env += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'tb',self.innerContract)
         return env
-    def buildTopEnvGeo_quadrants(self,fixedPoints,outers,leftEnv):
-        innerContract = ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj()],((4,7),(2,5,-1,-4,7,-8),(2,5,-3,-6,4,-10)),forder=(-3,-6,-1,-4,-10,-8),order=(4,7,2,5))
-        env = self.buildTopEnvGeo_single(fixedPoints,outers,'tt',innerContract)
-        env += self.buildTopEnvGeo_single(fixedPoints,outers,'bt',innerContract)
+    def buildTopEnvGeo_quadrants(self,fixedPoints,outers):
+        env = self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'tt',self.innerContract_shiftedRight)
+        env += self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'bt',self.innerContract_shiftedRight)
         return env
-    def buildBotEnvGeo_quadrants(self,fixedPoints,outers,leftEnv,):
-        innerContract = ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj()],((4,7),(2,5,-1,-4,7,-8),(2,5,-3,-6,4,-10)),forder=(-3,-6,-1,-4,-10,-8),order=(4,7,2,5))
-        env = self.buildBotEnvGeo_single(fixedPoints,outers,'tt',innerContract)
-        env += self.buildBotEnvGeo_single(fixedPoints,outers,'tb',innerContract)
+    def buildBotEnvGeo_quadrants(self,fixedPoints,outers):
+        env = self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'tt',self.innerContract_shiftedRight)
+        env += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'tb',self.innerContract_shiftedRight)
         return env
     def buildRightEnvGeo_quadrants(self,fixedPoints,outers):
-        env1 = self.buildTopEnvGeo_single(fixedPoints,outers,'bt',self.innerContract)
-        env1 += self.buildBotEnvGeo_single(fixedPoints,outers,'tb',self.innerContract)
-        env2 = self.buildTopEnvGeo_single(fixedPoints,outers,'tt',self.innerContract)
-        env2 += self.buildBotEnvGeo_single(fixedPoints,outers,'tt',self.innerContract)
+        env1 = self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'bt',self.innerContract)
+        env1 += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'tb',self.innerContract)
+        env2 = self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'tt',self.innerContract)
+        env2 += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'tt',self.innerContract)
         return self.modifyLeftQuadrant_env(env1,env2)
 
 class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site01(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site2):
@@ -1098,34 +1095,32 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site01(gradImplementa
         self.style = 'bot'
         super().__init__(psi,H)
     def buildTopEnvGeo(self,fixedPoints,outers):
-        env = self.buildTopEnvGeo_singleLeft(fixedPoints,outers,'bb',self.innerContract)
-        env += self.buildTopEnvGeo_singleLeft(fixedPoints,outers,'tb',self.innerContract)
+        env = self.buildTopEnvGeo_H_horiLength_2(fixedPoints,outers,'bb',self.innerContract)
+        env += self.buildTopEnvGeo_H_horiLength_2(fixedPoints,outers,'tb',self.innerContract)
         innerContract = ncon([self.innerContract,self.outerContract[self.style],self.outerContract[self.style]],((1,2,-3,-4,5,6,-7,-8,-9,-10),(1,5),(2,6)),forder=(-3,-4,-7,-8,-9,-10))
-        env += self.buildTopEnvGeo_single(fixedPoints,outers,'bb',innerContract)
-        env += self.buildTopEnvGeo_single(fixedPoints,outers,'tb',innerContract)
+        env += self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'bb',innerContract)
+        env += self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'tb',innerContract)
         return env
     def buildBotEnvGeo(self,fixedPoints,outers):
-        env = self.buildBotEnvGeo_singleLeft(fixedPoints,outers,'bb',self.innerContract)
-        env += self.buildBotEnvGeo_singleLeft(fixedPoints,outers,'bt',self.innerContract)
+        env = self.buildBotEnvGeo_H_horiLength_2(fixedPoints,outers,'bb',self.innerContract)
+        env += self.buildBotEnvGeo_H_horiLength_2(fixedPoints,outers,'bt',self.innerContract)
         innerContract = ncon([self.innerContract,self.outerContract[self.style],self.outerContract[self.style]],((1,2,-3,-4,5,6,-7,-8,-9,-10),(1,5),(2,6)),forder=(-3,-4,-7,-8,-9,-10))
-        env += self.buildBotEnvGeo_single(fixedPoints,outers,'bb',innerContract)
-        env += self.buildBotEnvGeo_single(fixedPoints,outers,'bt',innerContract)
+        env += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'bb',innerContract)
+        env += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'bt',innerContract)
         return env
-    def buildTopEnvGeo_quadrants(self,fixedPoints,outers,leftEnv):
-        innerContract = ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj()],((4,7),(2,5,-1,-4,7,-8),(2,5,-3,-6,4,-10)),forder=(-3,-6,-1,-4,-10,-8),order=(4,7,2,5))
-        env = self.buildTopEnvGeo_single(fixedPoints,outers,'bb',innerContract)
-        env += self.buildTopEnvGeo_single(fixedPoints,outers,'tb',innerContract)
+    def buildTopEnvGeo_quadrants(self,fixedPoints,outers):
+        env = self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'bb',self.innerContract_shiftedRight)
+        env += self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'tb',self.innerContract_shiftedRight)
         return env
-    def buildBotEnvGeo_quadrants(self,fixedPoints,outers,leftEnv,):
-        innerContract = ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj()],((4,7),(2,5,-1,-4,7,-8),(2,5,-3,-6,4,-10)),forder=(-3,-6,-1,-4,-10,-8),order=(4,7,2,5))
-        env = self.buildBotEnvGeo_single(fixedPoints,outers,'bb',innerContract)
-        env += self.buildBotEnvGeo_single(fixedPoints,outers,'bt',innerContract)
+    def buildBotEnvGeo_quadrants(self,fixedPoints,outers):
+        env = self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'bb',self.innerContract_shiftedRight)
+        env += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'bt',self.innerContract_shiftedRight)
         return env
     def buildRightEnvGeo_quadrants(self,fixedPoints,outers):
-        env1 = self.buildTopEnvGeo_singleLeft(fixedPoints,outers,'bb',self.innerContract)
-        env1 += self.buildBotEnvGeo_singleLeft(fixedPoints,outers,'bb',self.innerContract)
-        env2 = self.buildTopEnvGeo_singleLeft(fixedPoints,outers,'tb',self.innerContract)
-        env2 += self.buildBotEnvGeo_singleLeft(fixedPoints,outers,'bt',self.innerContract)
+        env1 = self.buildTopEnvGeo_H_horiLength_2(fixedPoints,outers,'bb',self.innerContract)
+        env1 += self.buildBotEnvGeo_H_horiLength_2(fixedPoints,outers,'bb',self.innerContract)
+        env2 = self.buildTopEnvGeo_H_horiLength_2(fixedPoints,outers,'tb',self.innerContract)
+        env2 += self.buildBotEnvGeo_H_horiLength_2(fixedPoints,outers,'bt',self.innerContract)
         return self.modifyLeftQuadrant_env(env1,env2)
 
 class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site11(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site2):
@@ -1133,32 +1128,30 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site11(gradImplementa
         self.style = 'top'
         super().__init__(psi,H)
     def buildTopEnvGeo(self,fixedPoints,outers):
-        env = self.buildTopEnvGeo_singleLeft(fixedPoints,outers,'tt',self.innerContract)
-        env += self.buildTopEnvGeo_singleLeft(fixedPoints,outers,'bt',self.innerContract)
+        env = self.buildTopEnvGeo_H_horiLength_2(fixedPoints,outers,'tt',self.innerContract)
+        env += self.buildTopEnvGeo_H_horiLength_2(fixedPoints,outers,'bt',self.innerContract)
         innerContract = ncon([self.innerContract,self.outerContract[self.style],self.outerContract[self.style]],((1,2,-3,-4,5,6,-7,-8,-9,-10),(1,5),(2,6)),forder=(-3,-4,-7,-8,-9,-10))
-        env += self.buildTopEnvGeo_single(fixedPoints,outers,'tt',innerContract)
-        env += self.buildTopEnvGeo_single(fixedPoints,outers,'bt',innerContract)
+        env += self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'tt',innerContract)
+        env += self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'bt',innerContract)
         return env
     def buildBotEnvGeo(self,fixedPoints,outers):
-        env = self.buildBotEnvGeo_singleLeft(fixedPoints,outers,'tt',self.innerContract)
-        env += self.buildBotEnvGeo_singleLeft(fixedPoints,outers,'tb',self.innerContract)
+        env = self.buildBotEnvGeo_H_horiLength_2(fixedPoints,outers,'tt',self.innerContract)
+        env += self.buildBotEnvGeo_H_horiLength_2(fixedPoints,outers,'tb',self.innerContract)
         innerContract = ncon([self.innerContract,self.outerContract[self.style],self.outerContract[self.style]],((1,2,-3,-4,5,6,-7,-8,-9,-10),(1,5),(2,6)),forder=(-3,-4,-7,-8,-9,-10))
-        env += self.buildBotEnvGeo_single(fixedPoints,outers,'tt',innerContract)
-        env += self.buildBotEnvGeo_single(fixedPoints,outers,'tb',innerContract)
+        env += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'tt',innerContract)
+        env += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'tb',innerContract)
         return env
-    def buildTopEnvGeo_quadrants(self,fixedPoints,outers,leftEnv):
-        innerContract = ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj()],((4,7),(2,5,-1,-4,7,-8),(2,5,-3,-6,4,-10)),forder=(-3,-6,-1,-4,-10,-8),order=(4,7,2,5))
-        env = self.buildTopEnvGeo_single(fixedPoints,outers,'tt',innerContract)
-        env += self.buildTopEnvGeo_single(fixedPoints,outers,'bt',innerContract)
+    def buildTopEnvGeo_quadrants(self,fixedPoints,outers):
+        env = self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'tt',self.innerContract_shiftedRight)
+        env += self.buildTopEnvGeo_H_horiLength_1(fixedPoints,outers,'bt',self.innerContract_shiftedRight)
         return env
-    def buildBotEnvGeo_quadrants(self,fixedPoints,outers,leftEnv,):
-        innerContract = ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj()],((4,7),(2,5,-1,-4,7,-8),(2,5,-3,-6,4,-10)),forder=(-3,-6,-1,-4,-10,-8),order=(4,7,2,5))
-        env = self.buildBotEnvGeo_single(fixedPoints,outers,'tt',innerContract)
-        env += self.buildBotEnvGeo_single(fixedPoints,outers,'tb',innerContract)
+    def buildBotEnvGeo_quadrants(self,fixedPoints,outers):
+        env = self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'tt',self.innerContract_shiftedRight)
+        env += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'tb',self.innerContract_shiftedRight)
         return env
     def buildRightEnvGeo_quadrants(self,fixedPoints,outers):
-        env1 = self.buildTopEnvGeo_singleLeft(fixedPoints,outers,'bt',self.innerContract)
-        env1 += self.buildBotEnvGeo_singleLeft(fixedPoints,outers,'tb',self.innerContract)
-        env2 = self.buildTopEnvGeo_singleLeft(fixedPoints,outers,'tt',self.innerContract)
-        env2 += self.buildBotEnvGeo_singleLeft(fixedPoints,outers,'tt',self.innerContract)
+        env1 = self.buildTopEnvGeo_H_horiLength_2(fixedPoints,outers,'bt',self.innerContract)
+        env1 += self.buildBotEnvGeo_H_horiLength_2(fixedPoints,outers,'tb',self.innerContract)
+        env2 = self.buildTopEnvGeo_H_horiLength_2(fixedPoints,outers,'tt',self.innerContract)
+        env2 += self.buildBotEnvGeo_H_horiLength_2(fixedPoints,outers,'tt',self.innerContract)
         return self.modifyLeftQuadrant_env(env1,env2)
