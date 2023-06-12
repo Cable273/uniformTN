@@ -85,7 +85,6 @@ class gradImplementation_mpso_2d_mpo_uniform_H_verticalLength_1(gradImplementati
             RR_d.norm_pairedCanon()
         fp = dict()
         fp['RR_d'] = RR_d.tensor
-        fp['RR_d'] = RR_d.tensor
         return fp
 
     def getOuterContracts(self,Td):
@@ -150,8 +149,7 @@ class gradImplementation_mpso_2d_mpo_uniform_oneBodyH(gradImplementation_mpso_2d
         env += self.buildBotEnvGeo(fixedPoints,outers)
         env = ncon([env,self.psi.mpo,self.psi.mpo.conj()],((3,1,7,5),(2,1,-4,5),(2,3,-6,7)),forder=(-6,-4),order=(5,7,1,2,3))
         env = self.psi.Tb_inv.applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
-        env = ncon([self.outerContract,env],((-1,-2),(-3,-4)),forder=(-1,-2,-3,-4))
-        return env
+        return self.wrapRightEnv(env)
 
 class gradImplementation_mpso_2d_mpo_uniform_twoBodyH_hori(gradImplementation_mpso_2d_mpo_uniform_H_verticalLength_1):
     def __init__(self,psi,H):
@@ -199,8 +197,7 @@ class gradImplementation_mpso_2d_mpo_uniform_twoBodyH_hori(gradImplementation_mp
         env += self.buildBotEnvGeo_H_horiLength_2(fixedPoints,outers,self.innerContract)
         env = ncon([env,self.psi.mpo,self.psi.mpo.conj()],((3,1,7,5),(2,1,-4,5),(2,3,-6,7)),forder=(-6,-4),order=(5,7,1,2,3))
         env = self.psi.Tb_inv.applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
-        env = ncon([self.outerContract,env],((-1,-2),(-3,-4)),forder=(-1,-2,-3,-4))
-        return env
+        return self.wrapRightEnv(env)
 
 # -----------------------------
 class gradImplementation_mpso_2d_mpo_uniform_H_verticalLength_2(gradImplementation_mpso_2d_mpo_uniform):
@@ -225,13 +222,9 @@ class gradImplementation_mpso_2d_mpo_uniform_H_verticalLength_2(gradImplementati
         outercontractTriple_upper = ncon([self.psi.mps,self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.mps.conj(),Td,self.psi.T.tensor],((-1,7,8),(-3,8,9),(-5,10,11),(-2,7,15),(-4,15,14),(-6,13,12),(14,9,13,10),(12,11)),forder=(-2,-4,-6,-1,-3,-5),order=(7,8,15,9,14,10,13,11,12))
         outercontractTriple_lower = ncon([self.psi.mps,self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.mps.conj(),Td,self.psi.T.tensor],((-1,7,8),(-3,9,10),(-5,10,11),(-2,7,15),(-4,14,13),(-6,13,12),(15,8,14,9),(12,11)),forder=(-2,-4,-6,-1,-3,-5),order=(7,8,15,9,14,10,13,11,12))
 
-        outerContract_open_top = ncon([self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.T.tensor,Td],((-1,6,7),(-3,7,8),(-2,11,10),(-4,10,9),(9,8),(-12,-5,11,6)),forder=(-2,-4,-1,-3,-12,-5),order=(9,8,7,10,6,11))
-        outerContract_open_bot = ncon([self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),Td],((-1,5,6),(-3,6,7),(-2,5,11),(-4,11,10),(10,7,-9,-8)),forder=(-2,-4,-1,-3,-9,-8),order=(5,6,11,10,7))
         fp = dict()
         fp['outerContractTriple_upper'] = outercontractTriple_upper
         fp['outerContractTriple_lower'] = outercontractTriple_lower
-        fp['outerContract_open_top'] = outerContract_open_top
-        fp['outerContract_open_bot'] = outerContract_open_bot
         return fp
 
     def buildTopEnvGeo_H_horiLength_1(self,fixedPoints,outers,innerContract):
