@@ -151,7 +151,7 @@ class mpsu1Transfer_left_twoLayerWithMPSInsert_twoSite(regularTransfer): #twoSit
         else:
             print("ERROR: mpsu1Transfer_left_twoLayerWithMpsInsert_twoSite style not valid")
             return 1
-        innerContract = ncon([B,B.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-8,-10),order=(2,5))
+        innerContract = ncon([B,B.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-10,-8),order=(2,5))
         self.matrix = ncon([innerContract,innerContract,outerContract,outerContract],((1,2,3,4,-5,-6,-7,-8),(9,10,11,12,-13,-14,-15,-16),(9,1,11,3),(10,2,12,4)),forder=(-13,-14,-5,-6,-15,-16,-7,-8),order=(3,1,4,2,11,9,12,10)).reshape(self.D**4,self.D**4)
 
 class mpsu1Transfer_left_twoLayer(regularTransfer):
