@@ -126,13 +126,13 @@ class mpsu1Transfer_left_twoLayer_twoSite(regularTransfer): #twoSite unit cell m
         self.D = np.size(B,axis=4)
         self.noLegs = 4
         if style == "square":
-            outerContract= ncon([A,A.conj(),T.tensor],((-1,-3,5,6),(-2,-4,5,7),(6,7)),forder=(-2,-4,-1,-3),order=(5,6,7))
+            outerContract= ncon([A,A.conj(),T.tensor],((-1,-3,5,6),(-2,-4,5,7),(7,6)),forder=(-2,-4,-1,-3),order=(5,6,7))
         elif style == "prong":
             outerContract= ncon([A,A,A.conj(),A.conj(),T.tensor],((1,-2,7,8),(-4,6,8,9),(1,-3,7,11),(-5,6,11,10),(10,9)),forder=(-3,-5,-2,-4),order=(7,1,8,11,6,9,10))
         else:
             print("ERROR: mpsu1Transfer_left_twoLayer_twoSite style not valid")
             return 1
-        innerContract = ncon([B,B.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-8,-10),order=(2,5))
+        innerContract = ncon([B,B.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-10,-8),order=(2,5))
         self.matrix = ncon([innerContract,innerContract,outerContract,outerContract],((1,2,3,4,-5,-6,-7,-8),(9,10,11,12,-13,-14,-15,-16),(9,1,11,3),(10,2,12,4)),forder=(-13,-14,-5,-6,-15,-16,-7,-8),order=(3,1,4,2,11,9,12,10)).reshape(self.D**4,self.D**4)
 class mpsu1Transfer_left_twoLayerWithMPSInsert_twoSite(regularTransfer): #twoSite unit cell mpso
     def __init__(self,A,B,T,style,Td):
@@ -256,3 +256,41 @@ class mpsu1Transfer_left_threeLayerWithMpsInsert_lowerBip_plusOne(regularTransfe
         self.matrix = np.dot(matrix1,matrix2)
         del matrix1
         del matrix2
+
+class mpsu1Transfer_left_threeLayerWithMPSInsert_twoSite_upper(regularTransfer):
+    def __init__(self,mps,mpo,T,style,Td):
+        self.D = np.size(mpo,axis=4)
+        self.noLegs = 6
+
+        outerContractTriple_square_Quad = ncon([mps,mps,mps.conj(),mps.conj(),Td,T.tensor],((-1,-3,9,10),(-5,-7,11,12),(-2,-4,9,15),(-6,-8,14,13),(15,10,14,11),(13,12)),forder=(-2,-4,-6,-8,-1,-3,-5,-7),order=(9,10,15,11,14,12,13))
+        outerContractTriple_upper_prong_Quad = ncon([mps,mps,mps,mps.conj(),mps.conj(),mps.conj(),Td,T.tensor],((1,-2,11,12),(-4,6,12,13),(-7,-9,14,15),(1,-3,11,19),(-5,6,19,18),(-8,-10,17,16),(18,13,17,14),(16,15)),forder=(-3,-5,-8,-10,-2,-4,-7,-9),order=(11,1,12,19,6,13,18,14,17,15,16))
+        if style == 'sb':
+            outerContractTriple = ncon([outerContractTriple_square_Quad],((-2,-4,-6,7,-1,-3,-5,7)),forder=(-2,-4,-6,-1,-3,-5))
+        elif style == 'st':
+            outerContractTriple = ncon([outerContractTriple_square_Quad],((-2,-4,5,-7,-1,-3,5,-6)),forder=(-2,-4,-7,-1,-3,-6))
+        elif style == 'pb':
+            outerContractTriple = ncon([outerContractTriple_upper_prong_Quad],((-2,-4,-6,7,-1,-3,-5,7)),forder=(-2,-4,-6,-1,-3,-5))
+        elif style == 'pt':
+            outerContractTriple = ncon([outerContractTriple_upper_prong_Quad],((-2,-4,5,-7,-1,-3,5,-6)),forder=(-2,-4,-7,-1,-3,-6))
+        innerContract = ncon([mpo,mpo.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-10,-8),order=(2,5))
+
+        self.matrix = ncon([innerContract,innerContract,innerContract,outerContractTriple,outerContractTriple],((1,2,3,4,-5,-6,-7,-8),(9,10,11,12,-13,-14,-15,-16),(17,18,19,20,-21,-22,-23,-24),(17,9,1,19,11,3),(18,10,2,20,12,4)),forder=(-21,-22,-13,-14,-5,-6,-23,-24,-15,-16,-7,-8),order=(19,20,17,18,11,12,9,10,1,2,3,4)).reshape(self.D**6,self.D**6)
+
+class mpsu1Transfer_left_threeLayerWithMPSInsert_twoSite_lower(regularTransfer):
+    def __init__(self,mps,mpo,T,style,Td):
+        self.D = np.size(mpo,axis=4)
+        self.noLegs = 6
+
+        outerContractTriple_square_Quad = ncon([mps,mps,mps.conj(),mps.conj(),Td,T.tensor],((-1,-3,9,10),(-5,-7,11,12),(-2,-4,9,15),(-6,-8,14,13),(15,10,14,11),(13,12)),forder=(-2,-4,-6,-8,-1,-3,-5,-7),order=(9,10,15,11,14,12,13))
+        outerContractTriple_lower_prong_Quad = ncon([mps,mps,mps,mps.conj(),mps.conj(),mps.conj(),Td,T.tensor],((-1,-3,11,12),(5,-6,13,14),(-8,10,14,15),(-2,-4,11,19),(5,-7,18,17),(-9,10,17,16),(19,12,18,13),(16,15)),forder=(-2,-4,-7,-9,-1,-3,-6,-8),order=(15,16,10,14,17,5,13,18,12,19,11))
+        if style == 'bs':
+            outerContractTriple = ncon([outerContractTriple_square_Quad],((-2,3,-5,-7,-1,3,-4,-6)),forder=(-2,-5,-7,-1,-4,-6))
+        elif style == 'ts':
+            outerContractTriple = ncon([outerContractTriple_square_Quad],((1,-3,-5,-7,1,-2,-4,-6)),forder=(-3,-5,-7,-2,-4,-6))
+        elif style == 'bp':
+            outerContractTriple = ncon([outerContractTriple_lower_prong_Quad],((-2,3,-5,-7,-1,3,-4,-6)),forder=(-2,-5,-7,-1,-4,-6))
+        elif style == 'tp':
+            outerContractTriple = ncon([outerContractTriple_lower_prong_Quad],((1,-3,-5,-7,1,-2,-4,-6)),forder=(-3,-5,-7,-2,-4,-6))
+        innerContract = ncon([mpo,mpo.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-10,-8))
+
+        self.matrix = ncon([innerContract,innerContract,innerContract,outerContractTriple,outerContractTriple],((1,2,3,4,-5,-6,-7,-8),(9,10,11,12,-13,-14,-15,-16),(17,18,19,20,-21,-22,-23,-24),(17,9,1,19,11,3),(18,10,2,20,12,4)),forder=(-21,-22,-13,-14,-5,-6,-23,-24,-15,-16,-7,-8),order=(19,20,17,18,11,12,9,10,1,2,3,4)).reshape(self.D**6,self.D**6)
