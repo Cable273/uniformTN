@@ -94,17 +94,23 @@ class gradImplementation_mpso_2d_mps_twoSite_twoBodyH_hori(gradImplementation_mp
             outerContract= ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((1,-2,4,5),(1,-3,4,6),(6,5)),forder=(-3,-2),order=(4,1,5,6))
             tensorLabel = 'top'
 
-        H_eff = ncon([self.psi.mpo,self.H,self.psi.mpo.conj(),outerContract,self.psi.R[tensorLabel].tensor],((2,6,-1,5,9,10),(3,7,2,6),(3,7,-4,8,9,11),(8,5),(11,10)),forder=(-4,-1),order=(11,10,5,6,7,8,2,3,9))
-        H_eff += ncon([self.psi.mpo,self.H,self.psi.mpo.conj(),outerContract,self.psi.R[tensorLabel].tensor],((2,6,1,-5,9,10),(3,7,2,6),(3,7,4,-8,9,11),(4,1),(11,10)),forder=(-8,-5),order=(9,1,2,3,4,6,7,10,11))
-        H_eff += ncon([self.psi.mpo,self.psi.mpo,self.H,self.psi.mpo.conj(),self.psi.mpo.conj(),outerContract,outerContract,outerContract,self.psi.R[tensorLabel].tensor],((2,5,1,-4,15,16),(9,13,8,12,16,17),(6,10,5,9),(2,6,3,-7,15,19),(10,13,11,14,19,18),(3,1),(11,8),(14,12),(18,17)),forder=(-7,-4),order=(18,17,12,13,14,8,9,10,11,16,19,5,6,1,2,3,15))
-        H_eff += ncon([self.psi.mpo,self.psi.mpo,self.H,self.psi.mpo.conj(),self.psi.mpo.conj(),outerContract,outerContract,outerContract,self.psi.R[tensorLabel].tensor],((2,5,1,4,15,16),(9,13,-8,12,16,17),(6,10,5,9),(2,6,3,7,15,19),(10,13,-11,14,19,18),(3,1),(7,4),(14,12),(18,17)),forder=(-11,-8),order=(15,1,2,3,4,5,6,7,16,19,9,10,12,13,14,17,18))
+        innerContract_centre  = ncon([self.psi.mpo,self.H,self.psi.mpo.conj(),self.psi.R[tensorLabel].tensor],((2,6,-1,-5,9,10),(3,7,2,6),(3,7,-4,-8,9,11),(11,10)),forder=(-4,-8,-1,-5),order=(9,2,3,6,7,10,11))
+        H_eff = ncon([innerContract_centre,outerContract],((-1,2,-3,4),(2,4)),forder=(-1,-3))
+        H_eff += ncon([innerContract_centre,outerContract],((1,-2,3,-4),(1,3)),forder=(-2,-4))
+
+        innerContract_offCentre  = ncon([self.psi.mpo,self.psi.mpo,self.H,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.R[tensorLabel].tensor],((2,5,-1,-4,15,16),(9,13,-8,-12,16,17),(6,10,5,9),(2,6,-3,-7,15,19),(10,13,-11,-14,19,18),(18,17)),forder=(-3,-7,-11,-14,-1,-4,-8,-12),order=(15,2,5,6,16,19,9,10,13,17,18))
+        H_eff += ncon([innerContract_offCentre,outerContract,outerContract,outerContract],((-1,2,3,4,-5,6,7,8),(2,6),(3,7),(4,8)),forder=(-1,-5))
+        H_eff += ncon([innerContract_offCentre,outerContract,outerContract,outerContract],((1,-2,3,4,5,-6,7,8),(1,5),(3,7),(4,8)),forder=(-2,-6))
+        H_eff += ncon([innerContract_offCentre,outerContract,outerContract,outerContract],((1,2,-3,4,5,6,-7,8),(1,5),(2,6),(4,8)),forder=(-3,-7))
+        H_eff += ncon([innerContract_offCentre,outerContract,outerContract,outerContract],((1,2,3,-4,5,6,7,-8),(1,5),(2,6),(3,7)),forder=(-4,-8))
 
         leftEnv = ncon([self.psi.mpo,self.H,self.psi.mpo.conj(),outerContract,outerContract],((2,6,1,5,9,-10),(3,7,2,6),(3,7,4,8,9,-11),(4,1),(8,5)),forder=(-11,-10),order=(9,1,2,3,4,5,6,7,8))
         leftEnv += ncon([self.psi.mpo,self.psi.mpo,self.H,self.psi.mpo.conj(),self.psi.mpo.conj(),outerContract,outerContract,outerContract,outerContract],((2,5,1,4,15,16),(9,13,8,12,16,-17),(6,10,5,9),(2,6,3,7,15,19),(10,13,11,14,19,-18),(3,1),(7,4),(11,8),(14,12)),forder=(-18,-17),order=(15,1,2,3,4,5,6,7,16,19,8,9,10,11,12,13,14))
         leftEnv = self.psi.Tb_inv[tensorLabel].applyRight(leftEnv.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
+        innerContract_centre  = ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj(),self.psi.R[tensorLabel].tensor],((9,7),(2,5,-1,-4,7,8),(2,5,-3,-6,9,10),(10,8)),forder=(-3,-6,-1,-4),order=(7,9,2,5,8,10))
+        H_eff += ncon([innerContract_centre,outerContract],((-1,2,-3,4),(2,4)),forder=(-1,-3))
+        H_eff += ncon([innerContract_centre,outerContract],((1,-2,3,-4),(1,3)),forder=(-2,-4))
 
-        H_eff += ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj(),outerContract,self.psi.R[tensorLabel].tensor],((10,7),(2,5,-1,4,7,8),(2,5,-3,6,10,9),(6,4),(9,8)),forder=(-3,-1),order=(8,9,4,5,6,2,7,10))
-        H_eff += ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj(),outerContract,self.psi.R[tensorLabel].tensor],((10,7),(2,5,1,-4,7,8),(2,5,3,-6,10,9),(3,1),(9,8)),forder=(-6,-4),order=(7,10,1,2,3,5,8,9))
         return oneBodyH(1/2*H_eff)
 
 class gradImplementation_mpso_2d_mps_twoSite_twoBodyH_vert(gradImplementation_mpso_2d_mps_uniform):
