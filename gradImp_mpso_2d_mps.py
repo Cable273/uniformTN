@@ -63,7 +63,7 @@ class gradImplementation_mpso_2d_mps_uniform_twoBodyH_vert(gradImplementation_mp
         return twoBodyH(H_eff_centre + H_eff_shifted)
 
 # -----------------------------
-class gradImplementation_mpso_2d_mps_twoSite_oneBodyH(gradImplementation_mpso_2d_mps_uniform):
+class gradImplementation_mpso_2d_mps_twoSite_square_oneBodyH(gradImplementation_mpso_2d_mps_uniform):
     def getEffectiveH(self,site):
         if site == 1:
             outerContract= ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((-1,3,4,5),(-2,3,4,6),(6,5)),forder=(-2,-1),order=(4,3,5,6))
@@ -85,7 +85,7 @@ class gradImplementation_mpso_2d_mps_twoSite_oneBodyH(gradImplementation_mpso_2d
         H_eff += ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj(),outerContract,self.psi.R[tensorLabel].tensor],((10,7),(2,5,1,-4,7,8),(2,5,3,-6,10,9),(3,1),(9,8)),forder=(-6,-4),order=(7,10,1,2,3,5,8,9))
         return oneBodyH(1/2*H_eff)
 
-class gradImplementation_mpso_2d_mps_twoSite_twoBodyH_hori(gradImplementation_mpso_2d_mps_uniform):
+class gradImplementation_mpso_2d_mps_twoSite_square_twoBodyH_hori(gradImplementation_mpso_2d_mps_uniform):
     def getEffectiveH(self,site):
         if site == 1:
             outerContract= ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((-1,3,4,5),(-2,3,4,6),(6,5)),forder=(-2,-1),order=(4,3,5,6))
@@ -113,7 +113,7 @@ class gradImplementation_mpso_2d_mps_twoSite_twoBodyH_hori(gradImplementation_mp
 
         return oneBodyH(1/2*H_eff)
 
-class gradImplementation_mpso_2d_mps_twoSite_twoBodyH_vert(gradImplementation_mpso_2d_mps_uniform):
+class gradImplementation_mpso_2d_mps_twoSite_square_twoBodyH_vert(gradImplementation_mpso_2d_mps_uniform):
     def getEffectiveH(self,site):
         if site == 1:
             outerContract= ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((-1,-3,5,6),(-2,-4,5,7),(6,7)),forder=(-2,-4,-1,-3),order=(5,6,7))

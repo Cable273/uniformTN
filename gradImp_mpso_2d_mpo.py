@@ -901,7 +901,7 @@ class gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_vert(gradImplementation_
         return self.modifyLeftQuadrant_env(env1,env2)
 
 # -----------------------------
-class gradImplementation_mpso_2d_mpo_twoSite(gradImplementation_mpso_2d_mpo):
+class gradImplementation_mpso_2d_mpo_twoSite_square(gradImplementation_mpso_2d_mpo):
     def wrapRightEnv_single(self,env):
         return ncon([env,self.outerContract[self.style],self.outerContract[self.style]],((-5,-6),(-1,-2),(-3,-4)),forder=(-1,-3,-2,-4,-5,-6))
     def wrapLeftEnv_single(self,env):
@@ -915,7 +915,7 @@ class gradImplementation_mpso_2d_mpo_twoSite(gradImplementation_mpso_2d_mpo):
         env_top = ncon([env_top,self.outerContract['top'],self.outerContract['top']],((-5,-6),(-1,-2),(-3,-4)),forder=(-1,-3,-2,-4,-5,-6))
         return env_bot + env_top
 
-class gradImplementation_mpso_2d_mpo_twoSite_H_verticalLength_1(gradImplementation_mpso_2d_mpo_twoSite):
+class gradImplementation_mpso_2d_mpo_twoSite_square_H_verticalLength_1(gradImplementation_mpso_2d_mpo_twoSite_square):
     def __init__(self,psi,H):
         super().__init__(psi,H)
         #objects needed to construct terms
@@ -981,7 +981,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_H_verticalLength_1(gradImplementati
         return self.wrapLeftEnv_single(env)
 
 #terms with the Hamiltonian under site 1 of the mpo ('on centre')
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site1(gradImplementation_mpso_2d_mpo_twoSite_H_verticalLength_1):
+class gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site1(gradImplementation_mpso_2d_mpo_twoSite_square_H_verticalLength_1):
     def __init__(self,psi,H):
         super().__init__(psi,H)
         innerContract = ncon([self.psi.mpo,self.H,self.psi.mpo.conj()],((2,6,-1,-5,9,-10),(3,7,2,6),(3,7,-4,-8,9,-11)),forder=(-4,-8,-1,-5,-11,-10),order=(9,2,3,6,7))
@@ -1010,7 +1010,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site1(gradImplementat
         return env
 
 #terms with the Hamiltonian under site 2 of the mpo ('off centre')
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site2(gradImplementation_mpso_2d_mpo_twoSite_H_verticalLength_1):
+class gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site2(gradImplementation_mpso_2d_mpo_twoSite_square_H_verticalLength_1):
     def __init__(self,psi,H):
         super().__init__(psi,H)
         #objects needed to construct terms
@@ -1041,7 +1041,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site2(gradImplementat
         env = self.psi.Tb_inv[self.style].applyLeft(env.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
         return env
 
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site00(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site1):
+class gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site00(gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site1):
     def __init__(self,psi,H):
         self.style = 'bot'
         super().__init__(psi,H)
@@ -1068,7 +1068,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site00(gradImplementa
         env2 += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'bt',self.innerContract)
         return self.modifyLeftQuadrant_env(env1,env2)
 
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site10(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site1):
+class gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site10(gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site1):
     def __init__(self,psi,H):
         self.style = 'top'
         super().__init__(psi,H)
@@ -1095,7 +1095,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site10(gradImplementa
         env2 += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'tt',self.innerContract)
         return self.modifyLeftQuadrant_env(env1,env2)
 
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site01(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site2):
+class gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site01(gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site2):
     def __init__(self,psi,H):
         self.style = 'bot'
         super().__init__(psi,H)
@@ -1128,7 +1128,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site01(gradImplementa
         env2 += self.buildBotEnvGeo_H_horiLength_2(fixedPoints,outers,'bt',self.innerContract)
         return self.modifyLeftQuadrant_env(env1,env2)
 
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site11(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site2):
+class gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site11(gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site2):
     def __init__(self,psi,H):
         self.style = 'top'
         super().__init__(psi,H)
@@ -1162,7 +1162,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site11(gradImplementa
         return self.modifyLeftQuadrant_env(env1,env2)
 
 # -----------------------------
-class gradImplementation_mpso_2d_mpo_twoSite_H_verticalLength_2(gradImplementation_mpso_2d_mpo_twoSite):
+class gradImplementation_mpso_2d_mpo_twoSite_square_H_verticalLength_2(gradImplementation_mpso_2d_mpo_twoSite_square):
     def __init__(self,psi,H):
         super().__init__(psi,H)
         #objects needed to construct terms
@@ -1276,7 +1276,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_H_verticalLength_2(gradImplementati
             return wrappedEnv
 
 
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site1(gradImplementation_mpso_2d_mpo_twoSite_H_verticalLength_2):
+class gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site1(gradImplementation_mpso_2d_mpo_twoSite_square_H_verticalLength_2):
     def __init__(self,psi,H):
         super().__init__(psi,H)
         innerContract = ncon([self.psi.mpo,self.psi.mpo.conj(),self.H,self.psi.mpo,self.psi.mpo.conj()],((2,6,-1,-5,8,-9),(3,6,-4,-7,8,-10),(13,3,12,2),(12,16,-11,-15,18,-19),(13,16,-14,-17,18,-20)),forder=(-14,-4,-17,-7,-11,-1,-15,-5,-20,-19,-10,-9),order=(8,2,3,6,18,12,13,16))
@@ -1306,7 +1306,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site1(gradImplementat
         env = self.psi.Tb2_inv[self.style].applyLeft(env.reshape(self.psi.D_mpo**4)).reshape(self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
         return env
 
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site2(gradImplementation_mpso_2d_mpo_twoSite_H_verticalLength_2):
+class gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site2(gradImplementation_mpso_2d_mpo_twoSite_square_H_verticalLength_2):
     def __init__(self,psi,H):
         super().__init__(psi,H)
         innerContract = ncon([self.psi.mpo,self.psi.mpo.conj(),self.H,self.psi.mpo,self.psi.mpo.conj()],((2,5,-1,-4,8,-9),(2,6,-3,-7,8,-10),(16,6,15,5),(12,15,-11,-14,18,-19),(12,16,-13,-17,18,-20)),forder=(-13,-3,-17,-7,-11,-1,-14,-4,-20,-19,-10,-9),order=(8,2,5,6,18,12,15,16))
@@ -1336,7 +1336,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site2(gradImplementat
         env = self.psi.Tb2_inv[self.style].applyLeft(env.reshape(self.psi.D_mpo**4)).reshape(self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
         return env
 
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site00(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site1):
+class gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site00(gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site1):
     def __init__(self,psi,H):
         self.style = 'square'
         super().__init__(psi,H)
@@ -1363,7 +1363,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site00(gradImplementa
         env_top += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'st',self.innerContract)
         return self.modifyLeftQuadrant_env(env_bot,env_top)
 
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site10(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site1):
+class gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site10(gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site1):
     def __init__(self,psi,H):
         self.style = 'prong'
         super().__init__(psi,H)
@@ -1390,7 +1390,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site10(gradImplementa
         env_top += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'pt',self.innerContract)
         return self.modifyLeftQuadrant_env(env_bot,env_top)
 
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site01(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site2):
+class gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site01(gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site2):
     def __init__(self,psi,H):
         self.style = 'square'
         super().__init__(psi,H)
@@ -1417,7 +1417,7 @@ class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site01(gradImplementa
         env_top += self.buildBotEnvGeo_H_horiLength_1(fixedPoints,outers,'st',self.innerContract)
         return self.modifyLeftQuadrant_env(env_bot,env_top)
 
-class gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site11(gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site2):
+class gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site11(gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site2):
     def __init__(self,psi,H):
         self.style = 'prong'
         super().__init__(psi,H)

@@ -37,8 +37,8 @@ def gradFactory(psi,H):
     elif type(psi) == uMPSU1_2d_left_bipartite:
         return gradEvaluater_mpso_2d_bipartite(psi,H)
 
-    elif type(psi) == uMPSU1_2d_left_twoSite:
-        return gradEvaluater_mpso_2d_twoSite(psi,H)
+    elif type(psi) == uMPSU1_2d_left_twoSite_square:
+        return gradEvaluater_mpso_2d_twoSite_square(psi,H)
 
 class gradEvaluater(ABC):
     def __init__(self,psi,H):
@@ -217,11 +217,11 @@ class gradEvaluater_mpso_2d_uniform(gradEvaluater_mpso_2d):
         super().__init__(psi,H)
         self.gradA_evaluater = gradEvaluater_mpso_2d_mps_uniform(psi,H)
         self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_uniform(psi,H)
-class gradEvaluater_mpso_2d_twoSite(gradEvaluater_mpso_2d):
+class gradEvaluater_mpso_2d_twoSite_square(gradEvaluater_mpso_2d):
     def __init__(self,psi,H):
         super().__init__(psi,H)
-        self.gradA_evaluater = gradEvaluater_mpso_2d_mps_twoSite(psi,H)
-        self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_twoSite(psi,H)
+        self.gradA_evaluater = gradEvaluater_mpso_2d_mps_twoSite_square(psi,H)
+        self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_twoSite_square(psi,H)
 class gradEvaluater_mpso_2d_bipartite(gradEvaluater_mpso_2d):
     def __init__(self,psi,H):
         super().__init__(psi,H)
@@ -263,7 +263,7 @@ class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps):
             effH.append(self.H_imp[n].getEffectiveH())
         effH = localH(effH)
         return gradEvaluater_uniform_1d_oneSiteLeft(self.eff_psi,effH)
-class gradEvaluater_mpso_2d_mps_twoSite(gradEvaluater_mpso_2d_mps):
+class gradEvaluater_mpso_2d_mps_twoSite_square(gradEvaluater_mpso_2d_mps):
     def getEffective_1d_evaluater(self):
         effH1 = [] #Hamiltonian acting on first site
         effH2 = [] #"" on second site
@@ -379,14 +379,14 @@ class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps_uniform):
         elif type(H) == twoBodyH_vert:
             return gradImplementation_mpso_2d_mps_uniform_twoBodyH_vert(self.psi,H.tensor)
 
-class gradEvaluater_mpso_2d_mps_twoSite(gradEvaluater_mpso_2d_mps_twoSite):
+class gradEvaluater_mpso_2d_mps_twoSite_square(gradEvaluater_mpso_2d_mps_twoSite_square):
     def fetch_implementation(self,H):
         if type(H) == oneBodyH:
-            return gradImplementation_mpso_2d_mps_twoSite_oneBodyH(self.psi,H.tensor)
+            return gradImplementation_mpso_2d_mps_twoSite_square_oneBodyH(self.psi,H.tensor)
         elif type(H) == twoBodyH_hori:
-            return gradImplementation_mpso_2d_mps_twoSite_twoBodyH_hori(self.psi,H.tensor)
+            return gradImplementation_mpso_2d_mps_twoSite_square_twoBodyH_hori(self.psi,H.tensor)
         elif type(H) == twoBodyH_vert:
-            return gradImplementation_mpso_2d_mps_twoSite_twoBodyH_vert(self.psi,H.tensor)
+            return gradImplementation_mpso_2d_mps_twoSite_square_twoBodyH_vert(self.psi,H.tensor)
 
 class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo_uniform):
     def fetch_implementation(self,H):
@@ -402,7 +402,7 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo_uniform):
     def wrapAroundRight(self,env):
         return ncon([self.psi.mpo,env],((-2,1,4,5),(-3,1,-6,4,-7,5)),forder=(-2,-3,-6,-7),order=(4,1,5))
 
-class gradEvaluater_mpso_2d_mpo_twoSite_ind(gradEvaluater_mpso_2d_mpo_uniform):
+class gradEvaluater_mpso_2d_mpo_twoSite_square_ind(gradEvaluater_mpso_2d_mpo_uniform):
     def __init__(self,psi,H,siteLabel):
         self.siteLabel = siteLabel
         super().__init__(psi,H)
@@ -410,33 +410,33 @@ class gradEvaluater_mpso_2d_mpo_twoSite_ind(gradEvaluater_mpso_2d_mpo_uniform):
     def fetch_implementation(self,H):
         if type(H) == oneBodyH:
             if self.siteLabel == '00':
-                return gradImplementation_mpso_2d_mpo_twoSite_oneBodyH_site00(self.psi,H.tensor)
+                return gradImplementation_mpso_2d_mpo_twoSite_square_oneBodyH_site00(self.psi,H.tensor)
             elif self.siteLabel == '01':
-                return gradImplementation_mpso_2d_mpo_twoSite_oneBodyH_site01(self.psi,H.tensor)
+                return gradImplementation_mpso_2d_mpo_twoSite_square_oneBodyH_site01(self.psi,H.tensor)
             elif self.siteLabel == '10':
-                return gradImplementation_mpso_2d_mpo_twoSite_oneBodyH_site10(self.psi,H.tensor)
+                return gradImplementation_mpso_2d_mpo_twoSite_square_oneBodyH_site10(self.psi,H.tensor)
             elif self.siteLabel == '11':
-                return gradImplementation_mpso_2d_mpo_twoSite_oneBodyH_site11(self.psi,H.tensor)
+                return gradImplementation_mpso_2d_mpo_twoSite_square_oneBodyH_site11(self.psi,H.tensor)
 
         elif type(H) == twoBodyH_hori:
             if self.siteLabel == '00':
-                return gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site00(self.psi,H.tensor)
+                return gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site00(self.psi,H.tensor)
             elif self.siteLabel == '01':
-                return gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site01(self.psi,H.tensor)
+                return gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site01(self.psi,H.tensor)
             elif self.siteLabel == '10':
-                return gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site10(self.psi,H.tensor)
+                return gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site10(self.psi,H.tensor)
             elif self.siteLabel == '11':
-                return gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_hori_site11(self.psi,H.tensor)
+                return gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_hori_site11(self.psi,H.tensor)
 
         elif type(H) == twoBodyH_vert:
             if self.siteLabel == '00':
-                return gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site00(self.psi,H.tensor)
+                return gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site00(self.psi,H.tensor)
             elif self.siteLabel == '01':
-                return gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site01(self.psi,H.tensor)
+                return gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site01(self.psi,H.tensor)
             elif self.siteLabel == '10':
-                return gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site10(self.psi,H.tensor)
+                return gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site10(self.psi,H.tensor)
             elif self.siteLabel == '11':
-                return gradImplementation_mpso_2d_mpo_twoSite_twoBodyH_vert_site11(self.psi,H.tensor)
+                return gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site11(self.psi,H.tensor)
 
     def wrapAroundLeft(self,env):
         return ncon([self.psi.mpo,env],((-2,-5,1,4,-7,8),(-3,-6,1,4,-9,8)),forder=(-2,-5,-3,-6,-7,-9),order=(8,1,4))
@@ -587,14 +587,14 @@ class gradEvaluater_mpso_2d_mpo_twoSiteUnitCell_wrapper(gradEvaluater):
                 print("d_22: ",d_22,mag_22)
         self.buildTotalGrad()
 
-class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater_mpso_2d_mpo_twoSiteUnitCell_wrapper):
+class gradEvaluater_mpso_2d_mpo_twoSite_square(gradEvaluater_mpso_2d_mpo_twoSiteUnitCell_wrapper):
     def __init__(self,psi,H):
         self.psi = psi
         self.H = H
-        self.gradEvaluater_11 = gradEvaluater_mpso_2d_mpo_twoSite_ind(self.psi,self.H,siteLabel='00')
-        self.gradEvaluater_12 = gradEvaluater_mpso_2d_mpo_twoSite_ind(self.psi,self.H,siteLabel='01')
-        self.gradEvaluater_21 = gradEvaluater_mpso_2d_mpo_twoSite_ind(self.psi,self.H,siteLabel='10')
-        self.gradEvaluater_22 = gradEvaluater_mpso_2d_mpo_twoSite_ind(self.psi,self.H,siteLabel='11')
+        self.gradEvaluater_11 = gradEvaluater_mpso_2d_mpo_twoSite_square_ind(self.psi,self.H,siteLabel='00')
+        self.gradEvaluater_12 = gradEvaluater_mpso_2d_mpo_twoSite_square_ind(self.psi,self.H,siteLabel='01')
+        self.gradEvaluater_21 = gradEvaluater_mpso_2d_mpo_twoSite_square_ind(self.psi,self.H,siteLabel='10')
+        self.gradEvaluater_22 = gradEvaluater_mpso_2d_mpo_twoSite_square_ind(self.psi,self.H,siteLabel='11')
 
     def buildTotalGrad(self):
         self.grad = 1/4*(self.grad_11 + self.grad_12 + self.grad_21 + self.grad_22)
