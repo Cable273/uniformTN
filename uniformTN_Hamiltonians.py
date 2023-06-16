@@ -178,7 +178,7 @@ class twoBodyH_vert(twoBodyH):
     def exp_2d_left_twoSite_square(self,psi):
         #four terms
         outerContract = dict()
-        outerContract['square'] = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,-3,5,6),(-2,-4,5,7),(6,7)),forder=(-2,-4,-1,-3),order=(5,6,7))
+        outerContract['square'] = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,-3,5,6),(-2,-4,5,7),(7,6)),forder=(-2,-4,-1,-3),order=(5,6,7))
         outerContract['prong']= ncon([psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.T.tensor],((1,-2,7,8),(-4,6,8,9),(1,-3,7,11),(-5,6,11,10),(10,9)),forder=(-3,-5,-2,-4),order=(7,1,8,11,6,9,10))
 
         E = ncon([psi.mpo,psi.mpo.conj(),psi.mpo,psi.mpo.conj(),self.tensor,outerContract['square'],outerContract['square'],psi.RR['square'].tensor],((2,6,1,5,15,16),(3,6,4,7,15,17),(9,13,8,12,18,19),(10,13,11,14,18,20),(10,3,9,2),(11,4,8,1),(14,7,12,5),(20,19,17,16)),order=(15,1,2,3,4,5,6,7,16,17,19,20,12,13,14,8,9,10,11,18))
