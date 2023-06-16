@@ -41,7 +41,7 @@ def gradFactory(psi,H):
         return gradEvaluater_mpso_2d_twoSite_square(psi,H)
 
     elif type(psi) == uMPSU1_2d_left_twoSite_staircase:
-        return gradEvaluater_mpso_2d_mps_twoSite_staircase(psi,H)
+        return gradEvaluater_mpso_2d_twoSite_staircase(psi,H)
 
 class gradEvaluater(ABC):
     def __init__(self,psi,H):
@@ -310,7 +310,7 @@ class gradEvaluater_mpso_2d_mps_twoSite_staircase(gradEvaluater_mpso_2d_mps_twoS
             return gradImplementation_mpso_2d_mps_twoSite_staircase_twoBodyH_vert(self.psi,H.tensor)
 
 
-class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
+class gradEvaluater_mpso_2d_mpo(gradEvaluater):
     @abstractmethod
     def wrapAroundLeft(self):
         pass
@@ -373,10 +373,25 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
                 if printEnv is True:
                     print("d: ",d,mag)
             
+
+class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo):
+    def fetch_implementation(self,H):
+        if type(H) == oneBodyH:
+            return gradImplementation_mpso_2d_mpo_uniform_oneBodyH(self.psi,H.tensor)
+        elif type(H) == twoBodyH_hori:
+            return gradImplementation_mpso_2d_mpo_uniform_twoBodyH_hori(self.psi,H.tensor)
+        elif type(H) == twoBodyH_vert:
+            return gradImplementation_mpso_2d_mpo_uniform_twoBodyH_vert(self.psi,H.tensor)
+
+    def wrapAroundLeft(self,env):
+        return ncon([self.psi.mpo,env],((-2,1,-4,5),(-3,1,-6,5)),forder=(-2,-3,-4,-6),order=(5,1))
+    def wrapAroundRight(self,env):
+        return ncon([self.psi.mpo,env],((-2,1,4,5),(-3,1,-6,4,-7,5)),forder=(-2,-3,-6,-7),order=(4,1,5))
+
     def projectTDVP(self):
         self.grad = project_mpoTangentVector(self.grad,self.psi.mps,self.psi.mpo,self.psi.T,self.psi.R)
 
-class gradEvaluater_mpso_2d_mpo_bipartite_ind(gradEvaluater_mpso_2d_mpo_uniform):
+class gradEvaluater_mpso_2d_mpo_bipartite_ind(gradEvaluater_mpso_2d_mpo):
     #find an individual gradient of bipartite ansatz, d/dA_1 <H> or d/dA_2 <H> (index arg is which gradient)
     #can reuse gradEvaluater_uniform_1d eval code as same structure to find gradient
     def __init__(self,psi,H,H_index,grad_index):
@@ -407,22 +422,27 @@ class gradEvaluater_mpso_2d_mpo_bipartite_ind(gradEvaluater_mpso_2d_mpo_uniform)
         return ncon([self.psi.mpo[self.index1],env],((-2,1,4,5),(-3,1,-6,4,-7,5)),forder=(-2,-3,-6,-7),order=(4,1,5))
 
 
+class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater_mpso_2d_mpo):
+    def wrapAroundLeft(self,env):
+        return ncon([self.psi.mpo,env],((-2,-5,1,4,-7,8),(-3,-6,1,4,-9,8)),forder=(-2,-5,-3,-6,-7,-9),order=(8,1,4))
+    def wrapAroundRight(self,env):
+        return ncon([self.psi.mpo,env],((-2,-5,1,4,7,8),(-3,-6,1,4,-9,7,-10,8)),forder=(-2,-5,-3,-6,-9,-10),order=(7,8,1,4))
+    def gradMagnitude(self,grad):
+        return np.einsum('abcdef,abcdef',grad,grad.conj())
+    def projectTDVP(self):
+        print("ERROR: 2d mpo two site unit cell TDVP needs implementing")
+        pass
 
-class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo_uniform):
+class gradEvaluater_mpso_2d_mpo_twoSite_staircase(gradEvaluater_mpso_2d_mpo_twoSite):
     def fetch_implementation(self,H):
         if type(H) == oneBodyH:
-            return gradImplementation_mpso_2d_mpo_uniform_oneBodyH(self.psi,H.tensor)
+            return gradImplementation_mpso_2d_mpo_twoSite_staircase_oneBodyH(self.psi,H.tensor)
         elif type(H) == twoBodyH_hori:
-            return gradImplementation_mpso_2d_mpo_uniform_twoBodyH_hori(self.psi,H.tensor)
+            return gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_hori(self.psi,H.tensor)
         elif type(H) == twoBodyH_vert:
-            return gradImplementation_mpso_2d_mpo_uniform_twoBodyH_vert(self.psi,H.tensor)
+            return gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_vert(self.psi,H.tensor)
 
-    def wrapAroundLeft(self,env):
-        return ncon([self.psi.mpo,env],((-2,1,-4,5),(-3,1,-6,5)),forder=(-2,-3,-4,-6),order=(5,1))
-    def wrapAroundRight(self,env):
-        return ncon([self.psi.mpo,env],((-2,1,4,5),(-3,1,-6,4,-7,5)),forder=(-2,-3,-6,-7),order=(4,1,5))
-
-class gradEvaluater_mpso_2d_mpo_twoSite_square_ind(gradEvaluater_mpso_2d_mpo_uniform):
+class gradEvaluater_mpso_2d_mpo_twoSite_square_ind(gradEvaluater_mpso_2d_mpo_twoSite):
     def __init__(self,psi,H,siteLabel):
         self.siteLabel = siteLabel
         super().__init__(psi,H)
@@ -458,15 +478,6 @@ class gradEvaluater_mpso_2d_mpo_twoSite_square_ind(gradEvaluater_mpso_2d_mpo_uni
             elif self.siteLabel == '11':
                 return gradImplementation_mpso_2d_mpo_twoSite_square_twoBodyH_vert_site11(self.psi,H.tensor)
 
-    def wrapAroundLeft(self,env):
-        return ncon([self.psi.mpo,env],((-2,-5,1,4,-7,8),(-3,-6,1,4,-9,8)),forder=(-2,-5,-3,-6,-7,-9),order=(8,1,4))
-    def wrapAroundRight(self,env):
-        return ncon([self.psi.mpo,env],((-2,-5,1,4,7,8),(-3,-6,1,4,-9,7,-10,8)),forder=(-2,-5,-3,-6,-9,-10),order=(7,8,1,4))
-    def gradMagnitude(self,grad):
-        return np.einsum('abcdef,abcdef',grad,grad.conj())
-    def projectTDVP(self):
-        print("ERROR: 2d mpo two site unit cell TDVP needs implementing")
-        pass
 # -------------------------------------------------------------------------------------------------------------------------------------
 #bipartite Wrappers
 class gradEvaluater_bipartite_1d_left(gradEvaluater):
