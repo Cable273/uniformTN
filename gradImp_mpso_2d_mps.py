@@ -116,7 +116,7 @@ class gradImplementation_mpso_2d_mps_twoSite_square_twoBodyH_hori(gradImplementa
 class gradImplementation_mpso_2d_mps_twoSite_square_twoBodyH_vert(gradImplementation_mpso_2d_mps_uniform):
     def getEffectiveH(self,site):
         if site == 1:
-            outerContract= ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((-1,-3,5,6),(-2,-4,5,7),(6,7)),forder=(-2,-4,-1,-3),order=(5,6,7))
+            outerContract= ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((-1,-3,5,6),(-2,-4,5,7),(7,6)),forder=(-2,-4,-1,-3),order=(5,6,7))
             tensorLabel = 'square'
         elif site == 2:
             outerContract= ncon([self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.T.tensor],((1,-2,7,8),(-4,6,8,9),(1,-3,7,11),(-5,6,11,10),(10,9)),forder=(-3,-5,-2,-4),order=(7,1,8,11,6,9,10))
@@ -207,3 +207,19 @@ class gradImplementation_mpso_2d_mps_bipartite_twoBodyH_vert(gradImplementation_
         env = self.psi.Tb2_inv[index1].applyRight(env.reshape(self.psi.D_mpo**4)).reshape(self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
         H_eff_shifted = ncon([env,self.psi.mpo[index2],self.psi.mpo[index2].conj(),self.psi.mpo[index1],self.psi.mpo[index1].conj(),self.psi.RR[index2].tensor],((13,11,9,7),(2,-1,7,8),(2,-3,9,10),(5,-4,11,12),(5,-6,13,14),(14,12,10,8)),forder=(-6,-3,-4,-1),order=(7,9,2,11,13,5,8,10,12,14))
         return twoBodyH(H_eff_centre + H_eff_shifted)
+
+# -----------------------------
+class gradImplementation_mpso_2d_mps_twoSite_staircase_oneBodyH(gradImplementation_mpso_2d_mps_uniform):
+    def getEffectiveH(self,site):
+        pass
+
+class gradImplementation_mpso_2d_mps_twoSite_staircase_twoBodyH_hori(gradImplementation_mpso_2d_mps_uniform):
+    def getEffectiveH(self,site):
+        innerContract_centre = ncon([self.psi.mpo,self.H,self.psi.mpo.conj(),self.psi.R.tensor],((2,6,-1,-5,9,10),(3,7,2,6),(3,7,-4,-8,9,11),(11,10)),forder=(-4,-8,-1,-5),order=(9,2,3,6,7,10,11))
+        innerContract_offCentre = ncon([self.psi.mpo,self.psi.mpo,self.H,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.R.tensor],((2,5,-1,-4,15,16),(9,13,-8,-12,16,17),(6,10,5,9),(2,6,-3,-7,15,19),(10,13,-11,-14,19,18),(18,17)),forder=(-3,-7,-11,-14,-1,-4,-8,-12),order=(15,2,5,6,16,19,9,10,13,18,17))
+        if site == 1:
+            H_eff = ncon([innerContract_centre,])
+
+class gradImplementation_mpso_2d_mps_twoSite_staircase_twoBodyH_vert(gradImplementation_mpso_2d_mps_uniform):
+    def getEffectiveH(self,site):
+        pass
