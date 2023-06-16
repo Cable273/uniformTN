@@ -39,7 +39,8 @@ class regularTransfer(transferMatrix):
 class transferPlusTwoPhysical(regularTransfer):
     def genTensor(self):
         self.tensor = self.matrix.view()
-        self.tensor.shape = np.append(np.array([2,2]),np.ones(2*self.noLegs,dtype=int)*self.D)
+        shape = np.append(np.array([2,2]),np.ones(self.noLegs,dtype=int)*self.D)
+        self.tensor.shape = np.append(shape,shape)
     def findLeftEig(self,noEigs_lanczos=1):
         el,ul = sp.sparse.linalg.eigs(self.matrix.transpose(),which="LM",k=noEigs_lanczos)
         return fixedPointPlusTwoPhysical(ul[:,np.argmin(np.abs(el-1))],self.D,self.noLegs)
@@ -199,7 +200,6 @@ class mpsu1Transfer_left_twoLayer_twoSite_staircase(transferPlusTwoPhysical):
         self.D = np.size(B,axis=4)
         self.noLegs = 4
         outerContract = dict()
-        outerContract_open = dict()
         outerContract['square'] = ncon([A,A.conj(),T.tensor],((-1,-3,5,6),(-2,-4,5,7),(7,6)),forder=(-2,-4,-1,-3),order=(5,6,7))
         outerContract['prong'] = ncon([A,A,A.conj(),A.conj(),T.tensor],((1,-2,7,8),(-4,6,8,9),(1,-3,7,11),(-5,6,11,10),(10,9)),forder=(-3,-5,-2,-4),order=(7,1,8,11,6,9,10))
         innerContract = ncon([B,B.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-10,-8),order=(2,5))

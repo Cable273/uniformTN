@@ -29,8 +29,10 @@ class localH_term:
     def exp(self,psi):
         if type(psi) == uMPSU1_2d_left:
             return self.exp_2d_left(psi)
-        elif type(psi) == uMPSU1_2d_left_twoSite:
-            return self.exp_2d_left_twoSite(psi)
+        elif type(psi) == uMPSU1_2d_left_twoSite_square:
+            return self.exp_2d_left_twoSite_square(psi)
+        elif type(psi) == uMPSU1_2d_left_twoSite_staircase:
+            return self.exp_2d_left_twoSite_staircase(psi)
         elif type(psi) == uMPSU1_2d_left_bipartite:
             return self.exp_2d_left_bipartite(psi)
         elif type(psi) == uMPS_1d_left:
@@ -64,7 +66,7 @@ class oneBodyH(localH_term):
         E += self.exp_1d_left_bipartite_ind(psi.mps[2],psi.R[1])
         return E/2
 
-    def exp_2d_left_twoSite(self,psi):
+    def exp_2d_left_twoSite_square(self,psi):
         #four terms
         outerContract = dict()
         outerContract['bot'] = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,3,4,5),(-2,3,4,6),(6,5)),forder=(-2,-1),order=(4,3,5,6))
@@ -118,7 +120,7 @@ class twoBodyH_hori(twoBodyH):
         E += self.exp_2d_left_bipartite_ind(psi.mps[2],psi.mps[1],psi.mpo[2],psi.mpo[1],psi.T[2],psi.T[1],psi.R[2])
         return E/2
 
-    def exp_2d_left_twoSite(self,psi):
+    def exp_2d_left_twoSite_square(self,psi):
         #four terms
         outerContract = dict()
         outerContract['bot'] = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,3,4,5),(-2,3,4,6),(6,5)),forder=(-2,-1),order=(4,3,5,6))
@@ -129,6 +131,16 @@ class twoBodyH_hori(twoBodyH):
         E += ncon([psi.mpo,psi.mpo,self.tensor,psi.mpo.conj(),psi.mpo.conj(),outerContract['bot'],outerContract['bot'],outerContract['bot'],outerContract['bot'],psi.R['bot'].tensor],((2,5,1,4,15,16),(9,13,8,12,16,17),(6,10,5,9),(2,6,3,7,15,19),(10,13,11,14,19,18),(3,1),(7,4),(11,8),(14,12),(18,17)),order=(15,1,2,3,4,5,6,7,16,19,8,9,10,11,12,13,14,17,18))
         E += ncon([psi.mpo,psi.mpo,self.tensor,psi.mpo.conj(),psi.mpo.conj(),outerContract['top'],outerContract['top'],outerContract['top'],outerContract['top'],psi.R['top'].tensor],((2,5,1,4,15,16),(9,13,8,12,16,17),(6,10,5,9),(2,6,3,7,15,19),(10,13,11,14,19,18),(3,1),(7,4),(11,8),(14,12),(18,17)),order=(15,1,2,3,4,5,6,7,16,19,8,9,10,11,12,13,14,17,18))
         return np.real(E/4)
+
+    def exp_2d_left_twoSite_staircase(self,psi):
+        #two terms
+        outerContract = dict()
+        outerContract['bot'] = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,3,4,5),(-2,3,4,6),(6,5)),forder=(-2,-1),order=(4,3,5,6))
+        outerContract['top']= ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((1,-2,4,5),(1,-3,4,6),(6,5)),forder=(-3,-2),order=(4,1,5,6))
+
+        E = ncon([psi.mpo,self.tensor,psi.mpo.conj(),outerContract['bot'],outerContract['top'],psi.R.tensor],((2,6,1,5,9,10),(3,7,2,6),(3,7,4,8,9,11),(4,1),(8,5),(11,10)),order=(9,2,6,3,7,1,4,5,8,10,11))
+        E += ncon([psi.mpo,psi.mpo.conj(),self.tensor,psi.mpo,psi.mpo.conj(),outerContract['bot'],outerContract['top'],outerContract['bot'],outerContract['top'],psi.R.tensor],((2,5,1,4,15,16),(2,6,3,7,15,19),(6,10,5,9),(9,13,8,12,16,17),(10,13,11,14,19,18),(3,1),(7,4),(11,8),(14,12),(18,17)),order=(15,2,1,3,4,7,5,6,16,19,13,9,10,8,11,12,14,17,18))
+        return np.real(E/2)
 
 class twoBodyH_vert(twoBodyH):
     def exp_2d_left(self,psi):
@@ -148,7 +160,7 @@ class twoBodyH_vert(twoBodyH):
         E +=  self.exp_2d_left_bipartite_ind(psi.mps[2],psi.mps[1],psi.mpo[2],psi.mpo[1],psi.T[2],psi.RR[1])
         return E/2
 
-    def exp_2d_left_twoSite(self,psi):
+    def exp_2d_left_twoSite_square(self,psi):
         #four terms
         outerContract = dict()
         outerContract['square'] = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,-3,5,6),(-2,-4,5,7),(6,7)),forder=(-2,-4,-1,-3),order=(5,6,7))
@@ -159,6 +171,18 @@ class twoBodyH_vert(twoBodyH):
         E += ncon([psi.mpo,psi.mpo.conj(),psi.mpo,psi.mpo.conj(),self.tensor,outerContract['square'],outerContract['square'],psi.RR['square'].tensor],((2,5,1,4,15,16),(2,6,3,7,15,17),(9,12,8,11,18,19),(9,13,10,14,18,20),(13,6,12,5),(10,3,8,1),(14,7,11,4),(20,19,17,16)),order=(15,1,2,3,4,5,6,7,16,17,19,20,11,12,13,14,8,9,10,18))
         E += ncon([psi.mpo,psi.mpo.conj(),psi.mpo,psi.mpo.conj(),self.tensor,outerContract['prong'],outerContract['prong'],psi.RR['prong'].tensor],((2,5,1,4,15,16),(2,6,3,7,15,17),(9,12,8,11,18,19),(9,13,10,14,18,20),(13,6,12,5),(10,3,8,1),(14,7,11,4),(20,19,17,16)),order=(15,1,2,3,4,5,6,7,16,17,19,20,11,12,13,14,8,9,10,18))
         return np.real(E/4)
+
+    def exp_2d_left_twoSite_staircase(self,psi):
+        #two terms
+        outerContract = dict()
+        outerContractDouble = dict()
+        outerContract['bot'] = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,3,4,5),(-2,3,4,6),(6,5)),forder=(-2,-1),order=(4,3,5,6))
+        outerContractDouble['square'] = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,-3,5,6),(-2,-4,5,7),(7,6)),forder=(-2,-4,-1,-3),order=(5,6,7))
+        outerContractDouble['prong'] = ncon([psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.T.tensor],((1,-2,7,8),(-4,6,8,9),(1,-3,7,11),(-5,6,11,10),(10,9)),forder=(-3,-5,-2,-4),order=(7,1,8,11,6,9,10))
+
+        E = ncon([psi.mpo,psi.mpo.conj(),self.tensor,psi.mpo,psi.mpo.conj(),outerContract['bot'],outerContractDouble['square'],psi.RR.tensor],((2,5,1,4,15,16),(2,6,3,7,15,17),(10,6,9,5),(9,13,8,12,18,19),(10,13,11,14,18,20),(3,1),(11,7,8,4),(14,12,20,19,17,16)))
+        E += ncon([psi.mpo,psi.mpo.conj(),self.tensor,psi.mpo,psi.mpo.conj(),psi.mpo,psi.mpo.conj(),outerContract['bot'],outerContractDouble['prong'],outerContractDouble['square'],psi.RR.tensor],((2,5,1,4,21,22),(2,6,3,7,21,24),(6,10,5,9),(9,13,8,12,25,26),(10,13,11,14,25,28),(16,19,15,18,22,30),(16,19,17,20,24,32),(3,1),(7,11,4,8),(17,14,15,12),(20,18,32,30,28,26)))
+        return np.real(E/2)
 
 
 class plaquetteH(localH_term):
