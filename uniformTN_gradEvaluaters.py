@@ -40,6 +40,9 @@ def gradFactory(psi,H):
     elif type(psi) == uMPSU1_2d_left_twoSite_square:
         return gradEvaluater_mpso_2d_twoSite_square(psi,H)
 
+    elif type(psi) == uMPSU1_2d_left_twoSite_staircase:
+        return gradEvaluater_mpso_2d_mps_twoSite_staircase(psi,H)
+
 class gradEvaluater(ABC):
     def __init__(self,psi,H):
         self.psi = psi
@@ -222,6 +225,11 @@ class gradEvaluater_mpso_2d_twoSite_square(gradEvaluater_mpso_2d):
         super().__init__(psi,H)
         self.gradA_evaluater = gradEvaluater_mpso_2d_mps_twoSite_square(psi,H)
         self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_twoSite_square(psi,H)
+class gradEvaluater_mpso_2d_twoSite_staircase(gradEvaluater_mpso_2d):
+    def __init__(self,psi,H):
+        super().__init__(psi,H)
+        self.gradA_evaluater = gradEvaluater_mpso_2d_mps_twoSite_staircase(psi,H)
+        self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_twoSite_staircase(psi,H)
 class gradEvaluater_mpso_2d_bipartite(gradEvaluater_mpso_2d):
     def __init__(self,psi,H):
         super().__init__(psi,H)
@@ -263,7 +271,16 @@ class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps):
             effH.append(self.H_imp[n].getEffectiveH())
         effH = localH(effH)
         return gradEvaluater_uniform_1d_oneSiteLeft(self.eff_psi,effH)
-class gradEvaluater_mpso_2d_mps_twoSite_square(gradEvaluater_mpso_2d_mps):
+
+    def fetch_implementation(self,H):
+        if type(H) == oneBodyH:
+            return gradImplementation_mpso_2d_mps_uniform_oneBodyH(self.psi,H.tensor)
+        elif type(H) == twoBodyH_hori:
+            return gradImplementation_mpso_2d_mps_uniform_twoBodyH_hori(self.psi,H.tensor)
+        elif type(H) == twoBodyH_vert:
+            return gradImplementation_mpso_2d_mps_uniform_twoBodyH_vert(self.psi,H.tensor)
+
+class gradEvaluater_mpso_2d_mps_twoSite(gradEvaluater_mpso_2d_mps):
     def getEffective_1d_evaluater(self):
         effH1 = [] #Hamiltonian acting on first site
         effH2 = [] #"" on second site
@@ -273,6 +290,25 @@ class gradEvaluater_mpso_2d_mps_twoSite_square(gradEvaluater_mpso_2d_mps):
         effH1 = localH(effH1)
         effH2 = localH(effH2)
         return gradEvaluater_uniform_1d_twoSiteLeft(self.eff_psi,effH1,effH2)
+
+class gradEvaluater_mpso_2d_mps_twoSite_square(gradEvaluater_mpso_2d_mps_twoSite):
+    def fetch_implementation(self,H):
+        if type(H) == oneBodyH:
+            return gradImplementation_mpso_2d_mps_twoSite_square_oneBodyH(self.psi,H.tensor)
+        elif type(H) == twoBodyH_hori:
+            return gradImplementation_mpso_2d_mps_twoSite_square_twoBodyH_hori(self.psi,H.tensor)
+        elif type(H) == twoBodyH_vert:
+            return gradImplementation_mpso_2d_mps_twoSite_square_twoBodyH_vert(self.psi,H.tensor)
+
+class gradEvaluater_mpso_2d_mps_twoSite_staircase(gradEvaluater_mpso_2d_mps_twoSite):
+    def fetch_implementation(self,H):
+        if type(H) == oneBodyH:
+            return gradImplementation_mpso_2d_mps_twoSite_staircase_oneBodyH(self.psi,H.tensor)
+        elif type(H) == twoBodyH_hori:
+            return gradImplementation_mpso_2d_mps_twoSite_staircase_twoBodyH_hori(self.psi,H.tensor)
+        elif type(H) == twoBodyH_vert:
+            return gradImplementation_mpso_2d_mps_twoSite_staircase_twoBodyH_vert(self.psi,H.tensor)
+
 
 class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater):
     @abstractmethod
@@ -370,23 +406,7 @@ class gradEvaluater_mpso_2d_mpo_bipartite_ind(gradEvaluater_mpso_2d_mpo_uniform)
     def wrapAroundRight(self,env):
         return ncon([self.psi.mpo[self.index1],env],((-2,1,4,5),(-3,1,-6,4,-7,5)),forder=(-2,-3,-6,-7),order=(4,1,5))
 
-class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps_uniform):
-    def fetch_implementation(self,H):
-        if type(H) == oneBodyH:
-            return gradImplementation_mpso_2d_mps_uniform_oneBodyH(self.psi,H.tensor)
-        elif type(H) == twoBodyH_hori:
-            return gradImplementation_mpso_2d_mps_uniform_twoBodyH_hori(self.psi,H.tensor)
-        elif type(H) == twoBodyH_vert:
-            return gradImplementation_mpso_2d_mps_uniform_twoBodyH_vert(self.psi,H.tensor)
 
-class gradEvaluater_mpso_2d_mps_twoSite_square(gradEvaluater_mpso_2d_mps_twoSite_square):
-    def fetch_implementation(self,H):
-        if type(H) == oneBodyH:
-            return gradImplementation_mpso_2d_mps_twoSite_square_oneBodyH(self.psi,H.tensor)
-        elif type(H) == twoBodyH_hori:
-            return gradImplementation_mpso_2d_mps_twoSite_square_twoBodyH_hori(self.psi,H.tensor)
-        elif type(H) == twoBodyH_vert:
-            return gradImplementation_mpso_2d_mps_twoSite_square_twoBodyH_vert(self.psi,H.tensor)
 
 class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo_uniform):
     def fetch_implementation(self,H):

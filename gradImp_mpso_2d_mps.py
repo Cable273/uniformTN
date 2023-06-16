@@ -215,11 +215,58 @@ class gradImplementation_mpso_2d_mps_twoSite_staircase_oneBodyH(gradImplementati
 
 class gradImplementation_mpso_2d_mps_twoSite_staircase_twoBodyH_hori(gradImplementation_mpso_2d_mps_uniform):
     def getEffectiveH(self,site):
+        outerContract = dict()
+        outerContract['bot']= ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((-1,3,4,5),(-2,3,4,6),(6,5)),forder=(-2,-1),order=(4,3,5,6))
+        outerContract['top']= ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((1,-2,4,5),(1,-3,4,6),(6,5)),forder=(-3,-2),order=(4,1,5,6))
+
         innerContract_centre = ncon([self.psi.mpo,self.H,self.psi.mpo.conj(),self.psi.R.tensor],((2,6,-1,-5,9,10),(3,7,2,6),(3,7,-4,-8,9,11),(11,10)),forder=(-4,-8,-1,-5),order=(9,2,3,6,7,10,11))
         innerContract_offCentre = ncon([self.psi.mpo,self.psi.mpo,self.H,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.R.tensor],((2,5,-1,-4,15,16),(9,13,-8,-12,16,17),(6,10,5,9),(2,6,-3,-7,15,19),(10,13,-11,-14,19,18),(18,17)),forder=(-3,-7,-11,-14,-1,-4,-8,-12),order=(15,2,5,6,16,19,9,10,13,18,17))
+
+        leftEnv = ncon([self.psi.mpo,self.H,self.psi.mpo.conj(),outerContract['bot'],outerContract['top']],((2,6,1,5,9,-10),(3,7,2,6),(3,7,4,8,9,-11),(4,1),(8,5)),forder=(-11,-10),order=(9,1,4,2,3,5,8,6,7))
+        leftEnv += ncon([self.psi.mpo,self.psi.mpo.conj(),self.H,self.psi.mpo,self.psi.mpo.conj(),outerContract['bot'],outerContract['top'],outerContract['bot'],outerContract['top']],((2,5,1,4,15,16),(2,6,3,7,15,19),(6,10,5,9),(9,13,8,12,16,-17),(10,13,11,14,19,-18),(3,1),(7,4),(11,8),(14,12)),forder=(-18,-17),order=(15,2,1,3,4,7,5,6,16,19,8,11,9,10,13,12,14))
+        leftEnv = self.psi.Tb_inv.applyRight(leftEnv.reshape(self.psi.D_mpo**2)).reshape(self.psi.D_mpo,self.psi.D_mpo)
+        innerContract_right = ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj(),self.psi.R.tensor],((10,7),(2,5,-1,-4,7,8),(2,5,-3,-6,10,9),(9,8)),forder=(-3,-6,-1,-4),order=(10,7,2,5,8,9))
+
         if site == 1:
-            H_eff = ncon([innerContract_centre,])
+            H_eff = ncon([innerContract_centre,outerContract['top']],((-1,2,-3,4),(2,4)),forder=(-1,-3))
+            H_eff += ncon([innerContract_right,outerContract['top']],((-1,2,-3,4),(2,4)),forder=(-1,-3))
+            H_eff += ncon([innerContract_offCentre,outerContract['top'],outerContract['bot'],outerContract['top']],((-1,2,3,4,-5,6,7,8),(2,6),(3,7),(4,8)),forder=(-1,-5),order=(2,6,3,7,4,8))
+            H_eff += ncon([innerContract_offCentre,outerContract['bot'],outerContract['top'],outerContract['top']],((1,2,-3,4,5,6,-7,8),(1,5),(2,6),(4,8)),forder=(-3,-7),order=(1,5,2,6,4,8))
+        elif site == 2:
+            H_eff = ncon([innerContract_centre,outerContract['bot']],((1,-2,3,-4),(1,3)),forder=(-2,-4))
+            H_eff += ncon([innerContract_right,outerContract['bot']],((1,-2,3,-4),(1,3)),forder=(-2,-4))
+            H_eff += ncon([innerContract_offCentre,outerContract['bot'],outerContract['bot'],outerContract['top']],((1,-2,3,4,5,-6,7,8),(1,5),(3,7),(4,8)),forder=(-2,-6),order=(1,5,3,7,4,8))
+            H_eff += ncon([innerContract_offCentre,outerContract['bot'],outerContract['top'],outerContract['bot']],((1,2,3,-4,5,6,7,-8),(1,5),(2,6),(3,7)),forder=(-4,-8),order=(1,5,2,6,3,7))
+        
+        return oneBodyH(H_eff)
+
 
 class gradImplementation_mpso_2d_mps_twoSite_staircase_twoBodyH_vert(gradImplementation_mpso_2d_mps_uniform):
     def getEffectiveH(self,site):
-        pass
+        outerContract = dict()
+        outerContractDouble = dict()
+        outerContract['bot']= ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((-1,3,4,5),(-2,3,4,6),(6,5)),forder=(-2,-1),order=(4,3,5,6))
+        outerContract['top']= ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((1,-2,4,5),(1,-3,4,6),(6,5)),forder=(-3,-2),order=(4,1,5,6))
+        outerContractDouble['square'] = ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((-1,-3,5,6),(-2,-4,5,7),(7,6)),forder=(-2,-4,-1,-3),order=(5,6,7))
+        outerContractDouble['prong'] = ncon([self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.T.tensor],((1,-2,7,8),(-4,6,8,9),(1,-3,7,11),(-5,6,11,10),(10,9)),forder=(-3,-5,-2,-4),order=(7,1,8,11,6,9,10))
+
+        if site == 1:
+            H_eff = ncon([self.psi.mpo,self.psi.mpo.conj(),self.H,self.psi.mpo,self.psi.mpo.conj(),outerContract['bot'],self.psi.RR.tensor],((2,5,1,-4,15,16),(2,6,3,-7,15,17),(10,6,9,5),(9,13,-8,12,18,19),(10,13,-11,14,18,20),(3,1),(14,12,20,19,17,16)),forder=(-11,-7,-8,-4),order=(15,2,1,3,5,6,16,17,19,20,13,12,14,9,10,18))
+            H_eff += ncon([self.psi.mpo,self.psi.mpo.conj(),self.H,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo.conj(),outerContractDouble['prong'],outerContractDouble['square'],self.psi.RR.tensor,np.eye(2)],((2,5,-1,4,21,22),(2,6,-3,7,21,23),(6,10,5,9),(9,13,8,12,24,25),(10,13,11,14,24,26),(16,19,15,18,22,27),(16,19,17,20,23,28),(7,11,4,8),(17,14,15,12),(20,18,28,27,26,25),(-29,-30)),forder=(-3,-29,-1,-30),order=[28,27,18,20,19,15,16,17,25,26,12,13,14,8,9,10,11,24,22,23,4,5,6,7,2,21])
+            H_eff += ncon([self.psi.mpo,self.psi.mpo.conj(),self.H,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo.conj(),outerContract['bot'],outerContractDouble['prong'],self.psi.RR.tensor],((2,5,1,4,21,22),(2,6,3,7,21,23),(6,10,5,9),(9,13,8,-12,24,25),(10,13,11,-14,24,26),(16,19,-15,18,22,27),(16,19,-17,20,23,28),(3,1),(7,11,4,8),(20,18,28,27,26,25)),forder=(-17,-14,-15,-12),order=[21,2,1,3,4,5,6,7,22,23,16,19,27,28,18,20,25,26,13,8,9,10,11,24])
+
+        elif site == 2:
+            H_eff = ncon([self.psi.mpo,self.psi.mpo.conj(),self.H,self.psi.mpo,self.psi.mpo.conj(),outerContractDouble['square'],self.psi.RR.tensor,np.eye(2)],((2,5,-1,4,15,16),(2,6,-3,7,15,17),(10,6,9,5),(9,13,8,12,18,19),(10,13,11,14,18,20),(11,7,8,4),(14,12,20,19,17,16),(-21,-22)),forder=(-21,-3,-22,-1))
+            H_eff += ncon([self.psi.mpo,self.psi.mpo.conj(),self.H,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo.conj(),outerContract['bot'],outerContractDouble['square'],self.psi.RR.tensor],((2,5,1,-4,21,22),(2,6,3,-7,21,23),(6,10,5,9),(9,13,-8,12,24,25),(10,13,-11,14,24,26),(16,19,15,18,22,27),(16,19,17,20,23,28),(3,1),(17,14,15,12),(20,18,28,27,26,25)),forder=(-7,-11,-4,-8),order=(28,27,18,19,20,15,16,17,22,23,5,6,1,2,3,21,25,26,13,12,14,9,10,24))
+
+        leftEnv = ncon([self.psi.mpo,self.psi.mpo.conj(),self.H,self.psi.mpo,self.psi.mpo.conj(),outerContract['bot'],outerContractDouble['square']],((2,5,1,4,15,-16),(2,6,3,7,15,-17),(10,6,9,5),(9,13,8,-12,18,-19),(10,13,11,-14,18,-20),(3,1),(11,7,8,4)),forder=(-14,-12,-20,-19,-17,-16),order=(15,2,1,3,4,5,6,18,13,8,9,10,11))
+        leftEnv += ncon([self.psi.mpo,self.psi.mpo.conj(),self.H,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo.conj(),outerContract['bot'],outerContractDouble['prong'],outerContractDouble['square']],((2,5,1,4,21,22),(2,6,3,7,21,23),(6,10,5,9),(9,13,8,12,24,-25),(10,13,11,14,24,-26),(16,19,15,-18,22,-28),(16,19,17,-20,23,-27),(3,1),(7,11,4,8),(17,14,15,12)),forder=(-20,-18,-27,-28,-26,-25),order=(21,2,1,3,4,5,6,7,22,23,16,19,15,17,24,9,10,13,8,11,12,14))
+        leftEnv = self.psi.Tb2_inv.applyRight(leftEnv.reshape(self.psi.D_mpo**4*4)).reshape(2,2,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
+        if site == 1:
+            H_eff += ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo.conj(),outerContractDouble['prong'],self.psi.RR.tensor],((21,22,16,15,14,13),(2,5,1,-4,13,17),(2,5,3,-6,14,18),(8,11,-7,10,15,19),(8,11,-9,12,16,20),(21,3,22,1),(12,10,20,19,18,17)),forder=(-9,-6,-7,-4))
+        elif site == 2:
+            H_eff += ncon([leftEnv,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo.conj(),outerContractDouble['square'],self.psi.RR.tensor],((-21,-22,16,15,14,13),(2,5,-1,4,13,17),(2,5,-3,6,14,18),(8,11,7,10,15,19),(8,11,9,12,16,20),(9,6,7,4),(12,10,20,19,18,17)),forder=(-21,-3,-22,-1),order=(20,19,10,11,12,7,8,9,18,17,4,5,6,2,13,14,15,16))
+
+        return twoBodyH(H_eff.reshape(4,4))
+
+
