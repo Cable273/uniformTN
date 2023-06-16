@@ -46,7 +46,7 @@ class stateAnsatz(ABC):
         pass
     def gaugeTDVP(self):
         pass
-    def gradDescent(self,H,learningRate,TDVP=False,subtractExp=False):
+    def gradDescent(self,H,learningRate,TDVP=False,subtractExp=True):
         from uniformTN_gradEvaluaters import gradFactory
         H_new = copy.deepcopy(H)
         if subtractExp is True:
