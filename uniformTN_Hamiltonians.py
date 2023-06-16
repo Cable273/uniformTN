@@ -78,6 +78,21 @@ class oneBodyH(localH_term):
         E += ncon([psi.mpo,self.tensor,psi.mpo.conj(),outerContract['top'],outerContract['top'],psi.R['top'].tensor],((2,5,1,4,8,9),(6,5),(2,6,3,7,8,10),(3,1),(7,4),(10,9)),order=(8,1,2,3,4,5,6,7,9,10))
         return np.real(E/4)
 
+    def exp_2d_left_twoSite_staircase(self,psi):
+        #two terms
+        outerContract = dict()
+        outerContract['bot'] = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,3,4,5),(-2,3,4,6),(6,5)),forder=(-2,-1),order=(4,3,5,6))
+        outerContract['top']= ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((1,-2,4,5),(1,-3,4,6),(6,5)),forder=(-3,-2),order=(4,1,5,6))
+
+        E = ncon([psi.mpo,psi.mpo.conj(),self.tensor,outerContract['bot'],outerContract['top'],psi.R.tensor],((2,6,1,5,8,9),(3,6,4,7,8,10),(3,2),(4,1),(7,5),(10,9)),order=(8,6,2,3,1,4,5,7,9,10))
+        E += ncon([psi.mpo,psi.mpo.conj(),self.tensor,outerContract['bot'],outerContract['top'],psi.R.tensor],((2,5,1,4,8,9),(2,6,3,7,8,10),(6,5),(3,1),(7,4),(10,9)),order=(8,2,5,6,1,3,4,7,9,10))
+        return np.real(E/2)
+
+    def exp_2d_left_bipartite(self,psi):
+        E = ncon([psi.mps[1],psi.mpo[1],self.tensor,psi.mpo[1].conj(),psi.mps[1].conj(),psi.R[2].tensor,psi.T[2].tensor],((1,5,6),(2,1,8,9),(3,2),(3,4,8,10),(4,5,7),(10,9),(7,6)))
+        E += ncon([psi.mps[2],psi.mpo[2],self.tensor,psi.mpo[2].conj(),psi.mps[2].conj(),psi.R[1].tensor,psi.T[1].tensor],((1,5,6),(2,1,8,9),(3,2),(3,4,8,10),(4,5,7),(10,9),(7,6)))
+        return np.real(E/2)
+
 class twoBodyH(localH_term):
     def reshapeTensor(self,H_matrix):
         return H_matrix.reshape([2,2,2,2])
@@ -180,8 +195,8 @@ class twoBodyH_vert(twoBodyH):
         outerContractDouble['square'] = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,-3,5,6),(-2,-4,5,7),(7,6)),forder=(-2,-4,-1,-3),order=(5,6,7))
         outerContractDouble['prong'] = ncon([psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.T.tensor],((1,-2,7,8),(-4,6,8,9),(1,-3,7,11),(-5,6,11,10),(10,9)),forder=(-3,-5,-2,-4),order=(7,1,8,11,6,9,10))
 
-        E = ncon([psi.mpo,psi.mpo.conj(),self.tensor,psi.mpo,psi.mpo.conj(),outerContract['bot'],outerContractDouble['square'],psi.RR.tensor],((2,5,1,4,15,16),(2,6,3,7,15,17),(10,6,9,5),(9,13,8,12,18,19),(10,13,11,14,18,20),(3,1),(11,7,8,4),(14,12,20,19,17,16)))
-        E += ncon([psi.mpo,psi.mpo.conj(),self.tensor,psi.mpo,psi.mpo.conj(),psi.mpo,psi.mpo.conj(),outerContract['bot'],outerContractDouble['prong'],outerContractDouble['square'],psi.RR.tensor],((2,5,1,4,21,22),(2,6,3,7,21,24),(6,10,5,9),(9,13,8,12,25,26),(10,13,11,14,25,28),(16,19,15,18,22,30),(16,19,17,20,24,32),(3,1),(7,11,4,8),(17,14,15,12),(20,18,32,30,28,26)))
+        E = ncon([psi.mpo,psi.mpo.conj(),self.tensor,psi.mpo,psi.mpo.conj(),outerContract['bot'],outerContractDouble['square'],psi.RR.tensor],((2,5,1,4,15,16),(2,6,3,7,15,17),(10,6,9,5),(9,13,8,12,18,19),(10,13,11,14,18,20),(3,1),(11,7,8,4),(14,12,20,19,17,16)),order=(15,2,1,3,4,5,6,7,16,17,19,20,12,13,14,8,9,10,11,18))
+        E += ncon([psi.mpo,psi.mpo.conj(),self.tensor,psi.mpo,psi.mpo.conj(),psi.mpo,psi.mpo.conj(),outerContract['bot'],outerContractDouble['prong'],outerContractDouble['square'],psi.RR.tensor],((2,5,1,4,21,22),(2,6,3,7,21,23),(6,10,5,9),(9,13,8,12,28,24),(10,13,11,14,28,25),(16,19,15,18,22,26),(16,19,17,20,23,27),(3,1),(7,11,4,8),(17,14,15,12),(20,18,27,26,25,24)),order=(25,24,13,28,8,9,10,11,12,14,26,27,18,19,20,15,16,17,22,23,2,4,5,6,7,1,3,21))
         return np.real(E/2)
 
 
