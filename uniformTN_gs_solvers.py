@@ -12,8 +12,6 @@ from einsumt import einsumt as einsum
 from abc import ABC, abstractmethod
 
 from uniformTN_transfers import inverseTransfer_left,inverseTransfer,inverseTransfer_right
-from uniformTN_gradients import grad_mps_1d_left
-from uniformTN_gradients import *
 import copy
 
 def gradDescent(psi0,H,N_iter,learningRate,decay=0,tol=1e-15,envTol=1e-15,printE0=False,printDiff=False,TDVP=False):

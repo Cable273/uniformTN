@@ -13,7 +13,6 @@ from abc import ABC, abstractmethod
 import copy
 
 from uniformTN_transfers import *
-from uniformTN_gradients import *
 from uniformTN_functions import polarDecomp,randoUnitary,project_mpsTangentVector,project_mpoTangentVector
 
 class stateAnsatz(ABC):
