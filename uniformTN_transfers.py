@@ -232,7 +232,7 @@ class mpsu1Transfer_left_twoLayerWithMpsInsert(regularTransfer):
         self.D = np.size(W,axis=2)
         self.noLegs = 4
         self.matrix = ncon([A,A,W,W,W.conj(),W.conj(),A.conj(),A.conj(),T.tensor,T_insert],((1,7,8),(4,9,10),(2,1,-14,-16),(5,4,-18,-20),(2,3,-15,-17),(5,6,-19,-21),(3,7,13),(6,12,11),(11,10),(13,8,12,9)),forder=(-15,-14,-19,-18,-17,-16,-21,-20),order=(7,8,13,9,12,10,11,1,2,3,4,5,6)).reshape(self.D**4,self.D**4)
-class mpsu1Transfer_left_twoLayerWithMPSInsert_twoSite(regularTransfer): #twoSite unit cell mpso
+class mpsu1Transfer_left_twoLayerWithMPSInsert_twoSite_square(regularTransfer): #twoSite unit cell mpso
     def __init__(self,A,B,T,style,Td):
         self.D = np.size(B,axis=4)
         self.noLegs = 4
@@ -251,6 +251,30 @@ class mpsu1Transfer_left_twoLayerWithMPSInsert_twoSite(regularTransfer): #twoSit
             return 1
         innerContract = ncon([B,B.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-10,-8),order=(2,5))
         self.matrix = ncon([innerContract,innerContract,outerContract,outerContract],((1,2,3,4,-5,-6,-7,-8),(9,10,11,12,-13,-14,-15,-16),(9,1,11,3),(10,2,12,4)),forder=(-13,-14,-5,-6,-15,-16,-7,-8),order=(3,1,4,2,11,9,12,10)).reshape(self.D**4,self.D**4)
+class mpsu1Transfer_left_twoLayerWithMPSInsert_twoSite_staircase_even(regularTransfer): #twoSite unit cell mpso
+    def __init__(self,A,B,T,Td):
+        self.D = np.size(B,axis=4)
+        self.noLegs = 4
+
+        outerContractQuad = ncon([A,A,A.conj(),A.conj(),Td,T.tensor],((-1,-3,9,10),(-5,-7,11,12),(-2,-4,9,15),(-6,-8,14,13),(15,10,14,11),(13,12)),forder=(-2,-4,-6,-8,-1,-3,-5,-7),order=(9,10,15,11,14,13,12))
+        outerContractDouble = dict()
+        outerContractDouble['bot']= ncon([outerContractQuad],((-2,3,-5,6,-1,3,-4,6)),forder=(-2,-5,-1,-4))
+        outerContractDouble['top']= ncon([outerContractQuad],((1,-3,4,-6,1,-2,4,-5)),forder=(-3,-6,-2,-5))
+        innerContract = ncon([B,B.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-10,-8),order=(2,5))
+        self.matrix = ncon([innerContract,innerContract,outerContractDouble['bot'],outerContractDouble['top']],((1,2,3,4,-5,-6,-7,-8),(9,10,11,12,-13,-14,-15,-16),(9,1,11,3),(10,2,12,4)),forder=(-13,-14,-5,-6,-15,-16,-7,-8),order=(3,1,4,2,11,9,12,10)).reshape(self.D**4,self.D**4)
+class mpsu1Transfer_left_twoLayerWithMPSInsert_twoSite_staircase_odd(transferPlusTwoPhysical): #twoSite unit cell mpso
+    def __init__(self,A,B,T,Td,Td_m1):
+        self.D = np.size(B,axis=4)
+        self.noLegs = 4
+        outerContractDouble = dict()
+
+        outerContractQuad = ncon([A,A,A.conj(),A.conj(),Td,T.tensor],((-1,-3,9,10),(-5,-7,11,12),(-2,-4,9,15),(-6,-8,14,13),(15,10,14,11),(13,12)),forder=(-2,-4,-6,-8,-1,-3,-5,-7),order=(9,10,15,11,14,13,12))
+        outerContractQuad_m1 = ncon([A,A,A.conj(),A.conj(),Td_m1,T.tensor],((-1,-3,9,10),(-5,-7,11,12),(-2,-4,9,15),(-6,-8,14,13),(15,10,14,11),(13,12)),forder=(-2,-4,-6,-8,-1,-3,-5,-7),order=(9,10,15,11,14,13,12))
+
+        outerContractDouble['prong'] = ncon([outerContractQuad],((1,-3,-5,6,1,-2,-4,6)),forder=(-3,-5,-2,-4))
+        outerContractDouble['square'] = ncon([outerContractQuad_m1],((-2,3,4,-6,-1,3,4,-5)),forder=(-2,-6,-1,-5))
+        innerContract = ncon([B,B.conj()],((2,5,-1,-4,-7,-8),(2,5,-3,-6,-9,-10)),forder=(-3,-6,-1,-4,-9,-7,-10,-8),order=(2,5))
+        self.matrix = ncon([innerContract,innerContract,outerContractDouble['prong'],outerContractDouble['square']],((1,2,3,4,-5,-6,-7,-8),(9,-10,11,-12,-13,-14,-15,-16),(-17,1,-18,3),(9,2,11,4)),forder=(-17,-18,-13,-14,-5,-6,-10,-12,-15,-16,-7,-8),order=(1,3,2,4,11,9)).reshape(4*self.D**4,4*self.D**4)
 class mpsu1Transfer_left_twoLayerWithMpsInsertBip(regularTransfer):
     def __init__(self,A1,A2,B1,B2,T1,T2,T_12,T_21):
         self.D = np.size(B1,axis=2)

@@ -361,7 +361,7 @@ class gradEvaluater_mpso_2d_mpo(gradEvaluater):
                     if d > 0:
                         Td_matrix,Td = self.H_imp[n].apply_mps_transfers(Td_matrix)
                     rightFP_d = self.H_imp[n].getFixedPoints(d,Td) #bottleneck of algo
-                    outers_d = self.H_imp[n].getOuterContracts(Td)
+                    outers_d = self.H_imp[n].getOuterContracts(d,Td)
 
                     gradRun = self.eval_geo(n,Td,rightFP_d,outers_d)
 
@@ -438,7 +438,9 @@ class gradEvaluater_mpso_2d_mpo_twoSite_staircase(gradEvaluater_mpso_2d_mpo_twoS
         if type(H) == oneBodyH:
             return gradImplementation_mpso_2d_mpo_twoSite_staircase_oneBodyH(self.psi,H.tensor)
         elif type(H) == twoBodyH_hori:
-            return gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_hori(self.psi,H.tensor)
+            imp1 = gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_hori_site1(self.psi,H.tensor)
+            imp2 = gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_hori_site2(self.psi,H.tensor)
+            return gradImplementation_mpso_2d_mpo_twoSite_staircase_wrapper(self.psi,imp1,imp2)
         elif type(H) == twoBodyH_vert:
             return gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_vert(self.psi,H.tensor)
 
