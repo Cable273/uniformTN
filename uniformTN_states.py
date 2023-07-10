@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 import copy
 
 from uniformTN_transfers import *
-from uniformTN_functions import polarDecomp,randoUnitary,project_mpsTangentVector,project_mpoTangentVector
+from uniformTN_functions import polarDecomp,randoUnitary,project_mpsTangentVector,project_mpoTangentVector 
 
 class stateAnsatz(ABC):
     @abstractmethod
@@ -48,18 +48,27 @@ class stateAnsatz(ABC):
     def gradDescent(self,H,learningRate,TDVP=False,subtractExp=True):
         from uniformTN_gradEvaluaters import gradFactory
         H_new = copy.deepcopy(H)
+        #subtract current expectation value
         if subtractExp is True:
             for n in range(0,len(H_new.terms)):
                 H_new.terms[n].tensor = H.terms[n].subtractExp(self)
 
         gradEvaluater = gradFactory(self,H_new)
         gradEvaluater.eval()
-
         if TDVP is True:
             gradEvaluater.projectTDVP()
+        print("\n")
+        # print(np.einsum('ijk,ijk',gradEvaluater.grad['mps1'],gradEvaluater.grad['mps1'].conj()))
+        # print(np.einsum('ijk,ijk',gradEvaluater.grad['mps2'],gradEvaluater.grad['mps2'].conj()))
+        # print(np.einsum('ijab,ijab',gradEvaluater.grad['mpo1'],gradEvaluater.grad['mpo1'].conj()))
+        # print(np.einsum('ijab,ijab',gradEvaluater.grad['mpo2'],gradEvaluater.grad['mpo2'].conj()))
+
+        print(np.einsum('ijk,ijk',gradEvaluater.grad['mps'],gradEvaluater.grad['mps'].conj()))
+        print(np.einsum('ijab,ijab',gradEvaluater.grad['mpo'],gradEvaluater.grad['mpo'].conj()))
+
         self.shiftTensors(-learningRate,gradEvaluater.grad)
         self.norm()
-    
+
 class uMPS_1d(stateAnsatz):
     def __init__(self,D,mps=None):
         self.mps = mps
