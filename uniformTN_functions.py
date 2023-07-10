@@ -28,7 +28,31 @@ def project_mpsTangentVector(gradA,A,T):
     Xa = np.einsum('iab,cb->iac',temp,T_eigvector_inverse)
     return Xa
 
-def project_mpoTangentVector(gradW,mps,mpo,T,R):
+def project_mpoTangentVector(grad_mpo,mps,mpo,T,R):
+    D_mpo = np.size(mpo,axis=2)
+    #lagrange multipliers
+    lambda_2 = ncon([grad_mpo,mpo.conj()],((2,-1,5,6),(2,-3,5,6)),forder=(-1,-3))
+    lambda_2 += -ncon([mpo,grad_mpo.conj()],((3,-2,5,6),(3,-1,5,6)),forder=(-2,-1))
+    lambda_1 = ncon([grad_mpo,mpo.conj()],((2,1,3,-4),(2,1,3,-5)),forder=(-4,-5))
+    lambda_1 += -ncon([mpo,grad_mpo.conj()],((2,1,3,-4),(2,1,3,-5)),forder=(-4,-5))
+
+    rho = ncon([mps,mps.conj(),T.tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1))
+    M = ncon([np.eye(2),np.eye(D_mpo),R.tensor,rho],((-3,-2),(-6,-7),(-5,-8),(-4,-1)),forder=(-4,-3,-5,-6,-2,-1,-7,-8)).reshape(4*D_mpo**2,4*D_mpo**2)
+    M += ncon([np.eye(2),np.eye(D_mpo),R.tensor,rho],((-3,-2),(-5,-6),(-8,-7),(-4,-1)),forder=(-2,-1,-6,-7,-4,-3,-8,-5)).reshape(4*D_mpo**2,4*D_mpo**2)
+    M = M.transpose()
+
+    c = ncon([grad_mpo,mpo.conj()],((2,-1,4,-5),(2,-3,4,-6)),forder=(-1,-3,-5,-6))
+    c += -ncon([mpo,grad_mpo.conj()],((2,-1,4,-5),(2,-3,4,-6)),forder=(-1,-3,-5,-6))
+    c += -ncon([rho,lambda_1],((-2,-1),(-3,-4)),forder=(-2,-1,-3,-4))
+    c += -ncon([lambda_2,R.tensor],((-2,-1),(-3,-4)),forder=(-2,-1,-3,-4))
+    c = c.reshape(4*D_mpo**2)
+
+    M_inv = np.linalg.inv(M)
+    A_tilde = np.dot(M_inv,c).reshape(2,2,D_mpo,D_mpo)
+    Xb= np.einsum('jiab,iubv->juav',mpo,A_tilde)
+    return Xb
+
+def project_mpoTangentVector_old(gradW,mps,mpo,T,R):
     D_mps = np.size(mps,axis=1)
     D_mpo = np.size(mpo,axis=2)
     #mpo tangent vector
