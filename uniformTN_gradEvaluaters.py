@@ -436,13 +436,17 @@ class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater_mpso_2d_mpo):
 class gradEvaluater_mpso_2d_mpo_twoSite_staircase(gradEvaluater_mpso_2d_mpo_twoSite):
     def fetch_implementation(self,H):
         if type(H) == oneBodyH:
-            return gradImplementation_mpso_2d_mpo_twoSite_staircase_oneBodyH(self.psi,H.tensor)
+            imp1 = gradImplementation_mpso_2d_mpo_twoSite_staircase_oneBodyH_site1(self.psi,H.tensor)
+            imp2 = gradImplementation_mpso_2d_mpo_twoSite_staircase_oneBodyH_site2(self.psi,H.tensor)
+            return gradImplementation_mpso_2d_mpo_twoSite_staircase_wrapper(self.psi,imp1,imp2)
         elif type(H) == twoBodyH_hori:
             imp1 = gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_hori_site1(self.psi,H.tensor)
             imp2 = gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_hori_site2(self.psi,H.tensor)
             return gradImplementation_mpso_2d_mpo_twoSite_staircase_wrapper(self.psi,imp1,imp2)
         elif type(H) == twoBodyH_vert:
-            return gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_vert(self.psi,H.tensor)
+            imp1 = gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_vert_site1(self.psi,H.tensor)
+            imp2 = gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_vert_site2(self.psi,H.tensor)
+            return gradImplementation_mpso_2d_mpo_twoSite_staircase_wrapper(self.psi,imp1,imp2)
 
 class gradEvaluater_mpso_2d_mpo_twoSite_square_ind(gradEvaluater_mpso_2d_mpo_twoSite):
     def __init__(self,psi,H,siteLabel):
@@ -577,7 +581,7 @@ class gradEvaluater_mpso_2d_mpo_twoSiteUnitCell_wrapper(gradEvaluater):
                         Td_matrix,Td = self.gradEvaluater_11.H_imp[n].apply_mps_transfers(Td_matrix)
                     #just use gradEvaluater_11 to calc d dep fixed points, which are the same for all gradEvaluaters
                     rightFP_d = self.gradEvaluater_11.H_imp[n].getFixedPoints(d,Td) #bottleneck of algo
-                    outers_d = self.gradEvaluater_11.H_imp[n].getOuterContracts(Td)
+                    outers_d = self.gradEvaluater_11.H_imp[n].getOuterContracts(d,Td)
 
                     if grad_11_breaker is False:
                         gradRun_11 = self.gradEvaluater_11.eval_geo(n,Td,rightFP_d,outers_d)
