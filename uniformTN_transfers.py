@@ -16,7 +16,8 @@ class transferMatrix(ABC):
         el,ul = sp.sparse.linalg.eigs(self.matrix.transpose(),which="LM",k=noEigs_lanczos)
         return fixedPoint(ul[:,np.argmin(np.abs(el-1))],self.D,self.noLegs)
     def findRightEig(self,noEigs_lanczos=1):
-        er,ur = sp.sparse.linalg.eigs(self.matrix,which="LM",k=noEigs_lanczos)
+        # er,ur = sp.sparse.linalg.eigs(self.matrix,which="LM",k=noEigs_lanczos)
+        er,ur = np.linalg.eig(self.matrix)
         return fixedPoint(ur[:,np.argmin(np.abs(er-1))],self.D,self.noLegs)
     def genTensor(self):
         self.tensor = self.matrix.view()
