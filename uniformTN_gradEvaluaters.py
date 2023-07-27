@@ -17,6 +17,7 @@ from uniformTN_Hamiltonians import *
 from gradImp_mps_1d import *
 from gradImp_mpso_2d_mps import *
 from gradImp_mpso_2d_mpo import *
+from uniformTN_functions import *
 
 def gradFactory(psi,H):
     if type(psi) == uMPS_1d:
@@ -329,7 +330,7 @@ class gradEvaluater_mpso_2d_mpo(gradEvaluater):
         #terms to left of H
         rightEnv = self.H_imp[n].wrapRightEnv(self.H_imp[n].buildRightEnv())
         grad += self.wrapAroundLeft(rightEnv)
-        # # terms to right of H
+        #terms to right of H
         leftEnv = self.H_imp[n].wrapLeftEnv(self.H_imp[n].buildLeftEnv())
         grad += self.wrapAroundRight(leftEnv)
         return grad
@@ -373,7 +374,6 @@ class gradEvaluater_mpso_2d_mpo(gradEvaluater):
                 if printEnv is True:
                     print("d: ",d,mag)
             
-
 class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo):
     def fetch_implementation(self,H):
         if type(H) == oneBodyH:
@@ -430,8 +430,8 @@ class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater_mpso_2d_mpo):
     def gradMagnitude(self,grad):
         return np.einsum('abcdef,abcdef',grad,grad.conj())
     def projectTDVP(self):
-        print("ERROR: 2d mpo two site unit cell TDVP needs implementing")
-        pass
+        self.grad = project_mpoTangentVector_staircase(self.grad,self.psi.mps,self.psi.mpo,self.psi.T,self.psi.R)
+        # print("ERROR: 2d mpo two site unit cell TDVP needs implementing")
 
 class gradEvaluater_mpso_2d_mpo_twoSite_staircase(gradEvaluater_mpso_2d_mpo_twoSite):
     def fetch_implementation(self,H):
