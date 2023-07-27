@@ -59,9 +59,9 @@ class inverseTransfer(transferMatrix):
         self.proj = np.outer(rightEig,leftEig)
         self.Q = np.eye(np.size(transferMatrix.matrix,axis=1)) - self.proj
     def applyLeft(self,rightVector,tol=1e-10):
-        return sp.sparse.linalg.bicgstab(self.inverseMatrix,np.dot(self.Q,rightVector),tol=tol)[0]
-    def applyRight(self,leftVector,tol=1e-10):
-        return sp.sparse.linalg.bicgstab(self.inverseMatrix.transpose(),np.dot(self.Q.transpose(),leftVector),tol=tol)[0]
+        return sp.sparse.linalg.bicg(self.inverseMatrix,np.dot(self.Q,rightVector),tol=tol)[0]
+    def applyRight(self,leftVector,tol=1e-10 ):
+        return sp.sparse.linalg.bicg(self.inverseMatrix.transpose(),np.dot(leftVector,self.Q),tol=tol)[0]
     def genInverse(self):
         self.matrix = sp.linalg.inv(self.inverseMatrix)-self.proj
 
