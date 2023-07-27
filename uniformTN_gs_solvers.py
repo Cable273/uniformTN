@@ -20,9 +20,7 @@ def gradDescent(psi0,H,N_iter,learningRate,decay=0,tol=1e-15,envTol=1e-15,printE
     pbar=ProgressBar()
     for n in pbar(range(0,N_iter)):
         print("\n")
-        #gauge transform if necessary
-        if TDVP is True:
-            psi.gaugeTDVP()
+        print('index',n)
 
         psi.get_transfers()
         psi.get_fixedPoints()

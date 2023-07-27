@@ -43,8 +43,7 @@ class stateAnsatz(ABC):
     @abstractmethod
     def del_inverses(self):
         pass
-    def gaugeTDVP(self):
-        pass
+
     def gradDescent(self,H,learningRate,TDVP=False,subtractExp=True):
         from uniformTN_gradEvaluaters import gradFactory
         H_new = copy.deepcopy(H)
@@ -55,16 +54,9 @@ class stateAnsatz(ABC):
 
         gradEvaluater = gradFactory(self,H_new)
         gradEvaluater.eval()
+
         if TDVP is True:
             gradEvaluater.projectTDVP()
-        print("\n")
-        # print(np.einsum('ijk,ijk',gradEvaluater.grad['mps1'],gradEvaluater.grad['mps1'].conj()))
-        # print(np.einsum('ijk,ijk',gradEvaluater.grad['mps2'],gradEvaluater.grad['mps2'].conj()))
-        # print(np.einsum('ijab,ijab',gradEvaluater.grad['mpo1'],gradEvaluater.grad['mpo1'].conj()))
-        # print(np.einsum('ijab,ijab',gradEvaluater.grad['mpo2'],gradEvaluater.grad['mpo2'].conj()))
-
-        print(np.einsum('ijk,ijk',gradEvaluater.grad['mps'],gradEvaluater.grad['mps'].conj()))
-        print(np.einsum('ijab,ijab',gradEvaluater.grad['mpo'],gradEvaluater.grad['mpo'].conj()))
 
         self.shiftTensors(-learningRate,gradEvaluater.grad)
         self.norm()
@@ -190,18 +182,6 @@ class uMPSU1_2d_left(uMPSU_2d):
         self.Tb2_inv = inverseTransfer_left(self.Tb2,self.RR.vector)
         self.Ta_inv.genInverse()
         self.Ta_inv.genTensor()
-    def gaugeTDVP(self):
-        Ta = mpsTransfer(self.mps)
-        T = Ta.findRightEig()
-        #gauge transform so diagonal in Z basis
-        rho = np.einsum('ija,ujb,ba->ui',self.mps,self.mps.conj(),T.tensor)
-        e,u =np.linalg.eig(rho)
-        #now gauge transform so diagonal along diagonal in YZ plane
-        theta = -math.pi/4
-        u2 = np.array([[np.cos(theta/2),1j*np.sin(theta/2)],[1j*np.sin(theta/2),np.cos(theta/2)]])
-        u = np.dot(u,u2)
-        self.mps = np.einsum('ijk,ia->ajk',self.mps,u)
-        self.mpo = np.einsum('ijab,kj->ikab',self.mpo,u.conj().transpose())
     def norm(self):
         #polar decomp to ensure left canon still
         self.mps = polarDecomp(self.mps.reshape(2*self.D_mps,self.D_mps)).reshape(2,self.D_mps,self.D_mps)
@@ -215,8 +195,6 @@ class uMPSU1_2d_left_twoSite(uMPSU1_2d_left):
         #polar decomp to ensure left canon still
         self.mps = polarDecomp(self.mps.reshape(4*self.D_mps,self.D_mps)).reshape(2,2,self.D_mps,self.D_mps)
         self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(4,4,self.D_mpo,self.D_mpo)).reshape(4*self.D_mpo,4*self.D_mpo)).reshape(4,self.D_mpo,4,self.D_mpo)).reshape(2,2,2,2,self.D_mpo,self.D_mpo)
-    def gaugeTDVP(self):
-        pass
 
 class uMPSU1_2d_left_twoSite_staircase(uMPSU1_2d_left_twoSite):
     def get_transfers(self):
@@ -306,32 +284,6 @@ class uMPSU1_2d_left_bipartite(uMPSU_2d):
             self.Ta_inv[n] = inverseTransfer_left(self.Ta[n],self.T[n].vector)
             self.Tb_inv[n] = inverseTransfer_left(self.Tb[n],self.R[n].vector)
             self.Tb2_inv[n] = inverseTransfer_left(self.Tb2[n],self.RR[n].vector)
-    def gaugeTDVP(self):
-        Ta = dict()
-        Ta[1] = mpsTransferBip(self.mps[1],self.mps[2])
-        Ta[2] = mpsTransferBip(self.mps[2],self.mps[1])
-        T1 = Ta[1].findRightEig()
-        T2 = Ta[2].findRightEig()
-        T1.norm_pairedCanon()
-        T2.norm_pairedCanon()
-
-        #gauge transform so diagonal along diagonal in YZ plane
-        theta = math.pi/4
-        u2 = np.array([[np.cos(theta/2),1j*np.sin(theta/2)],[1j*np.sin(theta/2),np.cos(theta/2)]])
-
-        #gauge transform so diagonal in Z basis
-        rho = np.einsum('ija,ujb,ba->ui',self.mps[1],self.mps[1].conj(),T2.tensor)
-        e,u =np.linalg.eig(rho)
-        u = np.dot(u,u2)
-        self.mps[1] = np.einsum('ijk,ia->ajk',self.mps[1],u)
-        self.mpo[1] = np.einsum('ijab,kj->ikab',self.mpo[1],u.conj().transpose())
-
-        #gauge transform so diagonal in Z basis
-        rho = np.einsum('ija,ujb,ba->ui',self.mps[2],self.mps[2].conj(),T1.tensor)
-        e,u =np.linalg.eig(rho)
-        u = np.dot(u,u2)
-        self.mps[2] = np.einsum('ijk,ia->ajk',self.mps[2],u)
-        self.mpo[2] = np.einsum('ijab,kj->ikab',self.mpo[2],u.conj().transpose())
     def shiftTensors(self,coef,tensorDict):
         self.mps[1] += coef*tensorDict['mps1']
         self.mps[2] += coef*tensorDict['mps2']
