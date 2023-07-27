@@ -17,7 +17,7 @@ from uniformTN_Hamiltonians import *
 from gradImp_mps_1d import *
 from gradImp_mpso_2d_mps import *
 from gradImp_mpso_2d_mpo import *
-from uniformTN_functions import *
+from uniformTN_projectors import *
 
 def gradFactory(psi,H):
     if type(psi) == uMPS_1d:
@@ -58,9 +58,15 @@ class gradEvaluater(ABC):
     @abstractmethod
     def fetch_implementation(self):
         pass
-    @abstractmethod
-    def projectTDVP(self):
-        pass
+
+    def projectTangentSpace(self,metric):
+        if metric == "euclid":
+            self.projectTangentSpace_euclid()
+        elif metric == "TDVP":
+            self.projectTangentSpace_tdvp()
+        else:
+            print("ERROR: INVALID METRIC - skipping projection to tangent space")
+
 
 # -------------------------------------------------------------------------------------------------------------------------------------
 #1d uniform
@@ -88,8 +94,8 @@ class gradEvaluater_uniform_1d(gradEvaluater):
             rightEnv += self.H_imp[n].buildRightEnv()
         self.grad += self.attachLeft(rightEnv)
 
-    def projectTDVP(self):
-        self.grad = project_mpsTangentVector(self.grad,self.psi.mps,self.psi.R)
+    def projectTangentSpace_euclid(self):
+        self.grad = project_mps_euclid(self.grad,self.psi.mps)
 
 class gradEvaluater_uniform_1d_oneSite(gradEvaluater_uniform_1d):
     def fetch_implementation(self,H):
@@ -118,6 +124,9 @@ class gradEvaluater_uniform_1d_oneSiteLeft(gradEvaluater_uniform_1d):
     def attachLeft(self,rightEnv):
         rightEnv = self.psi.Ta_inv.applyLeft(rightEnv.reshape(self.psi.D**2)).reshape(self.psi.D,self.psi.D)
         return ncon([self.psi.mps,rightEnv],((-1,-2,3),(-4,3)),forder=(-1,-2,-4))
+
+    def projectTangentSpace_tdvp(self):
+        self.grad = project_mps_tdvp_leftGauge(self.grad,self.psi.mps,self.psi.R)
 
 class gradEvaluater_uniform_1d_twoSiteLeft(gradEvaluater_uniform_1d):
     def __init__(self,psi,H,H2=None):
@@ -153,11 +162,14 @@ class gradEvaluater_uniform_1d_twoSiteLeft(gradEvaluater_uniform_1d):
             print(type(H_site2))
             return 1
 
-    def projectTDVP(self):
+    def projectTangentSpace_euclid(self):
         gradA = self.grad.reshape(4,self.psi.D,self.psi.D)
         A = self.psi.mps.reshape(4,self.psi.D,self.psi.D)
-        grad =  project_mpsTangentVector(gradA,A,self.psi.R).reshape(2,2,self.psi.D,self.psi.D)
-        self.grad = grad
+        self.grad =  project_mps_euclid(gradA,A).reshape(2,2,self.psi.D,self.psi.D)
+    def projectTangentSpace_tdvp(self):
+        gradA = self.grad.reshape(4,self.psi.D,self.psi.D)
+        A = self.psi.mps.reshape(4,self.psi.D,self.psi.D)
+        self.grad =  project_mps_tdvp_leftGauge(gradA,A,self.psi.R).reshape(2,2,self.psi.D,self.psi.D)
 
     def attachRight(self,leftEnv):
         leftEnv = self.psi.Ta_inv.applyRight(leftEnv.reshape(self.psi.D**2)).reshape(self.psi.D,self.psi.D)
@@ -186,8 +198,10 @@ class gradEvaluater_bipartite_1d_left_ind(gradEvaluater_uniform_1d):
         elif type(H) == twoBodyH or type(H) == twoBodyH_hori or type(H) == twoBodyH_vert:
             return gradImplementation_bipartite_1d_left_twoBodyH(self.psi,H.tensor,self.H_index,self.grad_index)
 
-    def projectTDVP(self):
-        self.grad = project_mpsTangentVector(self.grad,self.psi.mps[self.index1],self.psi.R[self.index1])
+    def projectTangentSpace_euclid(self):
+        self.grad = project_mps_euclid(self.grad,self.psi.mps[self.index1])
+    def projectTangentSpace_tdvp(self):
+        self.grad = project_mps_tdvp_leftGauge(self.grad,self.psi.mps[self.index1],self.psi.R[self.index2])
 
     def attachRight(self,leftEnv):
         leftEnv = self.psi.Ta_inv[self.index1].applyRight(leftEnv.reshape(self.psi.D**2)).reshape(self.psi.D,self.psi.D)
@@ -207,13 +221,13 @@ class gradEvaluater_mpso_2d(gradEvaluater):
     def copyEvaluaters(self):
         self.grad['mps'] = self.gradA_evaluater.grad
         self.grad['mpo'] = self.gradB_evaluater.grad
-    def eval(self,geo=True):
+    def eval(self,geo=False):
         self.gradA_evaluater.eval()
         self.gradB_evaluater.eval(geo=geo)
         self.copyEvaluaters()
-    def projectTDVP(self):
-        self.gradA_evaluater.projectTDVP()
-        self.gradB_evaluater.projectTDVP()
+    def projectTangentSpace(self,metric):
+        self.gradA_evaluater.projectTangentSpace(metric)
+        self.gradB_evaluater.projectTangentSpace(metric)
         self.copyEvaluaters()
 
 class gradEvaluater_mpso_2d_uniform(gradEvaluater_mpso_2d):
@@ -257,8 +271,8 @@ class gradEvaluater_mpso_2d_mps(gradEvaluater):
     def eval(self):
         self.effEvaluater.eval()
         self.grad = self.effEvaluater.grad
-    def projectTDVP(self):
-        self.effEvaluater.projectTDVP()
+    def projectTangentSpace(self,metric):
+        self.effEvaluater.projectTangentSpace(metric)
         self.grad = self.effEvaluater.grad
 
     @abstractmethod
@@ -388,8 +402,11 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo):
     def wrapAroundRight(self,env):
         return ncon([self.psi.mpo,env],((-2,1,4,5),(-3,1,-6,4,-7,5)),forder=(-2,-3,-6,-7),order=(4,1,5))
 
-    def projectTDVP(self):
-        self.grad = project_mpoTangentVector(self.grad,self.psi.mps,self.psi.mpo,self.psi.T,self.psi.R)
+    def projectTangentSpace_euclid(self):
+        self.grad = project_mpo_euclid(self.grad,self.psi.mpo)
+    def projectTangentSpace_tdvp(self):
+        rho = ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1))
+        self.grad = project_mpo_tdvp_leftGauge(self.grad,self.psi.mpo,self.psi.R,rho)
 
 class gradEvaluater_mpso_2d_mpo_bipartite_ind(gradEvaluater_mpso_2d_mpo):
     #find an individual gradient of bipartite ansatz, d/dA_1 <H> or d/dA_2 <H> (index arg is which gradient)
@@ -413,14 +430,16 @@ class gradEvaluater_mpso_2d_mpo_bipartite_ind(gradEvaluater_mpso_2d_mpo):
         elif type(H) == twoBodyH_vert: 
             return gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_vert(self.psi,H.tensor,self.H_index,self.grad_index)
 
-    def projectTDVP(self):
-        self.grad = project_mpsTangentVector(self.grad,self.psi.mps[self.index1],self.psi.mpo[self.index1],self.psi.T[self.index1],self.psi.R[self.index1])
+    def projectTangentSpace_euclid(self):
+        self.grad = project_mpo_euclid(self.grad,self.psi.mpo[self.index1])
+    def projectTangentSpace_tdvp(self):
+        rho = ncon([self.psi.mps[self.index1],self.psi.mps[self.index1].conj(),self.psi.T[self.index2].tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1))
+        self.grad = project_mpo_tdvp_leftGauge(self.grad,self.psi.mpo[self.index1],self.psi.R[self.index2],rho)
 
     def wrapAroundLeft(self,env):
         return ncon([self.psi.mpo[self.index1],env],((-2,1,-4,5),(-3,1,-6,5)),forder=(-2,-3,-4,-6),order=(5,1))
     def wrapAroundRight(self,env):
         return ncon([self.psi.mpo[self.index1],env],((-2,1,4,5),(-3,1,-6,4,-7,5)),forder=(-2,-3,-6,-7),order=(4,1,5))
-
 
 class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater_mpso_2d_mpo):
     def wrapAroundLeft(self,env):
@@ -429,9 +448,6 @@ class gradEvaluater_mpso_2d_mpo_twoSite(gradEvaluater_mpso_2d_mpo):
         return ncon([self.psi.mpo,env],((-2,-5,1,4,7,8),(-3,-6,1,4,-9,7,-10,8)),forder=(-2,-5,-3,-6,-9,-10),order=(7,8,1,4))
     def gradMagnitude(self,grad):
         return np.einsum('abcdef,abcdef',grad,grad.conj())
-    def projectTDVP(self):
-        self.grad = project_mpoTangentVector_staircase(self.grad,self.psi.mps,self.psi.mpo,self.psi.T,self.psi.R)
-        # print("ERROR: 2d mpo two site unit cell TDVP needs implementing")
 
 class gradEvaluater_mpso_2d_mpo_twoSite_staircase(gradEvaluater_mpso_2d_mpo_twoSite):
     def fetch_implementation(self,H):
@@ -447,6 +463,18 @@ class gradEvaluater_mpso_2d_mpo_twoSite_staircase(gradEvaluater_mpso_2d_mpo_twoS
             imp1 = gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_vert_site1(self.psi,H.tensor)
             imp2 = gradImplementation_mpso_2d_mpo_twoSite_staircase_twoBodyH_vert_site2(self.psi,H.tensor)
             return gradImplementation_mpso_2d_mpo_twoSite_staircase_wrapper(self.psi,imp1,imp2)
+
+    def projectTangentSpace_euclid(self):
+        gradB = self.grad.reshape(4,4,self.psi.D_mpo,self.psi.D_mpo)
+        B = self.psi.mpo.reshape(4,4,self.psi.D_mpo,self.psi.D_mpo)
+        self.grad = project_mpo_euclid(gradB,B).reshape(2,2,2,2,self.psi.D_mpo,self.psi.D_mpo)
+    def projectTangentSpace_tdvp(self):
+        gradB = self.grad.reshape(4,4,self.psi.D_mpo,self.psi.D_mpo)
+        B = self.psi.mpo.reshape(4,4,self.psi.D_mpo,self.psi.D_mpo)
+        rho1 = ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((-1,3,4,5),(-2,3,4,6),(6,5)),forder=(-2,-1))
+        rho2 = ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((1,-2,4,5),(1,-3,4,6),(6,5)),forder=(-3,-2))
+        rho = ncon([rho1,rho2],((-1,-2),(-3,-4)),forder=(-1,-3,-2,-4)).reshape(4,4)
+        self.grad = project_mpo_tdvp_leftGauge(gradB,B,self.psi.R,rho).reshape(2,2,2,2,self.psi.D_mpo,self.psi.D_mpo)
 
 class gradEvaluater_mpso_2d_mpo_twoSite_square_ind(gradEvaluater_mpso_2d_mpo_twoSite):
     def __init__(self,psi,H,siteLabel):
@@ -508,9 +536,12 @@ class gradEvaluater_bipartite_1d_left(gradEvaluater):
 
     def fetch_implementation(self):
         pass
-    def projectTDVP(self):
-        self.grad[1] = project_mpsTangentVector(self.grad[1],self.psi.mps[1],self.psi.R[1])
-        self.grad[2] = project_mpsTangentVector(self.grad[2],self.psi.mps[2],self.psi.R[2])
+    def projectTangentSpace_euclid(self):
+        self.grad[1] = project_mps_euclid(self.grad[1],self.psi.mps[1])
+        self.grad[2] = project_mps_euclid(self.grad[2],self.psi.mps[2])
+    def projectTangentSpace_tdvp(self):
+        self.grad[1] = project_mps_tdvp_leftGauge(self.grad[1],self.psi.mps[1],self.psi.R[2])
+        self.grad[2] = project_mps_tdvp_leftGauge(self.grad[2],self.psi.mps[2],self.psi.R[1])
 
 class gradEvaluater_mpso_2d_mps_bipartite(gradEvaluater):
     def eval(self):
@@ -538,9 +569,13 @@ class gradEvaluater_mpso_2d_mps_bipartite(gradEvaluater):
         self.grad = dict()
         self.grad[1] = 1/2*(gradEvaluater_11.grad + gradEvaluater_21.grad)
         self.grad[2] = 1/2*(gradEvaluater_12.grad + gradEvaluater_22.grad)
-    def projectTDVP(self):
-        self.grad[1] = project_mpsTangentVector(self.grad[1],self.psi.mps[1],self.psi.T[1])
-        self.grad[2] = project_mpsTangentVector(self.grad[2],self.psi.mps[2],self.psi.T[2])
+
+    def projectTangentSpace_euclid(self):
+        self.grad[1] = project_mps_euclid(self.grad[1],self.psi.mps[1])
+        self.grad[2] = project_mps_euclid(self.grad[2],self.psi.mps[2])
+    def projectTangentSpace_tdvp(self):
+        self.grad[1] = project_mps_tdvp_leftGauge(self.grad[1],self.psi.mps[1],self.psi.T[2])
+        self.grad[2] = project_mps_tdvp_leftGauge(self.grad[2],self.psi.mps[2],self.psi.T[1])
 
 class gradEvaluater_mpso_2d_mps_bipartite(gradEvaluater_mpso_2d_mps_bipartite):
     def fetch_implementation(self,H):
@@ -636,9 +671,10 @@ class gradEvaluater_mpso_2d_mpo_twoSite_square(gradEvaluater_mpso_2d_mpo_twoSite
     def buildTotalGrad(self):
         self.grad = 1/4*(self.grad_11 + self.grad_12 + self.grad_21 + self.grad_22)
 
-    def projectTDVP(self):
-        print("ERROR: 2d mpo two site unit cell TDVP needs implementing")
-        pass
+    def projectTangentSpace_euclid(self):
+        gradB = self.grad.reshape(4,4,self.psi.D_mpo,self.psi.D_mpo)
+        B = self.psi.mpo.reshape(4,4,self.psi.D_mpo,self.psi.D_mpo)
+        self.grad = project_mpo_euclid(gradB,B).reshape(2,2,2,2,self.psi.D_mpo,self.psi.D_mpo)
 
 class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater_mpso_2d_mpo_twoSiteUnitCell_wrapper):
     def __init__(self,psi,H):
@@ -654,6 +690,11 @@ class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater_mpso_2d_mpo_twoSiteUnitC
         self.grad[1] = 1/2*(self.grad_11 + self.grad_21)
         self.grad[2] = 1/2*(self.grad_12 + self.grad_22)
 
-    def projectTDVP(self):
-        self.grad[1] = project_mpoTangentVector(self.grad[1],self.psi.mps[1],self.psi.mpo[1],self.psi.T[1],self.psi.R[1])
-        self.grad[2] = project_mpoTangentVector(self.grad[2],self.psi.mps[2],self.psi.mpo[2],self.psi.T[2],self.psi.R[2])
+    def projectTangentSpace_euclid(self):
+        self.grad[1] = project_mpo_euclid(self.grad[1],self.psi.mpo[1])
+        self.grad[2] = project_mpo_euclid(self.grad[2],self.psi.mpo[2])
+    def projectTangentSpace_tdvp(self):
+        rho1 = ncon([self.psi.mps[1],self.psi.mps[1].conj(),self.psi.T[2].tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1))
+        rho2 = ncon([self.psi.mps[2],self.psi.mps[2].conj(),self.psi.T[1].tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1))
+        self.grad[1] = project_mpo_tdvp_leftGauge(self.grad[1],self.psi.mpo[1],self.psi.R[2],rho1)
+        self.grad[2] = project_mpo_tdvp_leftGauge(self.grad[2],self.psi.mpo[2],self.psi.R[1],rho2)

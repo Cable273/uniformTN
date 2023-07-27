@@ -14,14 +14,12 @@ from abc import ABC, abstractmethod
 from uniformTN_transfers import inverseTransfer_left,inverseTransfer,inverseTransfer_right
 import copy
 
-def gradDescent(psi0,H,N_iter,learningRate,decay=0,tol=1e-15,envTol=1e-15,printE0=False,printDiff=False,TDVP=False):
+def gradDescent(psi0,H,N_iter,learningRate,decay=0,tol=1e-15,envTol=1e-15,printE0=False,printDiff=False,projectionMetric=None):
     psi = copy.deepcopy(psi0) #dont change state
     eDensity = np.zeros(N_iter)
     pbar=ProgressBar()
     for n in pbar(range(0,N_iter)):
-        print("\n")
-        print('index',n)
-
+        # print("\n")
         psi.get_transfers()
         psi.get_fixedPoints()
         psi.get_inverses()
@@ -38,7 +36,7 @@ def gradDescent(psi0,H,N_iter,learningRate,decay=0,tol=1e-15,envTol=1e-15,printE
         if n > 1:
             learningRate = learningRate/(1+decay*n)
 
-        psi.gradDescent(H,learningRate,TDVP=TDVP)
+        psi.gradDescent(H,learningRate,projectionMetric=projectionMetric)
     eDensity = eDensity[:n]
     return psi,eDensity
 

@@ -13,7 +13,15 @@ from abc import ABC, abstractmethod
 import copy
 
 from uniformTN_transfers import *
-from uniformTN_functions import polarDecomp,randoUnitary,project_mpsTangentVector,project_mpoTangentVector 
+from uniformTN_projectors import polarDecomp
+
+#for initialising states
+def randoUnitary(d1,d2,real=False):
+    if real is True:
+        A = np.random.uniform(-1,1,(d1,d2)) 
+    else:
+        A = np.random.uniform(-1,1,(d1,d2)) + 1j*np.random.uniform(-1,1,(d1,d2))
+    return polarDecomp(A)
 
 class stateAnsatz(ABC):
     @abstractmethod
@@ -44,19 +52,18 @@ class stateAnsatz(ABC):
     def del_inverses(self):
         pass
 
-    def gradDescent(self,H,learningRate,TDVP=False,subtractExp=True):
+    def gradDescent(self,H,learningRate,projectionMetric=None):
         from uniformTN_gradEvaluaters import gradFactory
+        #subtract current expectation value (so cost f=<H>/<psi|psi> => df/dx = d/dx <H-eI>)
         H_new = copy.deepcopy(H)
-        #subtract current expectation value
-        if subtractExp is True:
-            for n in range(0,len(H_new.terms)):
-                H_new.terms[n].tensor = H.terms[n].subtractExp(self)
+        for n in range(0,len(H_new.terms)):
+            H_new.terms[n].tensor = H.terms[n].subtractExp(self)
 
         gradEvaluater = gradFactory(self,H_new)
         gradEvaluater.eval()
 
-        if TDVP is True:
-            gradEvaluater.projectTDVP()
+        if projectionMetric is not None:
+            gradEvaluater.projectTangentSpace(projectionMetric)
 
         self.shiftTensors(-learningRate,gradEvaluater.grad)
         self.norm()
