@@ -15,6 +15,8 @@ import copy
 from uniformTN_transfers import *
 from uniformTN_projectors import polarDecomp
 
+from rw_functions import save_obj,load_obj
+
 #for initialising states
 def randoUnitary(d1,d2,real=False):
     if real is True:
@@ -50,6 +52,13 @@ class stateAnsatz(ABC):
         pass
     @abstractmethod
     def del_inverses(self):
+        pass
+
+    @abstractmethod
+    def save(self):
+        pass
+    @abstractmethod
+    def load(self):
         pass
 
     def gradDescent(self,H,learningRate,projectionMetric=None):
@@ -98,6 +107,12 @@ class uMPS_1d(stateAnsatz):
         e0 = e[np.argmax(np.abs(e))]
         self.mps = self.mps / np.sqrt(np.abs(e0))
 
+    def save(self,filename):
+        np.save(filename,self.mps)
+    def load(self,filename):
+        self.mps = np.load(filename)
+        self.D = np.size(self.mps,axis=1)
+
 class uMPS_1d_left(uMPS_1d):
     def randoInit(self):
         self.mps = randoUnitary(2*self.D,self.D).reshape(2,self.D,self.D)
@@ -144,6 +159,17 @@ class uMPS_1d_left_bipartite(uMPS_1d_left):
         self.mps[1] = polarDecomp(self.mps[1].reshape(2*self.D,self.D)).reshape(2,self.D,self.D)
         self.mps[2] = polarDecomp(self.mps[2].reshape(2*self.D,self.D)).reshape(2,self.D,self.D)
 
+    def save(self,filename):
+        data = dict()
+        data['mps1'] = self.mps[1]
+        data['mps2'] = self.mps[2]
+        save_obj(data,filename)
+    def load(self,filename):
+        data = load_obj(filename)
+        self.mps[1] = data['mps1']
+        self.mps[2] = data['mps2']
+        self.D = np.size(self.mps[1],axis=1)
+
 class uMPSU_2d(stateAnsatz):
     def __init__(self,D_mps,D_mpo,mps=None,mpo=None):
         self.mps= mps
@@ -165,6 +191,18 @@ class uMPSU_2d(stateAnsatz):
     def shiftTensors(self,coef,tensorDict):
         self.mps += coef*tensorDict['mps']
         self.mpo += coef*tensorDict['mpo']
+
+    def save(self,filename):
+        data = dict()
+        data['mps'] = self.mps
+        data['mpo'] = self.mpo
+        save_obj(data,filename)
+    def load(self,filename):
+        data = load_obj(filename)
+        self.mps = data['mps']
+        self.mpo = data['mpo']
+        self.D_mps = np.size(self.mps,axis=1)
+        self.D_mpo = np.size(self.mpo,axis=2)
         
 class uMPSU1_2d_left(uMPSU_2d):
     def randoInit(self):
@@ -302,6 +340,22 @@ class uMPSU1_2d_left_bipartite(uMPSU_2d):
         self.mps[2] = polarDecomp(self.mps[2].reshape(2*self.D_mps,self.D_mps)).reshape(2,self.D_mps,self.D_mps)
         self.mpo[1] = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo[1]).reshape(2*self.D_mpo,2*self.D_mpo)).reshape(2,self.D_mpo,2,self.D_mpo))
         self.mpo[2] = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo[2]).reshape(2*self.D_mpo,2*self.D_mpo)).reshape(2,self.D_mpo,2,self.D_mpo))
+
+    def save(self,filename):
+        data = dict()
+        data['mps1'] = self.mps[1]
+        data['mps2'] = self.mps[2]
+        data['mpo1'] = self.mpo[1]
+        data['mpo2'] = self.mpo[2]
+        save_obj(data,filename)
+    def load(self,filename):
+        data = load_obj(filename)
+        self.mps[1] = data['mps1']
+        self.mps[2] = data['mps2']
+        self.mpo[1] = data['mpo1']
+        self.mpo[2] = data['mpo2']
+        self.D_mps = np.size(self.mps[1],axis=1)
+        self.D_mpo = np.size(self.mpo[1],axis=2)
 
 class uMPS_1d_centre(uMPS_1d_left):
     def randoInit(self):
