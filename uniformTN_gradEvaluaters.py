@@ -44,6 +44,10 @@ def gradFactory(psi,H):
     elif type(psi) == uMPSU1_2d_left_twoSite_staircase:
         return gradEvaluater_mpso_2d_twoSite_staircase(psi,H)
 
+    elif type(psi) == uMPSU1_2d_left_fourSite_square:
+        #can reuse all the uniform code here with effective Hamiltonisn
+        return gradEvaluater_mpso_2d_uniform(psi,H)
+
 class gradEvaluater(ABC):
     def __init__(self,psi,H):
         self.psi = psi

@@ -127,7 +127,8 @@ class gradImplementation_mpso_2d_mpo_uniform_oneBodyH(gradImplementation_mpso_2d
         super().__init__(psi,H)
         innerContract = ncon([self.psi.mpo,self.psi.mpo.conj(),self.H],((2,-1,5,-6),(3,-4,5,-7),(3,2)),forder=(-4,-1,-7,-6))
         exp = ncon([innerContract,self.outerContract,self.psi.R.tensor],((1,2,3,4),(1,2),(3,4)),order=(3,4,1,2))
-        self.h_tilde = self.H - exp*np.eye(2)
+        physDim = np.size(self.H.shape[0])
+        self.h_tilde = self.H - exp*np.eye(physDim)
 
         self.innerContract = ncon([self.psi.mpo,self.psi.mpo.conj(),self.h_tilde],((2,-1,5,-6),(3,-4,5,-7),(3,2)),forder=(-4,-1,-7,-6))
         leftEnv = self.buildLeftEnv(H = self.h_tilde)
@@ -164,7 +165,8 @@ class gradImplementation_mpso_2d_mpo_uniform_twoBodyH_hori(gradImplementation_mp
         super().__init__(psi,H)
         innerContract = ncon([self.psi.mpo,self.psi.mpo,self.H,self.psi.mpo.conj(),self.psi.mpo.conj()],((2,-1,9,10),(6,-5,10,-11),(3,7,2,6),(3,-4,9,13),(7,-8,13,-12)),forder=(-4,-8,-1,-5,-12,-11),order=(9,2,3,10,13,6,7))
         exp = ncon([innerContract,self.outerContract,self.outerContract,self.psi.R.tensor],((1,2,3,4,5,6),(1,3),(2,4),(5,6)),order=(1,3,2,4,5,6))
-        self.h_tilde = (self.H.reshape(4,4)-exp*np.eye(4)).reshape(2,2,2,2)
+        physDim = self.H.shape[0]
+        self.h_tilde = (self.H.reshape(physDim**2,physDim**2)-exp*np.eye(physDim**2)).reshape(physDim,physDim,physDim,physDim)
 
         self.innerContract= ncon([self.psi.mpo,self.psi.mpo,self.h_tilde,self.psi.mpo.conj(),self.psi.mpo.conj()],((2,-1,9,10),(6,-5,10,-11),(3,7,2,6),(3,-4,9,13),(7,-8,13,-12)),forder=(-4,-8,-1,-5,-12,-11),order=(9,2,3,10,13,6,7))
         leftEnv = self.buildLeftEnv(H = self.h_tilde)
@@ -257,7 +259,8 @@ class gradImplementation_mpso_2d_mpo_uniform_twoBodyH_vert(gradImplementation_mp
 
         leftEnv = ncon([self.psi.mpo,self.psi.mpo,self.H,self.psi.mpo.conj(),self.psi.mpo.conj(),self.outerContractDouble],((2,1,9,-10),(6,5,11,-12),(3,7,2,6),(3,4,9,-13),(7,8,11,-14),(4,8,1,5)),forder=(-13,-10,-14,-12),order=(9,1,2,3,4,11,5,6,7,8))
         exp = np.einsum('abcd,abcd',leftEnv,self.psi.RR.tensor)
-        self.h_tilde = (self.H.reshape(4,4)-exp*np.eye(4)).reshape(2,2,2,2)
+        physDim = self.H.shape[0]
+        self.h_tilde = (self.H.reshape(physDim**2,physDim**2)-exp*np.eye(physDim**2)).reshape(physDim,physDim,physDim,physDim)
 
         self.innerContract= ncon([self.psi.mpo,self.psi.mpo,self.h_tilde,self.psi.mpo.conj(),self.psi.mpo.conj()],((2,-1,9,-10),(6,-5,11,-12),(3,7,2,6),(3,-4,9,-13),(7,-8,11,-14)),forder=(-4,-8,-1,-5,-13,-10,-14,-12),order=(9,2,3,11,6,7))
         leftEnv = self.buildLeftEnv(H = self.h_tilde)

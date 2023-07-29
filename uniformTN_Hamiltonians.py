@@ -6,6 +6,7 @@ import numpy as np
 import scipy as sp
 from ncon import ncon
 from uniformTN_states import *
+import copy
 
 class localH:
     def __init__(self,H_terms):
@@ -19,6 +20,29 @@ class localH:
         self.subtractedTerms = dict()
         for n in range(0,len(self.terms)):
             self.subtractedTerms[n] = self.terms[n].subtractExp(psi)
+
+    def effH_2d_fourSite_square(self):
+        H_eff= self.terms[0].effH_2d_fourSite_square()
+        for n in range(1,len(self.terms)):
+            H_eff += self.terms[n].effH_2d_fourSite_square()
+        return H_eff
+
+    def __add__(self,H2):
+        newObj = copy.deepcopy(self)
+        added = []
+        for n in range(0,len(self.terms)):
+            for m in range(0,len(H2.terms)):
+                if m not in added:
+                    if type(self.terms[n]) is type(H2.terms[m]):
+                        newObj.terms[n] += H2.terms[m]
+                        added.append(m)
+
+        #append terms that weren't added
+        not_added = list( set(np.arange(0,len(H2.terms))) -set(added))
+        for n in range(0,len(not_added)):
+            newObj.terms.append(H2.terms[not_added[n]])
+        return newObj
+
             
 class localH_term:
     def __init__(self,H):
@@ -26,6 +50,16 @@ class localH_term:
         self.tensor = self.reshapeTensor(self.matrix)
     def subtractExp(self,psi):
         return self.reshapeTensor(self.matrix - self.exp(psi)*np.eye(np.size(self.matrix,axis=0)))
+
+    def __add__(self,H2):
+        if type(self) is type(H2):
+            newObj = copy.deepcopy(self)
+            newObj.__init__(self.matrix + H2.matrix)
+            return newObj
+        else:
+            print("ERROR: adding different type of H ",type(self)," and ",type(H2))
+
+
     def exp(self,psi):
         if type(psi) == uMPSU1_2d_left:
             return self.exp_2d_left(psi)
@@ -35,6 +69,10 @@ class localH_term:
             return self.exp_2d_left_twoSite_staircase(psi)
         elif type(psi) == uMPSU1_2d_left_bipartite:
             return self.exp_2d_left_bipartite(psi)
+
+        elif type(psi) == uMPSU1_2d_left_fourSite_square:
+            return self.exp_2d_left(psi)
+
         elif type(psi) == uMPS_1d_left:
             return self.exp_1d_left(psi)
         elif type(psi) == uMPS_1d:
@@ -46,7 +84,16 @@ class localH_term:
 
 class oneBodyH(localH_term):
     def reshapeTensor(self,H_matrix):
-        return H_matrix.reshape([2,2])
+        return H_matrix
+
+    def effH_2d_fourSite_square(self):
+        physDim = self.tensor.shape[0]
+        effH_tensor = ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-1,-5),(-2,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8))
+        effH_tensor += ncon([np.eye(physDim),self.tensor,np.eye(physDim),np.eye(physDim)],((-1,-5),(-2,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8))
+        effH_tensor += ncon([np.eye(physDim),np.eye(physDim),self.tensor,np.eye(physDim)],((-1,-5),(-2,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8))
+        effH_tensor += ncon([np.eye(physDim),np.eye(physDim),np.eye(physDim),self.tensor],((-1,-5),(-2,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8))
+        return localH([oneBodyH(1/4*effH_tensor.reshape(physDim**4,physDim**4))])
+
     def exp_1d(self,psi):
         return np.real(ncon([psi.mps,self.tensor,psi.mps.conj(),psi.L.tensor,psi.R.tensor],((1,3,4),(2,1),(2,5,6),(5,3),(6,4))),order=(3,5,1,2,4,6))
     def exp_1d_left(self,psi):
@@ -95,7 +142,8 @@ class oneBodyH(localH_term):
 
 class twoBodyH(localH_term):
     def reshapeTensor(self,H_matrix):
-        return H_matrix.reshape([2,2,2,2])
+        physDim = int(np.sqrt(H_matrix.shape[0]))
+        return H_matrix.reshape([physDim,physDim,physDim,physDim])
 
     #1d
     def exp_1d(self,psi):
@@ -116,10 +164,22 @@ class twoBodyH(localH_term):
         return E/2
 
 class twoBodyH_hori(twoBodyH):
+    def effH_2d_fourSite_square(self):
+        physDim = self.tensor.shape[0]
+        effH_oneSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-1,-2,-5,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
+        effH_oneSite += ncon([np.eye(physDim),np.eye(physDim),self.tensor],((-1,-5),(-2,-6),(-3,-4,-7,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
+        effH_oneSite = effH_oneSite/4
+
+        effH_twoSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-2,-5,-10,-13),(-1,-9),(-3,-11),(-4,-12),(-6,-14),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+        effH_twoSite += ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-4,-7,-12,-15),(-1,-9),(-2,-10),(-3,-11),(-5,-13),(-6,-14),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+        effH_twoSite = effH_twoSite/4
+
+        return localH([oneBodyH(effH_oneSite),twoBodyH_hori(effH_twoSite)])
+
     def exp_2d_left(self,psi):
-        centreContract = ncon([psi.mpo,psi.mpo,self.tensor,psi.mpo.conj(),psi.mpo.conj(),psi.R.tensor],((1,-10,5,6),(2,-11,6,7),(3,4,1,2),(3,-12,5,9),(4,-13,9,8),(8,7)),forder=(-12,-13,-10,-11),order=(5,6,9,7,8,1,2,3,4))
+        centreContract = ncon([psi.mpo,psi.mpo,self.tensor,psi.mpo.conj(),psi.mpo.conj(),psi.R.tensor],((2,-1,9,10),(6,-5,10,11),(3,7,2,6),(3,-4,9,13),(7,-8,13,12),(12,11)),forder=(-4,-8,-1,-5),order=(9,2,3,10,13,6,7,11,12))
         outerContract = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1))
-        E = np.real(ncon([outerContract,centreContract,outerContract],((2,1),(2,3,1,4),(3,4))))
+        E = np.real(ncon([outerContract,centreContract,outerContract],((2,1),(2,3,1,4),(3,4)),order=(2,1,3,4)))
         return E
 
     #2d left biparite
@@ -158,9 +218,21 @@ class twoBodyH_hori(twoBodyH):
         return np.real(E/2)
 
 class twoBodyH_vert(twoBodyH):
+    def effH_2d_fourSite_square(self):
+        physDim = self.tensor.shape[0]
+        effH_oneSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-1,-3,-5,-7),(-2,-6),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
+        effH_oneSite += ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-2,-4,-6,-8),(-1,-5),(-3,-7)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
+        effH_oneSite = effH_oneSite/4
+
+        effH_twoSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-3,-5,-11,-13),(-1,-9),(-2,-10),(-4,-12),(-6,-14),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+        effH_twoSite += ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-4,-6,-12,-14),(-1,-9),(-2,-10),(-3,-11),(-5,-13),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+        effH_twoSite = effH_twoSite/4
+
+        return localH([oneBodyH(effH_oneSite),twoBodyH_vert(effH_twoSite)])
+
     def exp_2d_left(self,psi):
-        outerContract = ncon([psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.T.tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2))
-        innerContract = ncon([psi.mpo,psi.mpo,self.tensor,psi.mpo.conj(),psi.mpo.conj(),psi.RR.tensor],((1,-5,9,11),(2,-7,10,14),(3,4,1,2),(3,-6,9,12),(4,-8,10,13),(12,11,13,14)),forder=(-6,-8,-5,-7),order=(12,11,13,14,9,10,1,2,3,4))
+        outerContract = ncon([psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.T.tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2),order=(5,6,9,7,8))
+        innerContract = ncon([psi.mpo,psi.mpo,self.tensor,psi.mpo.conj(),psi.mpo.conj(),psi.RR.tensor],((2,-1,9,10),(6,-5,12,13),(3,7,2,6),(3,-4,9,11),(7,-8,12,14),(11,10,14,13)),forder=(-4,-8,-1,-5),order=(9,2,3,10,11,13,14,6,7,12))
         E = np.real(ncon([innerContract,outerContract],((1,2,3,4),(1,2,3,4))))
         return E
 
@@ -202,4 +274,5 @@ class twoBodyH_vert(twoBodyH):
 
 class plaquetteH(localH_term):
     def reshapeTensor(self,H_matrix):
-        return H_matrix.reshape([2,2,2,2,2,2,2,2])
+        physDim = int(np.sqrt(np.sqrt(H_matrix.shape[0])))
+        return H_matrix.reshape([physDim,physDim,physDim,physDim,physDim,physDim,physDim,physDim])
