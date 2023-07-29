@@ -133,6 +133,9 @@ class uMPS_1d_left_twoSite(uMPS_1d_left):
         self.Ta = mpsTransfer_twoSite(self.mps)
     def norm(self):
         self.mps = polarDecomp(self.mps.reshape(4*self.D,self.D)).reshape(2,2,self.D,self.D)
+    def load(self,filename):
+        super().load(filename)
+        self.D = np.size(self.mps,axis=2)
 
 class uMPS_1d_left_bipartite(uMPS_1d_left):
     def randoInit(self):
@@ -240,6 +243,20 @@ class uMPSU1_2d_left_twoSite(uMPSU1_2d_left):
         #polar decomp to ensure left canon still
         self.mps = polarDecomp(self.mps.reshape(4*self.D_mps,self.D_mps)).reshape(2,2,self.D_mps,self.D_mps)
         self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(4,4,self.D_mpo,self.D_mpo)).reshape(4*self.D_mpo,4*self.D_mpo)).reshape(4,self.D_mpo,4,self.D_mpo)).reshape(2,2,2,2,self.D_mpo,self.D_mpo)
+
+    def load(self,filename):
+        super().load(filename)
+        self.D_mps = np.size(self.mps,axis=2)
+        self.D_mpo = np.size(self.mpo,axis=4)
+
+class uMPSU1_2d_left_fourSite_square(uMPSU1_2d_left):
+    def randoInit(self):
+        self.mps = randoUnitary(16*self.D_mps,self.D_mps).reshape(16,self.D_mps,self.D_mps)
+        self.mpo = np.einsum('iajb->ijab',randoUnitary(16*self.D_mpo,16*self.D_mpo).reshape(16,self.D_mpo,16,self.D_mpo)).reshape(16,16,self.D_mpo,self.D_mpo)
+    def norm(self):
+        #polar decomp to ensure left canon still
+        self.mps = polarDecomp(self.mps.reshape(16*self.D_mps,self.D_mps)).reshape(16,self.D_mps,self.D_mps)
+        self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(16,16,self.D_mpo,self.D_mpo)).reshape(16*self.D_mpo,16*self.D_mpo)).reshape(16,self.D_mpo,16,self.D_mpo)).reshape(16,16,self.D_mpo,self.D_mpo)
 
 class uMPSU1_2d_left_twoSite_staircase(uMPSU1_2d_left_twoSite):
     def get_transfers(self):
