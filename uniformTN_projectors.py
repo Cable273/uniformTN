@@ -37,7 +37,7 @@ def project_mpo_euclid(grad_mpo,mpo):
     AH_part = 1/2*(M-M.conj().transpose())
     return np.einsum('iajb->ijab',np.dot(B_matrix,AH_part).reshape(physDim,D,physDim,D))
 
-def project_mpo_tdvp_leftGauge(grad_mpo,mpo,R,rho,tol=1e-10):
+def project_mpo_tdvp_leftGauge(grad_mpo,mpo,R,rho,tol=1e-5):
     physDim = np.size(mpo,axis=0)
     D = np.size(mpo,axis=2)
     #Solve M A_tilde = c
@@ -61,6 +61,7 @@ def project_mpo_tdvp_leftGauge(grad_mpo,mpo,R,rho,tol=1e-10):
     c += -ncon([lambda_2,R.tensor],((-2,-1),(-3,-4)),forder=(-2,-1,-3,-4))
     c = c.reshape((physDim*D)**2)
 
-    A_tilde =  sp.sparse.linalg.bicgstab(M,c,tol=tol)[0].reshape(physDim,physDim,D,D)
+    M_inv = np.linalg.inv(M)
+    A_tilde = np.dot(M_inv,c).reshape(physDim,physDim,D,D)
     Xb= np.einsum('jiab,iubv->juav',mpo,A_tilde)
     return Xb
