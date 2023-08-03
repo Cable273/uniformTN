@@ -21,10 +21,10 @@ class localH:
         for n in range(0,len(self.terms)):
             self.subtractedTerms[n] = self.terms[n].subtractExp(psi)
 
-    def effH_2d_fourSite_square(self):
-        H_eff= self.terms[0].effH_2d_fourSite_square()
+    def effH_2d_fourSite_block(self):
+        H_eff= self.terms[0].effH_2d_fourSite_block()
         for n in range(1,len(self.terms)):
-            H_eff += self.terms[n].effH_2d_fourSite_square()
+            H_eff += self.terms[n].effH_2d_fourSite_block()
         return H_eff
 
     def __add__(self,H2):
@@ -70,8 +70,10 @@ class localH_term:
         elif type(psi) == uMPSU1_2d_left_bipartite:
             return self.exp_2d_left_bipartite(psi)
 
-        elif type(psi) == uMPSU1_2d_left_fourSite_square:
+        elif type(psi) == uMPSU1_2d_left_fourSite_block:
             return self.exp_2d_left(psi)
+        elif type(psi) == uMPSU1_2d_left_fourSite_sep:
+            return self.exp_2d_left_fourSite_sep(psi)
 
         elif type(psi) == uMPS_1d_left:
             return self.exp_1d_left(psi)
@@ -86,7 +88,7 @@ class oneBodyH(localH_term):
     def reshapeTensor(self,H_matrix):
         return H_matrix
 
-    def effH_2d_fourSite_square(self):
+    def effH_2d_fourSite_block(self):
         physDim = self.tensor.shape[0]
         effH_tensor = ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-1,-5),(-2,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8))
         effH_tensor += ncon([np.eye(physDim),self.tensor,np.eye(physDim),np.eye(physDim)],((-1,-5),(-2,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8))
@@ -140,6 +142,14 @@ class oneBodyH(localH_term):
         E += ncon([psi.mps[2],psi.mpo[2],self.tensor,psi.mpo[2].conj(),psi.mps[2].conj(),psi.R[1].tensor,psi.T[1].tensor],((1,5,6),(2,1,8,9),(3,2),(3,4,8,10),(4,5,7),(10,9),(7,6)))
         return np.real(E/2)
 
+    #2d left fourSite
+    def exp_2d_left_fourSite_sep(self,psi):    
+        E = ncon([psi.mps[1],psi.mpo[1],self.tensor,psi.mpo[1].conj(),psi.mps[1].conj(),psi.R[2].tensor,psi.T[3].tensor],((1,5,6),(2,1,8,9),(3,2),(3,4,8,10),(4,5,7),(10,9),(7,6)))
+        E += ncon([psi.mps[2],psi.mpo[2],self.tensor,psi.mpo[2].conj(),psi.mps[2].conj(),psi.R[1].tensor,psi.T[4].tensor],((1,5,6),(2,1,8,9),(3,2),(3,4,8,10),(4,5,7),(10,9),(7,6)))
+        E += ncon([psi.mps[3],psi.mpo[3],self.tensor,psi.mpo[3].conj(),psi.mps[3].conj(),psi.R[4].tensor,psi.T[1].tensor],((1,5,6),(2,1,8,9),(3,2),(3,4,8,10),(4,5,7),(10,9),(7,6)))
+        E += ncon([psi.mps[4],psi.mpo[4],self.tensor,psi.mpo[4].conj(),psi.mps[4].conj(),psi.R[3].tensor,psi.T[2].tensor],((1,5,6),(2,1,8,9),(3,2),(3,4,8,10),(4,5,7),(10,9),(7,6)))
+        return E/4
+
 class twoBodyH(localH_term):
     def reshapeTensor(self,H_matrix):
         physDim = int(np.sqrt(H_matrix.shape[0]))
@@ -164,7 +174,7 @@ class twoBodyH(localH_term):
         return E/2
 
 class twoBodyH_hori(twoBodyH):
-    def effH_2d_fourSite_square(self):
+    def effH_2d_fourSite_block(self):
         physDim = self.tensor.shape[0]
         effH_oneSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-1,-2,-5,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
         effH_oneSite += ncon([np.eye(physDim),np.eye(physDim),self.tensor],((-1,-5),(-2,-6),(-3,-4,-7,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
@@ -217,8 +227,16 @@ class twoBodyH_hori(twoBodyH):
         E += ncon([psi.mpo,psi.mpo.conj(),self.tensor,psi.mpo,psi.mpo.conj(),outerContract['bot'],outerContract['top'],outerContract['bot'],outerContract['top'],psi.R.tensor],((2,5,1,4,15,16),(2,6,3,7,15,19),(6,10,5,9),(9,13,8,12,16,17),(10,13,11,14,19,18),(3,1),(7,4),(11,8),(14,12),(18,17)),order=(15,2,1,3,4,7,5,6,16,19,13,9,10,8,11,12,14,17,18))
         return np.real(E/2)
 
+    #2d left fourSite
+    def exp_2d_left_fourSite_sep(self,psi):    
+        E = self.exp_2d_left_bipartite_ind(psi.mps[1],psi.mps[2],psi.mpo[1],psi.mpo[2],psi.T[4],psi.T[3],psi.R[1])
+        E += self.exp_2d_left_bipartite_ind(psi.mps[2],psi.mps[1],psi.mpo[2],psi.mpo[1],psi.T[3],psi.T[4],psi.R[2])
+        E += self.exp_2d_left_bipartite_ind(psi.mps[3],psi.mps[4],psi.mpo[3],psi.mpo[4],psi.T[2],psi.T[1],psi.R[3])
+        E += self.exp_2d_left_bipartite_ind(psi.mps[4],psi.mps[3],psi.mpo[4],psi.mpo[3],psi.T[1],psi.T[2],psi.R[4])
+        return E/4
+
 class twoBodyH_vert(twoBodyH):
-    def effH_2d_fourSite_square(self):
+    def effH_2d_fourSite_block(self):
         physDim = self.tensor.shape[0]
         effH_oneSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-1,-3,-5,-7),(-2,-6),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
         effH_oneSite += ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-2,-4,-6,-8),(-1,-5),(-3,-7)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
@@ -270,6 +288,13 @@ class twoBodyH_vert(twoBodyH):
         E = ncon([psi.mpo,psi.mpo.conj(),self.tensor,psi.mpo,psi.mpo.conj(),outerContract['bot'],outerContractDouble['square'],psi.RR.tensor],((2,5,1,4,15,16),(2,6,3,7,15,17),(10,6,9,5),(9,13,8,12,18,19),(10,13,11,14,18,20),(3,1),(11,7,8,4),(14,12,20,19,17,16)),order=(15,2,1,3,4,5,6,7,16,17,19,20,12,13,14,8,9,10,11,18))
         E += ncon([psi.mpo,psi.mpo.conj(),self.tensor,psi.mpo,psi.mpo.conj(),psi.mpo,psi.mpo.conj(),outerContract['bot'],outerContractDouble['prong'],outerContractDouble['square'],psi.RR.tensor],((2,5,1,4,21,22),(2,6,3,7,21,23),(6,10,5,9),(9,13,8,12,28,24),(10,13,11,14,28,25),(16,19,15,18,22,26),(16,19,17,20,23,27),(3,1),(7,11,4,8),(17,14,15,12),(20,18,27,26,25,24)),order=(25,24,13,28,8,9,10,11,12,14,26,27,18,19,20,15,16,17,22,23,2,4,5,6,7,1,3,21))
         return np.real(E/2)
+
+    def exp_2d_left_fourSite_sep(self,psi):
+        E =  self.exp_2d_left_bipartite_ind(psi.mps[1],psi.mps[3],psi.mpo[1],psi.mpo[3],psi.T[1],psi.RR[2])
+        E +=  self.exp_2d_left_bipartite_ind(psi.mps[3],psi.mps[1],psi.mpo[3],psi.mpo[1],psi.T[3],psi.RR[4])
+        E +=  self.exp_2d_left_bipartite_ind(psi.mps[2],psi.mps[4],psi.mpo[2],psi.mpo[4],psi.T[2],psi.RR[1])
+        E +=  self.exp_2d_left_bipartite_ind(psi.mps[4],psi.mps[2],psi.mpo[4],psi.mpo[2],psi.T[4],psi.RR[3])
+        return E/4
 
 
 class plaquetteH(localH_term):
