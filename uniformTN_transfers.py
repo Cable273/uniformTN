@@ -229,6 +229,16 @@ class mpsu1Transfer_left_twoLayerBip(regularTransfer):
         del matrix1
         del matrix2
 
+class mpsu1Transfer_left_twoLayer_fourSiteSep(regularTransfer):
+    def __init__(self,A1,A2,A3,A4,B1,B2,B3,B4,T1,T2):
+        self.D = np.size(B1,axis=2)
+        self.noLegs = 4
+        matrix1 = ncon([A1,A3,B1,B3,B1.conj(),B3.conj(),A1.conj(),A3.conj(),T1.tensor],((1,7,8),(4,8,9),(2,1,-12,-14),(5,4,-16,-18),(2,3,-13,-15),(5,6,-17,-19),(3,7,11),(6,11,10),(10,9)),forder=(-13,-12,-17,-16,-15,-14,-19,-18),order=(7,8,9,10,11,1,2,3,4,5,6)).reshape(self.D**4,self.D**4)
+        matrix2 = ncon([A2,A4,B2,B4,B2.conj(),B4.conj(),A2.conj(),A4.conj(),T2.tensor],((1,7,8),(4,8,9),(2,1,-12,-14),(5,4,-16,-18),(2,3,-13,-15),(5,6,-17,-19),(3,7,11),(6,11,10),(10,9)),forder=(-13,-12,-17,-16,-15,-14,-19,-18),order=(7,8,9,10,11,1,2,3,4,5,6)).reshape(self.D**4,self.D**4)
+        self.matrix = np.dot(matrix1,matrix2)
+        del matrix1
+        del matrix2
+
 class mpsu1Transfer_left_twoLayerWithMpsInsert(regularTransfer):
     def __init__(self,A,W,T,T_insert):
         self.D = np.size(W,axis=2)

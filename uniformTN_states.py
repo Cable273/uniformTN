@@ -249,14 +249,6 @@ class uMPSU1_2d_left_twoSite(uMPSU1_2d_left):
         self.D_mps = np.size(self.mps,axis=2)
         self.D_mpo = np.size(self.mpo,axis=4)
 
-class uMPSU1_2d_left_fourSite_square(uMPSU1_2d_left):
-    def randoInit(self):
-        self.mps = randoUnitary(16*self.D_mps,self.D_mps).reshape(16,self.D_mps,self.D_mps)
-        self.mpo = np.einsum('iajb->ijab',randoUnitary(16*self.D_mpo,16*self.D_mpo).reshape(16,self.D_mpo,16,self.D_mpo)).reshape(16,16,self.D_mpo,self.D_mpo)
-    def norm(self):
-        #polar decomp to ensure left canon still
-        self.mps = polarDecomp(self.mps.reshape(16*self.D_mps,self.D_mps)).reshape(16,self.D_mps,self.D_mps)
-        self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(16,16,self.D_mpo,self.D_mpo)).reshape(16*self.D_mpo,16*self.D_mpo)).reshape(16,self.D_mpo,16,self.D_mpo)).reshape(16,16,self.D_mpo,self.D_mpo)
 
 class uMPSU1_2d_left_twoSite_staircase(uMPSU1_2d_left_twoSite):
     def get_transfers(self):
@@ -305,14 +297,60 @@ class uMPSU1_2d_left_twoSite_square(uMPSU1_2d_left_twoSite):
         self.Tb2_inv['square'] = inverseTransfer_left(self.Tb2['square'],self.RR['square'].vector)
         self.Tb2_inv['prong'] = inverseTransfer_left(self.Tb2['prong'],self.RR['prong'].vector)
 
-class uMPSU1_2d_left_bipartite(uMPSU_2d):
+#multiple mps/mpo tensors (eg bipartite ansatz, 4 site sep etc)
+class uMPSU1_2d_left_multipleSites(uMPSU_2d):
     def randoInit(self):
         self.mps = dict()
         self.mpo = dict()
-        self.mps[1] = randoUnitary(2*self.D_mps,self.D_mps).reshape(2,self.D_mps,self.D_mps)
-        self.mps[2] = randoUnitary(2*self.D_mps,self.D_mps).reshape(2,self.D_mps,self.D_mps)
-        self.mpo[1] = np.einsum('iajb->ijab',randoUnitary(2*self.D_mpo,2*self.D_mpo).reshape(2,self.D_mpo,2,self.D_mpo))
-        self.mpo[2] = np.einsum('iajb->ijab',randoUnitary(2*self.D_mpo,2*self.D_mpo).reshape(2,self.D_mpo,2,self.D_mpo))
+        for n in range(1,self.noTensors+1):
+            self.mps[n] = randoUnitary(2*self.D_mps,self.D_mps).reshape(2,self.D_mps,self.D_mps)
+            self.mpo[n] = np.einsum('iajb->ijab',randoUnitary(2*self.D_mpo,2*self.D_mpo).reshape(2,self.D_mpo,2,self.D_mpo))
+    def get_fixedPoints(self):
+        self.T = dict()
+        self.R = dict()
+        self.RR = dict()
+        for n in range(1,self.noTensors+1):
+            self.T[n] = self.Ta[n].findRightEig()
+            self.T[n].norm_pairedCanon()
+            self.R[n] = self.Tb[n].findRightEig()
+            self.R[n].norm_pairedCanon()
+            self.RR[n] = self.Tb2[n].findRightEig()
+            self.RR[n].norm_pairedCanon()
+    def get_inverses(self):
+        self.Ta_inv = dict()
+        self.Tb_inv = dict()
+        self.Tb2_inv = dict()
+        for n in range(1,self.noTensors+1):
+            self.Ta_inv[n] = inverseTransfer_left(self.Ta[n],self.T[n].vector)
+            self.Tb_inv[n] = inverseTransfer_left(self.Tb[n],self.R[n].vector)
+            self.Tb2_inv[n] = inverseTransfer_left(self.Tb2[n],self.RR[n].vector)
+    def shiftTensors(self,coef,tensorDict):
+        for n in range(1,self.noTensors+1):
+            self.mps[n] += coef*tensorDict['mps'+str(n)]
+            self.mpo[n] += coef*tensorDict['mpo'+str(n)]
+    def norm(self):
+        #polar decomps to project to closest unitaries
+        for n in range(1,self.noTensors+1):
+            self.mps[n] = polarDecomp(self.mps[n].reshape(2*self.D_mps,self.D_mps)).reshape(2,self.D_mps,self.D_mps)
+            self.mpo[n] = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo[n]).reshape(2*self.D_mpo,2*self.D_mpo)).reshape(2,self.D_mpo,2,self.D_mpo))
+    def save(self,filename):
+        data = dict()
+        for n in range(1,self.noTensors+1):
+            data['mps'+str(n)] = self.mps[n]
+            data['mpo'+str(n)] = self.mpo[n]
+        save_obj(data,filename)
+    def load(self,filename):
+        data = load_obj(filename)
+        for n in range(1,self.noTensors+1):
+            self.mps[n] = data['mps'+str(n)]
+            self.mpo[n] = data['mpo'+str(n)]
+        self.D_mps = np.size(self.mps[1],axis=1)
+        self.D_mpo = np.size(self.mpo[1],axis=2)
+
+class uMPSU1_2d_left_bipartite(uMPSU1_2d_left_multipleSites):
+    def __init__(self,D_mps,D_mpo,mps=None,mpo=None):
+        self.noTensors = 2
+        super().__init__(D_mps,D_mpo,mps=mps,mpo=mpo)
     def get_transfers(self):
         self.Ta = dict()
         self.Tb = dict()
@@ -327,52 +365,42 @@ class uMPSU1_2d_left_bipartite(uMPSU_2d):
         self.Tb[2] = mpsu1Transfer_left_oneLayerBip(self.mps[2],self.mps[1],self.mpo[2],self.mpo[1],T2,T1)
         self.Tb2[1] = mpsu1Transfer_left_twoLayerBip(self.mps[1],self.mps[2],self.mpo[1],self.mpo[2],T1,T2)
         self.Tb2[2] = mpsu1Transfer_left_twoLayerBip(self.mps[2],self.mps[1],self.mpo[2],self.mpo[1],T2,T1)
-    def get_fixedPoints(self):
-        self.T = dict()
-        self.R = dict()
-        self.RR = dict()
-        for n in range(1,len(self.mps)+1):
-            self.T[n] = self.Ta[n].findRightEig()
-            self.T[n].norm_pairedCanon()
-            self.R[n] = self.Tb[n].findRightEig()
-            self.R[n].norm_pairedCanon()
-            self.RR[n] = self.Tb2[n].findRightEig()
-            self.RR[n].norm_pairedCanon()
-    def get_inverses(self):
-        self.Ta_inv = dict()
-        self.Tb_inv = dict()
-        self.Tb2_inv = dict()
-        for n in range(1,len(self.mps)+1):
-            self.Ta_inv[n] = inverseTransfer_left(self.Ta[n],self.T[n].vector)
-            self.Tb_inv[n] = inverseTransfer_left(self.Tb[n],self.R[n].vector)
-            self.Tb2_inv[n] = inverseTransfer_left(self.Tb2[n],self.RR[n].vector)
-    def shiftTensors(self,coef,tensorDict):
-        self.mps[1] += coef*tensorDict['mps1']
-        self.mps[2] += coef*tensorDict['mps2']
-        self.mpo[1] += coef*tensorDict['mpo1']
-        self.mpo[2] += coef*tensorDict['mpo2']
-    def norm(self):
-        #polar decomps to project to closest unitaries
-        self.mps[1] = polarDecomp(self.mps[1].reshape(2*self.D_mps,self.D_mps)).reshape(2,self.D_mps,self.D_mps)
-        self.mps[2] = polarDecomp(self.mps[2].reshape(2*self.D_mps,self.D_mps)).reshape(2,self.D_mps,self.D_mps)
-        self.mpo[1] = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo[1]).reshape(2*self.D_mpo,2*self.D_mpo)).reshape(2,self.D_mpo,2,self.D_mpo))
-        self.mpo[2] = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo[2]).reshape(2*self.D_mpo,2*self.D_mpo)).reshape(2,self.D_mpo,2,self.D_mpo))
 
-    def save(self,filename):
-        data = dict()
-        data['mps1'] = self.mps[1]
-        data['mps2'] = self.mps[2]
-        data['mpo1'] = self.mpo[1]
-        data['mpo2'] = self.mpo[2]
-        save_obj(data,filename)
-    def load(self,filename):
-        data = load_obj(filename)
-        self.mps[1] = data['mps1']
-        self.mps[2] = data['mps2']
-        self.mpo[1] = data['mpo1']
-        self.mpo[2] = data['mpo2']
-        self.D_mps = np.size(self.mps[1],axis=1)
-        self.D_mpo = np.size(self.mpo[1],axis=2)
+class uMPSU1_2d_left_fourSite_sep(uMPSU1_2d_left_multipleSites):
+    def __init__(self,D_mps,D_mpo,mps=None,mpo=None):
+        self.noTensors = 4
+        super().__init__(D_mps,D_mpo,mps=mps,mpo=mpo)
+    def get_transfers(self):
+        self.Ta = dict()
+        self.Tb = dict()
+        self.Tb2 = dict()
+        self.Ta[1] = mpsTransferBip(self.mps[1],self.mps[3])
+        self.Ta[2] = mpsTransferBip(self.mps[2],self.mps[4])
+        self.Ta[3] = mpsTransferBip(self.mps[3],self.mps[1])
+        self.Ta[4] = mpsTransferBip(self.mps[4],self.mps[2])
+        T = dict()
+        for n in range(1,5):
+            T[n] = self.Ta[n].findRightEig()
+            T[n].norm_pairedCanon()
+        self.Tb[1] = mpsu1Transfer_left_oneLayerBip(self.mps[1],self.mps[2],self.mpo[1],self.mpo[2],T[4],T[3])
+        self.Tb[2] = mpsu1Transfer_left_oneLayerBip(self.mps[2],self.mps[1],self.mpo[2],self.mpo[1],T[3],T[4])
+        self.Tb[3] = mpsu1Transfer_left_oneLayerBip(self.mps[3],self.mps[4],self.mpo[3],self.mpo[4],T[2],T[1])
+        self.Tb[4] = mpsu1Transfer_left_oneLayerBip(self.mps[4],self.mps[3],self.mpo[4],self.mpo[3],T[1],T[2])
+
+        self.Tb2[1] = mpsu1Transfer_left_twoLayer_fourSiteSep(self.mps[1],self.mps[2],self.mps[3],self.mps[4],self.mpo[1],self.mpo[2],self.mpo[3],self.mpo[4],T[1],T[2])
+        self.Tb2[2] = mpsu1Transfer_left_twoLayer_fourSiteSep(self.mps[2],self.mps[1],self.mps[4],self.mps[3],self.mpo[2],self.mpo[1],self.mpo[4],self.mpo[3],T[2],T[1])
+        self.Tb2[3] = mpsu1Transfer_left_twoLayer_fourSiteSep(self.mps[3],self.mps[4],self.mps[1],self.mps[2],self.mpo[3],self.mpo[4],self.mpo[1],self.mpo[2],T[3],T[4])
+        self.Tb2[4] = mpsu1Transfer_left_twoLayer_fourSiteSep(self.mps[4],self.mps[3],self.mps[2],self.mps[1],self.mpo[4],self.mpo[3],self.mpo[2],self.mpo[1],T[4],T[3])
+
+class uMPSU1_2d_left_fourSite_block(uMPSU1_2d_left):
+    def randoInit(self):
+        self.mps = randoUnitary(16*self.D_mps,self.D_mps).reshape(16,self.D_mps,self.D_mps)
+        self.mpo = np.einsum('iajb->ijab',randoUnitary(16*self.D_mpo,16*self.D_mpo).reshape(16,self.D_mpo,16,self.D_mpo)).reshape(16,16,self.D_mpo,self.D_mpo)
+    def norm(self):
+        #polar decomp to ensure left canon still
+        self.mps = polarDecomp(self.mps.reshape(16*self.D_mps,self.D_mps)).reshape(16,self.D_mps,self.D_mps)
+        self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(16,16,self.D_mpo,self.D_mpo)).reshape(16*self.D_mpo,16*self.D_mpo)).reshape(16,self.D_mpo,16,self.D_mpo)).reshape(16,16,self.D_mpo,self.D_mpo)
+
 
 class uMPS_1d_centre(uMPS_1d_left):
     def randoInit(self):
