@@ -123,11 +123,9 @@ class gradImplementation_bipartite_1d(gradImplementation_uniform_1d):
         self.H_index = H_index #the index above the first site of H
         self.grad_index = grad_index #the mps tensor to take gradient of
         if self.grad_index == 1:
-            self.index1 = 1
-            self.index2 = 2
+            self.index1,self.index2 = 1,2
         elif self.grad_index == 2:
-            self.index1 = 2
-            self.index2 = 1
+            self.index1,self.index2 = 2,1
 
 class gradImplementation_bipartite_1d_left_oneBodyH(gradImplementation_bipartite_1d):
     def getCentralTerms(self):
