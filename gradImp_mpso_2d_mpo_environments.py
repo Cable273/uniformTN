@@ -250,7 +250,7 @@ class env_mpso_vert_fourSite_sep(env_mpso_vert_multipleTensors):
                 return env_mpso_vert_fourSite_sep_eval_2x1_env4(self.psi)
 
 # ---------------------------------------------------------------------------------------------------
-#gradEvals
+#gradEvals for env_mpso_vert
 class env_gradEval:
     def __init__(self,psi):
         self.psi = psi 
