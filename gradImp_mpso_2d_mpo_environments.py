@@ -80,6 +80,11 @@ class env_mpso_hori_uniform(env_mpso_hori):
         env = self.psi.Tb_inv.applyLeft(self.tensor.reshape(self.D**2)).reshape(self.D,self.D)
         return ncon([env,self.psi.mpo,outers['len1']],((-6,5),(-2,1,-4,5),(-3,1)),forder=(-2,-3,-4,-6),order=(5,1))
 
+class env_mpso_hori_twoSite_square(env_mpso_hori):
+    def gradLeft(self,outers):
+        env = self.psi.Tb_inv[self.label].applyLeft(self.tensor.reshape(self.D**2)).reshape(self.D,self.D)
+        return ncon([env,self.psi.mpo,outers['len1'][self.label],outers['len1'][self.label]],((-9,8),(-2,-5,1,4,-7,8),(-3,1),(-6,4)),forder=(-2,-5,-3,-6,-7,-9),order=(8,4,1))
+
 class env_mpso_hori_multipleTensors(env_mpso_hori):
     def gradLeft_siteLabels(self,siteLabels,outers):
         grad = np.zeros(np.append([self.psi.noTensors],self.psi.mpo[1].shape)).astype(complex)
@@ -173,7 +178,41 @@ class env_mpso_vert_uniform(env_mpso_vert):
         return self.eval.gradBelow(self.tensor,fixedPoints,outers)
     def build_hori(self,fixedPoints,outers):
         grad = self.gradAbove(fixedPoints,outers) + self.gradBelow(fixedPoints,outers)
-        return env_mpso_hori_uniform(self.psi, ncon([grad,self.psi.mpo.conj()],((1,2,-3,4),(1,2,-5,4)),forder=(-5,-3),order=(4,1)) )
+        return env_mpso_hori_uniform(self.psi, ncon([grad,self.psi.mpo.conj()],((1,2,-3,4),(1,2,-5,4)),forder=(-5,-3),order=(4,1,2)) )
+
+class env_mpso_vert_twoSite_square(env_mpso_vert):
+    def setEval(self):
+        if self.shape == [1,1]:
+            if self.label == 'bot':
+                return env_mpso_vert_twoSite_square_eval_1x1_envBot(self.psi)
+            elif self.label == 'top':
+                return env_mpso_vert_twoSite_square_eval_1x1_envTop(self.psi)
+        elif self.shape == [1,2]:
+            if self.label == 'bot':
+                return env_mpso_vert_twoSite_square_eval_1x2_envBot(self.psi)
+            elif self.label == 'top':
+                return env_mpso_vert_twoSite_square_eval_1x2_envTop(self.psi)
+        elif self.shape == [2,1]:
+            if self.label == 'square':
+                return env_mpso_vert_twoSite_square_eval_2x1_envSquare(self.psi)
+            elif self.label == 'prong':
+                return env_mpso_vert_twoSite_square_eval_2x1_envProng(self.psi)
+
+    def gradCentre(self,outers):
+        return self.eval.gradCentre(self.tensor,outers)
+    def gradAbove(self,fixedPoints,outers):
+        return self.eval.gradAbove('bot',self.tensor,fixedPoints,outers)  + self.eval.gradAbove('top',self.tensor,fixedPoints,outers) 
+    def gradBelow(self,fixedPoints,outers):
+        return self.eval.gradBelow('bot',self.tensor,fixedPoints,outers) + self.eval.gradBelow('top',self.tensor,fixedPoints,outers)
+    def build_hori(self,fixedPoints,outers):
+        gradBot = self.eval.gradAbove('bot',self.tensor,fixedPoints,outers) + self.eval.gradBelow('bot',self.tensor,fixedPoints,outers)
+        gradTop = self.eval.gradAbove('top',self.tensor,fixedPoints,outers) + self.eval.gradBelow('top',self.tensor,fixedPoints,outers)
+        envBot = ncon([gradBot,self.psi.mpo.conj()],((1,2,3,4,-5,6),(1,2,3,4,-7,6)),forder=(-7,-5),order=(6,2,4,1,3))
+        envTop = ncon([gradTop,self.psi.mpo.conj()],((1,2,3,4,-5,6),(1,2,3,4,-7,6)),forder=(-7,-5),order=(6,2,4,1,3))
+        env = envGroup_mpso_hori()
+        env.add(env_mpso_hori_twoSite_square(self.psi,envBot,label='bot'))
+        env.add(env_mpso_hori_twoSite_square(self.psi,envTop,label='top'))
+        return env
 
 class env_mpso_vert_multipleTensors(env_mpso_vert):
     def gradCentre(self,outers):
@@ -181,19 +220,16 @@ class env_mpso_vert_multipleTensors(env_mpso_vert):
         for n in range(1,self.psi.noTensors+1):
             grad[n-1] = self.eval.gradCentre_tensor(n, self.tensor,outers)
         return grad
-
     def gradAbove(self,fixedPoints,outers):
         grad = np.zeros(np.append([self.psi.noTensors],self.psi.mpo[1].shape)).astype(complex)
         for n in range(1,self.psi.noTensors+1):
             grad[n-1] = self.eval.gradAbove_tensor(n, self.tensor,outers)
         return grad
-
     def gradBelow(self,fixedPoints,outers):
         grad = np.zeros(np.append([self.psi.noTensors],self.psi.mpo[1].shape)).astype(complex)
         for n in range(1,self.psi.noTensors+1):
             grad[n-1] = self.eval.gradBelow_tensor(n, self.tensor,outers)
         return grad
-
     def build_hori(self,fixedPoints,outers):
         grad = self.gradAbove(fixedPoints,outers) + self.gradBelow(fixedPoints,outers)
         envs_hori = envGroup_mpso_hori()
@@ -254,7 +290,8 @@ class env_mpso_vert_fourSite_sep(env_mpso_vert_multipleTensors):
 class env_gradEval:
     def __init__(self,psi):
         self.psi = psi 
-
+# ---------------------------------------------------------------------------------------------------
+#gradEvals for env_mpso_vert uniform
 class env_mpso_vert_uniform_eval_1x1(env_gradEval):
     def gradCentre(self,tensor,outers):
         return ncon([tensor,self.psi.R.tensor,outers['len1']],((-2,1,-4,6),(-5,6),(-3,1)),forder=(-2,-3,-4,-5),order=(6,1))
@@ -281,6 +318,36 @@ class env_mpso_vert_uniform_eval_2x1(env_gradEval):
     def gradBelow(self,tensor,fixedPoints,outers):
         return ncon([tensor,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,fixedPoints['lower'],outers['lower']],((5,2,4,1,13,14,10,11),(2,3,10,12),(5,6,13,15),(-8,7,-16,17),(-18,17,15,14,12,11),(-9,6,3,7,4,1)),forder=(-8,-9,-16,-18),order=(10,2,11,12,13,5,14,15,1,3,4,6,17,7))
 
+# ---------------------------------------------------------------------------------------------------
+#gradEvals twoSite_square
+class env_mpso_vert_twoSite_square_eval_1x1(env_gradEval):
+    def gradCentre_ind(self,style,tensor,outers):
+        return ncon([tensor,self.psi.R[style].tensor,outers[style],outers[style]],((-2,-5,1,4,-7,8),(-9,8),(-3,1),(-6,4)),forder=(-2,-5,-3,-6,-7,-9),order=(8,4,1))
+    def gradAbove_ind(self,style,tensor,fixedPoints,outers):
+        return ncon([tensor,self.psi.mpo.conj(),self.psi.mpo,fixedPoints[style],outers[style],outers[style]],((5,11,4,10,16,17),(5,11,6,12,16,18),(-2,-8,1,7,-13,14),(18,17,-15,14),(6,-3,4,1),(12,-9,10,7)),forder=(-2,-8,-3,-9,-13,-15),order=(16,5,11,4,6,10,12,17,18,14,7,1))
+    def gradBelow_ind(self,style,tensor,fixedPoints,outers):
+        return ncon([tensor,self.psi.mpo.conj(),self.psi.mpo,fixedPoints[style],outers[style],outers[style]],((2,5,1,4,13,14),(2,5,3,6,13,15),(-8,-11,7,10,-16,17),(-18,17,15,14),(-9,3,7,1),(-12,6,10,4)),forder=(-8,-11,-9,-12,-16,-18),order=(13,2,5,1,3,4,6,14,15,17,10,7))
+
+class env_mpso_vert_twoSite_square_eval_1x2(env_gradEval):
+    def gradCentre_ind(self,style,tensor,outers):
+        return ncon([tensor,self.psi.mpo.conj(),self.psi.R[style].tensor,outers[style],outers[style],outers[style],outers[style]],((-2,-5,8,11,1,4,7,10,-13,14),(8,11,9,12,-16,15),(15,14),(-3,1),(-6,4),(9,7),(12,10)),forder=(-2,-5,-3,-6,-13,-16),order=(15,14,11,8,12,10,9,7,1,4))
+    def gradAbove_ind(self,style,tensor,fixedPoints,outers):
+        return ncon([tensor,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo,fixedPoints[style],outers[style],outers[style],outers[style],outers[style]],((5,11,17,23,4,10,16,22,30,32),(5,11,6,12,30,31),(17,23,18,24,31,33),(14,20,13,19,26,28),(14,20,15,21,-27,29),(-2,-8,1,7,-25,26),(33,32,29,28),(6,-3,4,1),(12,-9,10,7),(18,15,16,13),(24,21,22,19)),forder=(-2,-8,-3,-9,-25,-27),order=(30,5,11,4,6,10,12,31,17,23,16,18,22,24,33,32,28,28,14,20,19,21,13,15,26,7,1))
+    def gradBelow_ind(self,style,tensor,fixedPoints,outers):
+        return ncon([tensor,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo,fixedPoints[style],outers[style],outers[style],outers[style],outers[style]],((2,8,14,20,1,7,13,19,25,27),(2,8,3,9,25,26),(14,20,15,21,26,28),(17,23,16,22,30,32),(17,23,18,24,-31,33),(-5,-11,4,10,-29,30),(33,32,28,27),(-6,3,4,1),(-12,9,10,7),(18,15,16,13),(24,21,22,19)),forder=(-5,-11,-6,-12,-29,-31),order=(25,2,8,1,3,7,9,26,14,20,13,15,19,21,27,28,32,33,17,23,22,24,16,18,30,10,4))
+
+class env_mpso_vert_twoSite_square_eval_2x1(env_gradEval):
+    def gradCentre_ind(self,style,tensor,outers):
+        grad = ncon([tensor,self.psi.mpo.conj(),self.psi.RR[style].tensor,outers[style],outers[style]],((5,11,-2,-8,4,10,1,7,16,17,-13,14),(5,11,6,12,16,18),(18,17,-15,14),(6,-3,4,1),(12,-9,10,7)),forder=(-2,-8,-3,-9,-13,-15),order=(16,5,11,4,6,10,12,18,17,14,7,1))
+        grad += ncon([tensor,self.psi.mpo.conj(),self.psi.RR[style].tensor,outers[style],outers[style]],((-5,-11,2,8,4,10,1,7,-16,17,13,14),(2,8,3,9,13,15),(-18,17,15,14),(-6,3,4,1),(-12,9,10,7)),forder=(-5,-11,-6,-12,-16,-18),order=(13,2,8,1,3,7,9,14,15,17,10,4))
+        return grad
+    def gradAbove_ind(self,style,tensor,fixedPoints,outers):
+        return ncon([tensor,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,fixedPoints[style],outers[style],outers[style]],((14,17,8,11,13,16,7,10,19,20,22,23),(14,17,15,18,19,21),(8,11,9,12,22,24),(-2,-5,1,4,-25,26),(21,20,24,23,-27,26),(15,9,-3,13,7,1),(18,12,-6,16,10,4)),forder=(-2,-5,-3,-6,-25,-27),order=(19,14,17,13,15,16,18,20,21,23,24,8,11,7,9,10,12,22,26,1,4))
+    def gradBelow_ind(self,style,tensor,fixedPoints,outers):
+        return ncon([tensor,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,fixedPoints[style],outers[style],outers[style]],((5,14,2,11,4,13,1,10,22,23,19,20),(5,14,6,15,22,24),(2,11,3,12,19,21),(-8,-17,7,16,-25,26),(-27,26,24,23,21,20),(-9,6,3,7,4,1),(-18,15,12,16,13,10)),forder=(-8,-17,-9,-18,-25,-27),order=(19,2,11,1,3,10,12,20,21,23,24,5,14,4,6,13,15,22,26,16,7))
+
+# ---------------------------------------------------------------------------------------------------
+#gradEvals multiple Tensors
 class env_mpso_vert_multipleTensors_eval_1x1(env_gradEval):
     def gradCentre_ind(self,tensor,fixedPoints,outers):
         return ncon([tensor,fixedPoints,outers],((-2,1,-4,6),(-5,6),(-3,1)),forder=(-2,-3,-4,-5),order=(6,1))
@@ -306,6 +373,103 @@ class env_mpso_vert_multipleTensors_eval_2x1(env_gradEval):
         return ncon([tensor,self.psi.mpo[envLabels[0]].conj(),self.psi.mpo[envLabels[1]].conj(),self.psi.mpo[gradLabels[0]],fixedPoints,outers],((8,5,7,4,16,17,13,14),(8,9,16,18),(5,6,13,15),(-2,1,-10,11),(18,17,15,14,-12,11),(9,6,-3,7,4,1)),forder=(-2,-3,-10,-12),order=(16,8,18,17,13,5,14,15,4,6,7,9,11,1))
     def gradBelow_ind(self,envLabels,gradLabels,tensor,fixedPoints,outers):
         return ncon([tensor,self.psi.mpo[envLabels[1]].conj(),self.psi.mpo[envLabels[0]].conj(),self.psi.mpo[gradLabels[0]],fixedPoints,outers],((5,2,4,1,13,14,10,11),(2,3,10,12),(5,6,13,15),(-8,7,-16,17),(-18,17,15,14,12,11),(-9,6,3,7,4,1)),forder=(-8,-9,-16,-18),order=(10,2,11,12,13,5,14,15,1,3,4,6,17,7))
+# ---------------------------------------------------------------------------------------------------
+#twoSite_square
+class env_mpso_vert_twoSite_square_eval_1x1_envBot(env_mpso_vert_twoSite_square_eval_1x1):
+    def gradCentre(self,tensor,outers):
+        return self.gradCentre_ind('bot',tensor,outers['len1'])
+    def gradAbove(self,gradTensorLabel,tensor,fixedPoints,outers):
+        if gradTensorLabel == 'bot':
+            return self.gradAbove_ind('bb',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        else:
+            return self.gradAbove_ind('bt',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        return grad
+    def gradBelow(self,gradTensorLabel,tensor,fixedPoints,outers):
+        if gradTensorLabel == 'bot':
+            return self.gradBelow_ind('bb',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        else:
+            return self.gradBelow_ind('tb',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        return grad
+
+class env_mpso_vert_twoSite_square_eval_1x1_envTop(env_mpso_vert_twoSite_square_eval_1x1):
+    def gradCentre(self,tensor,outers):
+        return self.gradCentre_ind('top',tensor,outers['len1'])
+    def gradAbove(self,gradTensorLabel,tensor,fixedPoints,outers):
+        if gradTensorLabel == 'bot':
+            return self.gradAbove_ind('tb',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        else:
+            return self.gradAbove_ind('tt',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        return grad
+    def gradBelow(self,gradTensorLabel,tensor,fixedPoints,outers):
+        if gradTensorLabel == 'bot':
+            return self.gradBelow_ind('bt',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        else:
+            return self.gradBelow_ind('tt',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        return grad
+
+class env_mpso_vert_twoSite_square_eval_1x2_envBot(env_mpso_vert_twoSite_square_eval_1x2):
+    def gradCentre(self,tensor,outers):
+        return self.gradCentre_ind('bot',tensor,outers['len1'])
+    def gradAbove(self,gradTensorLabel,tensor,fixedPoints,outers):
+        if gradTensorLabel == 'bot':
+            return self.gradAbove_ind('bb',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        else:
+            return self.gradAbove_ind('bt',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        return grad
+    def gradBelow(self,gradTensorLabel,tensor,fixedPoints,outers):
+        if gradTensorLabel == 'bot':
+            return self.gradBelow_ind('bb',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        else:
+            return self.gradBelow_ind('tb',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        return grad
+
+class env_mpso_vert_twoSite_square_eval_1x2_envTop(env_mpso_vert_twoSite_square_eval_1x2):
+    def gradCentre(self,tensor,outers):
+        return self.gradCentre_ind('top',tensor,outers['len1'])
+    def gradAbove(self,gradTensorLabel,tensor,fixedPoints,outers):
+        if gradTensorLabel == 'bot':
+            return self.gradAbove_ind('tb',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        else:
+            return self.gradAbove_ind('tt',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        return grad
+    def gradBelow(self,gradTensorLabel,tensor,fixedPoints,outers):
+        if gradTensorLabel == 'bot':
+            return self.gradBelow_ind('bt',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        else:
+            return self.gradBelow_ind('tt',tensor,fixedPoints['RR_d'],outers['outerContractDouble'])
+        return grad
+
+class env_mpso_vert_twoSite_square_eval_2x1_envSquare(env_mpso_vert_twoSite_square_eval_2x1):
+    def gradCentre(self,tensor,outers):
+        return self.gradCentre_ind('square',tensor,outers['len2'])
+    def gradAbove(self,gradTensorLabel,tensor,fixedPoints,outers):
+        if gradTensorLabel == 'bot':
+            return self.gradAbove_ind('sb',tensor,fixedPoints['RRR_d_upper'],outers['outerContractTriple_upper'])
+        else:
+            return self.gradAbove_ind('st',tensor,fixedPoints['RRR_d_upper'],outers['outerContractTriple_upper'])
+        return grad
+    def gradBelow(self,gradTensorLabel,tensor,fixedPoints,outers):
+        if gradTensorLabel == 'bot':
+            return self.gradBelow_ind('bs',tensor,fixedPoints['RRR_d_lower'],outers['outerContractTriple_lower'])
+        else:
+            return self.gradBelow_ind('ts',tensor,fixedPoints['RRR_d_lower'],outers['outerContractTriple_lower'])
+        return grad
+
+class env_mpso_vert_twoSite_square_eval_2x1_envProng(env_mpso_vert_twoSite_square_eval_2x1):
+    def gradCentre(self,tensor,outers):
+        return self.gradCentre_ind('prong',tensor,outers['len2'])
+    def gradAbove(self,gradTensorLabel,tensor,fixedPoints,outers):
+        if gradTensorLabel == 'bot':
+            return self.gradAbove_ind('pb',tensor,fixedPoints['RRR_d_upper'],outers['outerContractTriple_upper'])
+        else:
+            return self.gradAbove_ind('pt',tensor,fixedPoints['RRR_d_upper'],outers['outerContractTriple_upper'])
+        return grad
+    def gradBelow(self,gradTensorLabel,tensor,fixedPoints,outers):
+        if gradTensorLabel == 'bot':
+            return self.gradBelow_ind('bp',tensor,fixedPoints['RRR_d_lower'],outers['outerContractTriple_lower'])
+        else:
+            return self.gradBelow_ind('tp',tensor,fixedPoints['RRR_d_lower'],outers['outerContractTriple_lower'])
+        return grad
 
 # ---------------------------------------------------------------------------------------------------
 #bipartite
