@@ -223,12 +223,12 @@ class env_mpso_vert_multipleTensors(env_mpso_vert):
     def gradAbove(self,fixedPoints,outers):
         grad = np.zeros(np.append([self.psi.noTensors],self.psi.mpo[1].shape)).astype(complex)
         for n in range(1,self.psi.noTensors+1):
-            grad[n-1] = self.eval.gradAbove_tensor(n, self.tensor,outers)
+            grad[n-1] = self.eval.gradAbove_tensor(n, self.tensor,fixedPoints,outers)
         return grad
     def gradBelow(self,fixedPoints,outers):
         grad = np.zeros(np.append([self.psi.noTensors],self.psi.mpo[1].shape)).astype(complex)
         for n in range(1,self.psi.noTensors+1):
-            grad[n-1] = self.eval.gradBelow_tensor(n, self.tensor,outers)
+            grad[n-1] = self.eval.gradBelow_tensor(n, self.tensor,fixedPoints,outers)
         return grad
     def build_hori(self,fixedPoints,outers):
         grad = self.gradAbove(fixedPoints,outers) + self.gradBelow(fixedPoints,outers)
