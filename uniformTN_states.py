@@ -401,6 +401,23 @@ class uMPSU1_2d_left_fourSite_block(uMPSU1_2d_left):
         self.mps = polarDecomp(self.mps.reshape(16*self.D_mps,self.D_mps)).reshape(16,self.D_mps,self.D_mps)
         self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(16,16,self.D_mpo,self.D_mpo)).reshape(16*self.D_mpo,16*self.D_mpo)).reshape(16,self.D_mpo,16,self.D_mpo)).reshape(16,16,self.D_mpo,self.D_mpo)
 
+class uMPSU1_2d_left_twoSite_block(uMPSU1_2d_left):
+    def randoInit(self):
+        self.mps = randoUnitary(4*self.D_mps,self.D_mps).reshape(4,self.D_mps,self.D_mps)
+        self.mpo = np.einsum('iajb->ijab',randoUnitary(4*self.D_mpo,4*self.D_mpo).reshape(4,self.D_mpo,4,self.D_mpo)).reshape(4,4,self.D_mpo,self.D_mpo)
+    def norm(self):
+        #polar decomp to ensure left canon still
+        self.mps = polarDecomp(self.mps.reshape(4*self.D_mps,self.D_mps)).reshape(4,self.D_mps,self.D_mps)
+        self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(4,4,self.D_mpo,self.D_mpo)).reshape(4*self.D_mpo,4*self.D_mpo)).reshape(4,self.D_mpo,4,self.D_mpo)).reshape(4,4,self.D_mpo,self.D_mpo)
+
+class uMPSU1_2d_left_threeSite_block(uMPSU1_2d_left):
+    def randoInit(self):
+        self.mps = randoUnitary(8*self.D_mps,self.D_mps).reshape(8,self.D_mps,self.D_mps)
+        self.mpo = np.einsum('iajb->ijab',randoUnitary(8*self.D_mpo,8*self.D_mpo).reshape(8,self.D_mpo,8,self.D_mpo)).reshape(8,8,self.D_mpo,self.D_mpo)
+    def norm(self):
+        #polar decomp to ensure left canon still
+        self.mps = polarDecomp(self.mps.reshape(8*self.D_mps,self.D_mps)).reshape(8,self.D_mps,self.D_mps)
+        self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(8,8,self.D_mpo,self.D_mpo)).reshape(8*self.D_mpo,8*self.D_mpo)).reshape(8,self.D_mpo,8,self.D_mpo)).reshape(8,8,self.D_mpo,self.D_mpo)
 
 class uMPS_1d_centre(uMPS_1d_left):
     def randoInit(self):
