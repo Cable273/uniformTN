@@ -21,30 +21,6 @@ class localH:
         for n in range(0,len(self.terms)):
             self.subtractedTerms[n] = self.terms[n].subtractExp(psi)
 
-    def effH_2d_fourSite_block(self):
-        H_eff= self.terms[0].effH_2d_fourSite_block()
-        for n in range(1,len(self.terms)):
-            H_eff += self.terms[n].effH_2d_fourSite_block()
-        return H_eff
-
-    def effH_2d_twoSite_block_hori(self):
-        H_eff= self.terms[0].effH_2d_twoSite_block_hori()
-        for n in range(1,len(self.terms)):
-            H_eff += self.terms[n].effH_2d_twoSite_block_hori()
-        return H_eff
-
-    def effH_2d_twoSite_block_vert(self):
-        H_eff= self.terms[0].effH_2d_twoSite_block_vert()
-        for n in range(1,len(self.terms)):
-            H_eff += self.terms[n].effH_2d_twoSite_block_vert()
-        return H_eff
-
-    def effH_2d_threeSite_block_hori(self):
-        H_eff= self.terms[0].effH_2d_threeSite_block_hori()
-        for n in range(1,len(self.terms)):
-            H_eff += self.terms[n].effH_2d_threeSite_block_hori()
-        return H_eff
-
     def __add__(self,H2):
         newObj = copy.deepcopy(self)
         added = []
@@ -107,33 +83,6 @@ class localH_term:
 class oneBodyH(localH_term):
     def reshapeTensor(self,H_matrix):
         return H_matrix
-
-    def effH_2d_twoSite_block(self):
-        physDim = self.tensor.shape[0]
-        effH_tensor = ncon([self.tensor,np.eye(physDim)],((-2,-1),(-4,-3)),forder=(-2,-4,-1,-3))
-        effH_tensor += ncon([np.eye(physDim)+self.tensor],((-2,-1),(-4,-3)),forder=(-2,-4,-1,-3))
-        return localH([oneBodyH(1/2*effH_tensor.reshape(physDim**2,physDim**2))])
-    def effH_2d_twoSite_block_hori(self):
-        return self.effH_2d_twoSite_block()
-    def effH_2d_twoSite_block_vert(self):
-        return self.effH_2d_twoSite_block()
-
-    def effH_2d_threeSite_block(self):
-        physDim = self.tensor.shape[0]
-        effH_tensor = ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-1,-4),(-2,-5),(-3,-6)),forder=(-2,-4,-1,-3))
-        effH_tensor += ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-2,-5),(-1,-4),(-3,-6)),forder=(-2,-4,-1,-3))
-        effH_tensor += ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-3,-6),(-1,-4),(-2,-5)),forder=(-2,-4,-1,-3))
-        return localH([oneBodyH(1/3*effH_tensor.reshape(physDim**3,physDim**3))])
-    def effH_2d_threeSite_block_hori(self):
-        return effH_2d_threeSite_block()
-
-    def effH_2d_fourSite_block(self):
-        physDim = self.tensor.shape[0]
-        effH_tensor = ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-1,-5),(-2,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8))
-        effH_tensor += ncon([np.eye(physDim),self.tensor,np.eye(physDim),np.eye(physDim)],((-1,-5),(-2,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8))
-        effH_tensor += ncon([np.eye(physDim),np.eye(physDim),self.tensor,np.eye(physDim)],((-1,-5),(-2,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8))
-        effH_tensor += ncon([np.eye(physDim),np.eye(physDim),np.eye(physDim),self.tensor],((-1,-5),(-2,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8))
-        return localH([oneBodyH(1/4*effH_tensor.reshape(physDim**4,physDim**4))])
 
     def exp_1d(self,psi):
         return np.real(ncon([psi.mps,self.tensor,psi.mps.conj(),psi.L.tensor,psi.R.tensor],((1,3,4),(2,1),(2,5,6),(5,3),(6,4))),order=(3,5,1,2,4,6))
@@ -213,42 +162,6 @@ class twoBodyH(localH_term):
         return E/2
 
 class twoBodyH_hori(twoBodyH):
-    def effH_2d_twoSite_block_hori(self):
-        physDim = self.tensor.shape[0]
-        effH_oneSite = self.tensor.reshape(physDim**2,physDim**2)
-        effH_twoSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-2,-3,-6,-7),(-1,-5),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
-        effH_oneSite = effH_oneSite / 2
-        effH_twoSite = effH_twoSite / 2
-        return localH([oneBodyH(effH_oneSite),twoBodyH_hori(effH_twoSite)])
-
-    def effH_2d_twoSite_block_vert(self):
-        physDim = self.tensor.shape[0]
-        effH_twoSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-1,-3,-5,-7),(-2,-6),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
-        effH_twoSite += ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-2,-4,-6,-8),(-1,-5),(-3,-7)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
-        effH_twoSite = effH_twoSite / 2
-        return localH([twoBodyH_hori(effH_twoSite)])
-
-    def effH_2d_threeSite_block_hori(self):
-        physDim = self.tensor.shape[0]
-        effH_oneSite = ncon([self.tensor,np.eye(physDim)],((-1,-2,-4,-5),(-3,-6)),forder=(-1,-2,-3,-4,-5,-6)).reshape(physDim**3,physDim**3)
-        effH_oneSite += ncon([self.tensor,np.eye(physDim)],((-2,-3,-5,-6),(-1,-4)),forder=(-1,-2,-3,-4,-5,-6)).reshape(physDim**3,physDim**3)
-        effH_twoSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-3,-4,-9,-10),(-1,-7),(-2,-8),(-5,-11),(-6,-12)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12)).reshape(physDim**6,physDim**6)
-
-        effH_oneSite = effH_oneSite / 3
-        effH_twoSite = effH_twoSite / 3
-        return localH([oneBodyH(effH_oneSite),twoBodyH_hori(effH_twoSite)])
-
-    def effH_2d_fourSite_block(self):
-        physDim = self.tensor.shape[0]
-        effH_oneSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-1,-2,-5,-6),(-3,-7),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
-        effH_oneSite += ncon([np.eye(physDim),np.eye(physDim),self.tensor],((-1,-5),(-2,-6),(-3,-4,-7,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
-        effH_oneSite = effH_oneSite/4
-
-        effH_twoSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-2,-5,-10,-13),(-1,-9),(-3,-11),(-4,-12),(-6,-14),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
-        effH_twoSite += ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-4,-7,-12,-15),(-1,-9),(-2,-10),(-3,-11),(-5,-13),(-6,-14),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
-        effH_twoSite = effH_twoSite/4
-
-        return localH([oneBodyH(effH_oneSite),twoBodyH_hori(effH_twoSite)])
 
     def exp_2d_left(self,psi):
         centreContract = ncon([psi.mpo,psi.mpo,self.tensor,psi.mpo.conj(),psi.mpo.conj(),psi.R.tensor],((2,-1,9,10),(6,-5,10,11),(3,7,2,6),(3,-4,9,13),(7,-8,13,12),(12,11)),forder=(-4,-8,-1,-5),order=(9,2,3,10,13,6,7,11,12))
@@ -300,40 +213,6 @@ class twoBodyH_hori(twoBodyH):
         return E/4
 
 class twoBodyH_vert(twoBodyH):
-    def effH_2d_twoSite_block_hori(self):
-        physDim = self.tensor.shape[0]
-        effH_twoSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-1,-3,-5,-7),(-2,-6),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
-        effH_twoSite += ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-2,-4,-6,-8),(-1,-5),(-3,-7)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
-        effH_twoSite = effH_twoSite / 2
-        return localH([twoBodyH_vert(effH_twoSite)])
-
-    def effH_2d_twoSite_block_vert(self):
-        physDim = self.tensor.shape[0]
-        effH_oneSite = self.tensor.reshape(physDim**2,physDim**2)
-        effH_twoSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-2,-3,-6,-7),(-1,-5),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
-        effH_oneSite = effH_oneSite / 2
-        effH_twoSite = effH_twoSite / 2
-        return localH([oneBodyH(effH_oneSite),twoBodyH_vert(effH_twoSite)])
-
-    def effH_2d_threeSite_block_hori(self):
-        physDim = self.tensor.shape[0]
-        effH = ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-1,-4,-7,-10),(-2,-8),(-3,-9),(-5,-11),(-6,-12)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12)).reshape(physDim**6,physDim**6)
-        effH += ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-2,-5,-8,-11),(-1,-7),(-3,-9),(-4,-10),(-6,-12)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12)).reshape(physDim**6,physDim**6)
-        effH += ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-3,-6,-9,-12),(-1,-7),(-2,-8),(-4,-10),(-5,-11)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12)).reshape(physDim**6,physDim**6)
-        effH = effH / 3
-        return localH([twoBodyH_vert(effH)])
-
-    def effH_2d_fourSite_block(self):
-        physDim = self.tensor.shape[0]
-        effH_oneSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-1,-3,-5,-7),(-2,-6),(-4,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
-        effH_oneSite += ncon([self.tensor,np.eye(physDim),np.eye(physDim)],((-2,-4,-6,-8),(-1,-5),(-3,-7)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
-        effH_oneSite = effH_oneSite/4
-
-        effH_twoSite = ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-3,-5,-11,-13),(-1,-9),(-2,-10),(-4,-12),(-6,-14),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
-        effH_twoSite += ncon([self.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-4,-6,-12,-14),(-1,-9),(-2,-10),(-3,-11),(-5,-13),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
-        effH_twoSite = effH_twoSite/4
-
-        return localH([oneBodyH(effH_oneSite),twoBodyH_vert(effH_twoSite)])
 
     def exp_2d_left(self,psi):
         outerContract = ncon([psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.T.tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2),order=(5,6,9,7,8))
