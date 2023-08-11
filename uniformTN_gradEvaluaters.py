@@ -41,7 +41,7 @@ def gradFactory(psi,H):
     elif type(psi) == uMPSU1_2d_left_twoSite_square:
         return gradEvaluater_mpso_2d_twoSite_square(psi,H)
 
-    elif type(psi) == uMPSU1_2d_left_fourSite_block:
+    elif type(psi) == uMPSU1_2d_left_NSite_block:
         return gradEvaluater_mpso_2d_uniform(psi,H)
 
     elif type(psi) == uMPSU1_2d_left_fourSite_sep:
@@ -223,7 +223,7 @@ class gradEvaluater_mpso_2d(gradEvaluater):
     def copyEvaluaters(self):
         self.grad['mps'] = self.gradA_evaluater.grad
         self.grad['mpo'] = self.gradB_evaluater.grad
-    def eval(self,geo=True):
+    def eval(self,geo=False):
         self.gradA_evaluater.eval()
         self.gradB_evaluater.eval(geo=geo)
         self.copyEvaluaters()
@@ -551,11 +551,11 @@ class gradEvaluater_mpso_2d_mps_bipartite(gradEvaluater):
     def fetch_implementation(self,H):
         indexSetter = mpso_2d_mps_bipartite_indexSetter
         if type(H) == oneBodyH:
-            return gradImplementation_mpso_2d_mps_multipleSites_oneBodyH(self.psi,H.tensor,indexSetter = indexSetter)
+            return gradImplementation_mpso_2d_mps_multipleTensors_oneBodyH(self.psi,H.tensor,indexSetter = indexSetter)
         elif type(H) == twoBodyH_hori:
-            return gradImplementation_mpso_2d_mps_multipleSites_twoBodyH_hori(self.psi,H.tensor,indexSetter = indexSetter)
+            return gradImplementation_mpso_2d_mps_multipleTensors_twoBodyH_hori(self.psi,H.tensor,indexSetter = indexSetter)
         elif type(H) == twoBodyH_vert:
-            return gradImplementation_mpso_2d_mps_multipleSites_twoBodyH_vert(self.psi,H.tensor,indexSetter = indexSetter)
+            return gradImplementation_mpso_2d_mps_multipleTensors_twoBodyH_vert(self.psi,H.tensor,indexSetter = indexSetter)
 
 class gradEvaluater_mpso_2d_mps_fourSite_sep(gradEvaluater):
     def effective_1d_bipartite_psi(self,index1,index2):
@@ -620,8 +620,8 @@ class gradEvaluater_mpso_2d_mps_fourSite_sep(gradEvaluater):
     def fetch_implementation(self,H):
         indexSetter = mpso_2d_mps_fourSite_sep_indexSetter
         if type(H) == oneBodyH:
-            return gradImplementation_mpso_2d_mps_multipleSites_oneBodyH(self.psi,H.tensor,indexSetter=indexSetter)
+            return gradImplementation_mpso_2d_mps_multipleTensors_oneBodyH(self.psi,H.tensor,indexSetter=indexSetter)
         elif type(H) == twoBodyH_hori:
-            return gradImplementation_mpso_2d_mps_multipleSites_twoBodyH_hori(self.psi,H.tensor,indexSetter=indexSetter)
+            return gradImplementation_mpso_2d_mps_multipleTensors_twoBodyH_hori(self.psi,H.tensor,indexSetter=indexSetter)
         elif type(H) == twoBodyH_vert:
-            return gradImplementation_mpso_2d_mps_multipleSites_twoBodyH_vert(self.psi,H.tensor,indexSetter=indexSetter)
+            return gradImplementation_mpso_2d_mps_multipleTensors_twoBodyH_vert(self.psi,H.tensor,indexSetter=indexSetter)

@@ -298,7 +298,7 @@ class uMPSU1_2d_left_twoSite_square(uMPSU1_2d_left_twoSite):
         self.Tb2_inv['prong'] = inverseTransfer_left(self.Tb2['prong'],self.RR['prong'].vector)
 
 #multiple mps/mpo tensors (eg bipartite ansatz, 4 site sep etc)
-class uMPSU1_2d_left_multipleSites(uMPSU_2d):
+class uMPSU1_2d_left_multipleTensors(uMPSU_2d):
     def randoInit(self):
         self.mps = dict()
         self.mpo = dict()
@@ -347,7 +347,7 @@ class uMPSU1_2d_left_multipleSites(uMPSU_2d):
         self.D_mps = np.size(self.mps[1],axis=1)
         self.D_mpo = np.size(self.mpo[1],axis=2)
 
-class uMPSU1_2d_left_bipartite(uMPSU1_2d_left_multipleSites):
+class uMPSU1_2d_left_bipartite(uMPSU1_2d_left_multipleTensors):
     def __init__(self,D_mps,D_mpo,mps=None,mpo=None):
         self.noTensors = 2
         super().__init__(D_mps,D_mpo,mps=mps,mpo=mpo)
@@ -366,7 +366,7 @@ class uMPSU1_2d_left_bipartite(uMPSU1_2d_left_multipleSites):
         self.Tb2[1] = mpsu1Transfer_left_twoLayerBip(self.mps[1],self.mps[2],self.mpo[1],self.mpo[2],T1,T2)
         self.Tb2[2] = mpsu1Transfer_left_twoLayerBip(self.mps[2],self.mps[1],self.mpo[2],self.mpo[1],T2,T1)
 
-class uMPSU1_2d_left_fourSite_sep(uMPSU1_2d_left_multipleSites):
+class uMPSU1_2d_left_fourSite_sep(uMPSU1_2d_left_multipleTensors):
     def __init__(self,D_mps,D_mpo,mps=None,mpo=None):
         self.noTensors = 4
         super().__init__(D_mps,D_mpo,mps=mps,mpo=mpo)
@@ -392,32 +392,17 @@ class uMPSU1_2d_left_fourSite_sep(uMPSU1_2d_left_multipleSites):
         self.Tb2[3] = mpsu1Transfer_left_twoLayer_fourSiteSep(self.mps[3],self.mps[4],self.mps[1],self.mps[2],self.mpo[3],self.mpo[4],self.mpo[1],self.mpo[2],T[3],T[4])
         self.Tb2[4] = mpsu1Transfer_left_twoLayer_fourSiteSep(self.mps[4],self.mps[3],self.mps[2],self.mps[1],self.mpo[4],self.mpo[3],self.mpo[2],self.mpo[1],T[4],T[3])
 
-class uMPSU1_2d_left_fourSite_block(uMPSU1_2d_left):
+class uMPSU1_2d_left_NSite_block(uMPSU1_2d_left):
+    def __init__(self,noSites,D_mps,D_mpo,mps=None,mpo=None):
+        self.noSites = noSites
+        self.physDim = np.power(2,self.noSites)
     def randoInit(self):
-        self.mps = randoUnitary(16*self.D_mps,self.D_mps).reshape(16,self.D_mps,self.D_mps)
-        self.mpo = np.einsum('iajb->ijab',randoUnitary(16*self.D_mpo,16*self.D_mpo).reshape(16,self.D_mpo,16,self.D_mpo)).reshape(16,16,self.D_mpo,self.D_mpo)
+        self.mps = randoUnitary(self.physDim*self.D_mps,self.D_mps).reshape(self.physDim,self.D_mps,self.D_mps)
+        self.mpo = np.einsum('iajb->ijab',randoUnitary(self.physDim*self.D_mpo,self.physDim*self.D_mpo).reshape(self.physDim,self.D_mpo,self.physDim,self.D_mpo)).reshape(self.physDim,self.physDim,self.D_mpo,self.D_mpo)
     def norm(self):
         #polar decomp to ensure left canon still
-        self.mps = polarDecomp(self.mps.reshape(16*self.D_mps,self.D_mps)).reshape(16,self.D_mps,self.D_mps)
-        self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(16,16,self.D_mpo,self.D_mpo)).reshape(16*self.D_mpo,16*self.D_mpo)).reshape(16,self.D_mpo,16,self.D_mpo)).reshape(16,16,self.D_mpo,self.D_mpo)
-
-class uMPSU1_2d_left_twoSite_block(uMPSU1_2d_left):
-    def randoInit(self):
-        self.mps = randoUnitary(4*self.D_mps,self.D_mps).reshape(4,self.D_mps,self.D_mps)
-        self.mpo = np.einsum('iajb->ijab',randoUnitary(4*self.D_mpo,4*self.D_mpo).reshape(4,self.D_mpo,4,self.D_mpo)).reshape(4,4,self.D_mpo,self.D_mpo)
-    def norm(self):
-        #polar decomp to ensure left canon still
-        self.mps = polarDecomp(self.mps.reshape(4*self.D_mps,self.D_mps)).reshape(4,self.D_mps,self.D_mps)
-        self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(4,4,self.D_mpo,self.D_mpo)).reshape(4*self.D_mpo,4*self.D_mpo)).reshape(4,self.D_mpo,4,self.D_mpo)).reshape(4,4,self.D_mpo,self.D_mpo)
-
-class uMPSU1_2d_left_threeSite_block(uMPSU1_2d_left):
-    def randoInit(self):
-        self.mps = randoUnitary(8*self.D_mps,self.D_mps).reshape(8,self.D_mps,self.D_mps)
-        self.mpo = np.einsum('iajb->ijab',randoUnitary(8*self.D_mpo,8*self.D_mpo).reshape(8,self.D_mpo,8,self.D_mpo)).reshape(8,8,self.D_mpo,self.D_mpo)
-    def norm(self):
-        #polar decomp to ensure left canon still
-        self.mps = polarDecomp(self.mps.reshape(8*self.D_mps,self.D_mps)).reshape(8,self.D_mps,self.D_mps)
-        self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(8,8,self.D_mpo,self.D_mpo)).reshape(8*self.D_mpo,8*self.D_mpo)).reshape(8,self.D_mpo,8,self.D_mpo)).reshape(8,8,self.D_mpo,self.D_mpo)
+        self.mps = polarDecomp(self.mps.reshape(self.physDim*self.D_mps,self.D_mps)).reshape(self.physDim,self.D_mps,self.D_mps)
+        self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(self.physDim,self.physDim,self.D_mpo,self.D_mpo)).reshape(self.physDim*self.D_mpo,self.physDim*self.D_mpo)).reshape(self.physDim,self.D_mpo,self.physDim,self.D_mpo)).reshape(self.physDim,self.physDim,self.D_mpo,self.D_mpo)
 
 class uMPS_1d_centre(uMPS_1d_left):
     def randoInit(self):

@@ -202,7 +202,7 @@ class gradImplementation_mpso_2d_mps_twoSite_staircase_twoBodyH_vert(gradImpleme
 
 # -----------------------------
 #mpso_2d bipartite and fourSite_sep ansatz (same code, different index mapping)
-class gradImplementation_mpso_2d_mps_multipleSites(gradImplementation_mpso_2d_mps_uniform):
+class gradImplementation_mpso_2d_mps_multipleTensors(gradImplementation_mpso_2d_mps_uniform):
     def __init__(self,psi,H,indexSetter):
         self.indexSetter = indexSetter
         super().__init__(psi,H)
@@ -225,7 +225,7 @@ def mpso_2d_mps_bipartite_indexSetter(index):
         index1,index2,index3,index4 = 2,1,1,2
     return index1,index2,index3,index4
 
-class gradImplementation_mpso_2d_mps_multipleSites_oneBodyH(gradImplementation_mpso_2d_mps_multipleSites):
+class gradImplementation_mpso_2d_mps_multipleTensors_oneBodyH(gradImplementation_mpso_2d_mps_multipleTensors):
     def getEffectiveH(self,index):
         index1,index2,index3,index4 = self.indexSetter(index)
         outerContract_1 =  ncon([self.psi.mps[index1],self.psi.mps[index1].conj(),self.psi.T[index3].tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1),order=(3,4,5))
@@ -246,7 +246,7 @@ class gradImplementation_mpso_2d_mps_multipleSites_oneBodyH(gradImplementation_m
         H_eff_shifted = ncon([env,self.psi.mpo[index1],self.psi.mpo[index1].conj(),self.psi.R[index2].tensor],((6,4),(2,-1,4,5),(2,-3,6,7),(7,5)),forder=(-3,-1),order=(4,6,2,5,7))
         return oneBodyH(H_eff_centre + H_eff_shifted)
 
-class gradImplementation_mpso_2d_mps_multipleSites_twoBodyH_hori(gradImplementation_mpso_2d_mps_multipleSites):
+class gradImplementation_mpso_2d_mps_multipleTensors_twoBodyH_hori(gradImplementation_mpso_2d_mps_multipleTensors):
     def getEffectiveH(self,index):
         index1,index2,index3,index4 = self.indexSetter(index)
         outerContract_1 =  ncon([self.psi.mps[index1],self.psi.mps[index1].conj(),self.psi.T[index3].tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1),order=(3,4,5))
@@ -265,7 +265,7 @@ class gradImplementation_mpso_2d_mps_multipleSites_twoBodyH_hori(gradImplementat
         H_eff_shifted = ncon([env,self.psi.mpo[index1],self.psi.mpo[index1].conj(),self.psi.R[index2].tensor],((6,4),(2,-1,4,5),(2,-3,6,7),(7,5)),forder=(-3,-1),order=(4,6,2,5,7))
         return oneBodyH(H_eff_centre + H_eff_shifted)
 
-class gradImplementation_mpso_2d_mps_multipleSites_twoBodyH_vert(gradImplementation_mpso_2d_mps_multipleSites):
+class gradImplementation_mpso_2d_mps_multipleTensors_twoBodyH_vert(gradImplementation_mpso_2d_mps_multipleTensors):
     def getEffectiveH(self,index):
         #under current Hamiltonian
         index1,index2,index3,index4 = self.indexSetter(index)

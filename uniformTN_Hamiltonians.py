@@ -89,11 +89,7 @@ class localH_term:
             return self.exp_2d_left_bipartite(psi)
 
         #blocked ansatz are same as uniform code but with effective hamiltonian
-        elif type(psi) == uMPSU1_2d_left_fourSite_block:
-            return self.exp_2d_left(psi)
-        elif type(psi) == uMPSU1_2d_left_twoSite_block:
-            return self.exp_2d_left(psi)
-        elif type(psi) == uMPSU1_2d_left_threeSite_block:
+        elif type(psi) == uMPSU1_2d_left_NSite_block:
             return self.exp_2d_left(psi)
 
         elif type(psi) == uMPSU1_2d_left_fourSite_sep:
