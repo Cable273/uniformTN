@@ -73,6 +73,9 @@ class stateAnsatz(ABC):
 
         if projectionMetric is not None:
             gradEvaluater.projectTangentSpace(projectionMetric)
+        print(np.einsum('ijk,ijk',gradEvaluater.grad['mps'],gradEvaluater.grad['mps'].conj()))
+        print(np.einsum('ijab,ijab',gradEvaluater.grad['mpo'],gradEvaluater.grad['mpo'].conj()))
+
 
         self.shiftTensors(-learningRate,gradEvaluater.grad)
         self.norm()
@@ -394,6 +397,7 @@ class uMPSU1_2d_left_fourSite_sep(uMPSU1_2d_left_multipleTensors):
 
 class uMPSU1_2d_left_NSite_block(uMPSU1_2d_left):
     def __init__(self,noSites,D_mps,D_mpo,mps=None,mpo=None):
+        super().__init__(D_mps,D_mpo,mps,mpo)
         self.noSites = noSites
         self.physDim = np.power(2,self.noSites)
     def randoInit(self):
