@@ -22,6 +22,10 @@ class finite_1dChains:
     def setTensor(self,site,tensor):
         self.tensors[site] = tensor
 
+    def setTensor_bulk(self,tensor):
+        for n in range(1,self.N-1):
+            self.setTensor(n,tensor)
+
     def __mul__(self,scalar):
         newMPO = copy.deepcopy(self)
         newMPO.tensors[0] = scalar * newMPO.tensors[0]
@@ -36,7 +40,7 @@ class finite_1dChains:
             newObj.tensors[n] = newObj.tensors[n].conj()
         return newObj
 
-    def print_shapes(self):
+    def print_shape(self):
         for n in range(0,self.N):
             print(self.tensors[n].shape)
 
@@ -61,7 +65,7 @@ class mpo_finite(finite_1dChains):
                 D_left = self.tensors[n].shape[2] + mpo2.tensors[n].shape[2]
                 D_right = self.tensors[n].shape[3] + mpo2.tensors[n].shape[3]
                 newMPO.tensors[n] = np.zeros((self.phsDim,self.phsDim,D_left,D_right)).astype(complex)
-                newMPO.tensors[n][:,:,:self.tensors[n].shape[2],:self.tensors.shape[2]] = self.tensors[n]
+                newMPO.tensors[n][:,:,:self.tensors[n].shape[2],:self.tensors[n].shape[2]] = self.tensors[n]
                 newMPO.tensors[n][:,:,self.tensors[n].shape[2]:,self.tensors[n].shape[2]:] = mpo2.tensors[n]
         return newMPO
 
@@ -84,6 +88,9 @@ class mpo_finite(finite_1dChains):
         else:
             print("MPS and MPO not compatible with each other")
             return None
+    def var(self,psi):
+        H2 = self.mult(self)
+        return H2.exp(psi)-(self.exp(psi))**2
 
     def mult(self,mpo):
         if self.phsDim != mpo.phsDim:
@@ -176,7 +183,7 @@ class mps_finite(finite_1dChains):
             M = ncon([self.tensors[site1],self.tensors[site2]],((-1,3),(-2,3)),forder=(-1,-2))
 
         U,S,Vd = sp.linalg.svd(M,full_matrices=False)
-        U,S,Vd = self.truncate_svd(U,S,Vd)
+        U,S,Vd = U[:,:self.D],S[:self.D],Vd[:self.D,:] #truncate
         if norm is True:
             S = S / np.sqrt(np.dot(S,S))
 
@@ -194,6 +201,3 @@ class mps_finite(finite_1dChains):
             self.tensors[site2] = Vd.transpose()
         elif len(self.tensors[site2].shape) == 3:
             self.tensors[site2] = np.einsum('ijk->jik',Vd.reshape(np.size(S),shape2[0],shape2[2]))
-
-    def truncate_svd(self,U,S,Vd,tol=1e-5):
-        return U[:,:self.D],S[:self.D],Vd[:self.D,:]
