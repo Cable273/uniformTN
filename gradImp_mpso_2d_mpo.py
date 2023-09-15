@@ -117,6 +117,24 @@ class gradImplementation_mpso_2d_mpo_uniform_twoBodyH_vert(gradImplementation_mp
         self.envs_hori.add( env_mpso_hori_uniform(self.psi,np.einsum('abcc->ab',envDouble)) )
         self.envs_hori.add( env_mpso_hori_uniform(self.psi,np.einsum('aabc->bc',envDouble)) )
 
+class gradImplementation_mpso_2d_mpo_uniform_plaquetteH(gradImplementation_mpso_2d_mpo_uniform_H_verticalLength_2):
+    def buildEnvs_vert(self):
+        #term under H 
+        env = ncon([self.psi.mpo,self.psi.mpo,self.psi.mpo,self.psi.mpo,self.H],((2,-1,-13,14),(5,-4,14,-15),(8,-7,-16,17),(11,-10,17,-18),(-9,-3,-12,-6,8,2,11,5)),forder=(-9,-12,-3,-6,-7,-10,-1,-4,-16,-18,-13,-15),order=(2,14,5,8,17,11))
+        self.envs_vert_quadrantSeed.add( env_mpso_vert_uniform(self.psi,env,shape=[2,2]) )
+        self.envs_vert.add( env_mpso_vert_uniform(self.psi,env,shape=[2,2]) )
+        env = ncon([env,self.psi.mpo.conj(),self.psi.mpo.conj(),self.outers['len2']],((1,-2,3,-4,5,-6,7,-8,9,-10,11,-12),(1,14,9,-15),(3,13,11,-16),(14,13,5,7)),forder=(-2,-4,-6,-8,-15,-10,-16,-12),order=(11,3,7,13,9,1,5,14))
+        self.envs_vert.add( env_mpso_vert_uniform(self.psi,env,shape=[2,1]) )
+        #term right of H
+        env = ncon([env,self.psi.mpo.conj(),self.psi.mpo.conj(),self.outers['len2']],((5,2,4,1,10,-11,7,-8),(5,6,10,-12),(2,3,7,-9),(6,3,4,1)),forder=(-12,-11,-9,-8),order=(10,5,4,6,7,2,1,3))
+        env = self.psi.Tb2_inv.applyRight(env.reshape(self.psi.D_mpo**4)).reshape(self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
+        env = ncon([env,self.psi.mpo,self.psi.mpo],((-8,7,-6,5),(-2,-1,5,-9),(-4,-3,7,-10)),forder=(-4,-2,-3,-1,-8,-10,-6,-9))
+        self.envs_vert.add( env_mpso_vert_uniform(self.psi,env,shape=[2,1]) )
+
+    def buildEnvs_hori(self):
+        envDouble = ncon([self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.H,self.psi.RR.tensor,self.outers['len2'],self.outers['len2']],((2,1,-17,18),(6,5,18,19),(3,4,-20,21),(7,8,21,22),(10,9,-23,24),(14,13,24,25),(11,12,-26,27),(15,16,27,28),(11,3,15,7,10,2,14,6),(28,25,22,19),(12,4,9,1),(16,8,13,5)),forder=(-26,-23,-20,-17),order=(19,22,5,6,7,8,25,28,13,14,15,16,18,21,2,3,1,4,24,27,10,11,9,12))
+        self.envs_hori.add( env_mpso_hori_uniform(self.psi,np.einsum('abcc->ab',envDouble)) )
+        self.envs_hori.add( env_mpso_hori_uniform(self.psi,np.einsum('aabc->bc',envDouble)) )
 # -----------------------------
 #Bipartite
 class gradImplementation_mpso_2d_mpo_bipartite(gradImplementation_mpso_2d_mpo):

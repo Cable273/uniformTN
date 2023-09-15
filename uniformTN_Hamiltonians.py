@@ -267,3 +267,7 @@ class plaquetteH(localH_term):
     def reshapeTensor(self,H_matrix):
         physDim = int(np.sqrt(np.sqrt(H_matrix.shape[0])))
         return H_matrix.reshape([physDim,physDim,physDim,physDim,physDim,physDim,physDim,physDim])
+
+    def exp_2d_left(self,psi):
+        outerContractDouble = ncon([psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.T.tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2))
+        return np.real(ncon([psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),self.tensor,psi.RR.tensor,outerContractDouble,outerContractDouble],((2,1,17,18),(6,5,18,19),(3,4,17,21),(7,8,21,20),(10,9,22,23),(14,13,23,24),(11,12,22,26),(15,16,26,25),(11,3,15,7,10,2,14,6),(25,24,20,19),(12,4,9,1),(16,8,13,5)),order=(17,1,4,2,3,18,21,5,8,6,7,19,20,24,25,13,16,14,15,23,26,9,12,10,11,22)))

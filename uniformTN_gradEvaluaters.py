@@ -303,6 +303,8 @@ class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps):
             return gradImplementation_mpso_2d_mps_uniform_twoBodyH_hori(self.psi,H.tensor)
         elif type(H) == twoBodyH_vert:
             return gradImplementation_mpso_2d_mps_uniform_twoBodyH_vert(self.psi,H.tensor)
+        elif type(H) == plaquetteH:
+            return gradImplementation_mpso_2d_mps_uniform_plaquetteH(self.psi,H.tensor)
 
 class gradEvaluater_mpso_2d_mps_twoSite(gradEvaluater_mpso_2d_mps):
     def getEffective_1d_evaluater(self):
@@ -382,6 +384,8 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo):
             return gradImplementation_mpso_2d_mpo_uniform_twoBodyH_hori(self.psi,H.tensor)
         elif type(H) == twoBodyH_vert:
             return gradImplementation_mpso_2d_mpo_uniform_twoBodyH_vert(self.psi,H.tensor)
+        elif type(H) == plaquetteH:
+            return gradImplementation_mpso_2d_mpo_uniform_plaquetteH(self.psi,H.tensor)
 
     def projectTangentSpace_euclid(self):
         self.grad = project_mpo_euclid(self.grad,self.psi.mpo)

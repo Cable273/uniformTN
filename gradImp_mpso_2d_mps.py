@@ -64,6 +64,19 @@ class gradImplementation_mpso_2d_mps_uniform_twoBodyH_vert(gradImplementation_mp
         physDim = H_eff_shifted.shape[0]
         return twoBodyH((H_eff_centre + H_eff_shifted).reshape(physDim**2,physDim**2))
 
+class gradImplementation_mpso_2d_mps_uniform_plaquetteH(gradImplementation_mpso_2d_mps_uniform):
+    def getEffectiveH(self):
+        outerContractDouble = ncon([self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.T.tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2))
+        H_eff =  ncon([self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.H,self.psi.RR.tensor,outerContractDouble],((2,-1,17,18),(6,5,18,19),(3,-4,17,21),(7,8,21,20),(10,-9,22,23),(14,13,23,24),(11,-12,22,26),(15,16,26,25),(11,3,15,7,10,2,14,6),(25,24,20,19),(16,8,13,5)),forder=(-12,-4,-9,-1),order=(17,2,3,18,21,5,8,6,7,19,20,24,25,13,16,14,15,23,26,10,11,22))
+        H_eff +=  ncon([self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.H,self.psi.RR.tensor,outerContractDouble],((2,1,17,18),(6,-5,18,19),(3,4,17,21),(7,-8,21,20),(10,9,22,23),(14,-13,23,24),(11,12,22,26),(15,-16,26,25),(11,3,15,7,10,2,14,6),(25,24,20,19),(12,4,9,1)),forder=(-16,-8,-13,-5),order=(17,1,4,2,3,18,21,6,7,19,20,24,25,14,15,23,26,9,12,10,11,22))
+
+        env = ncon([self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.H,outerContractDouble,outerContractDouble],((2,1,17,18),(6,5,18,-19),(3,4,17,21),(7,8,21,-20),(10,9,22,23),(14,13,23,-24),(11,12,22,26),(15,16,26,-25),(11,3,15,7,10,2,14,6),(12,4,9,1),(16,8,13,5)),forder=(-25,-24,-20,-19),order=(17,22,1,4,9,12,2,3,10,11,18,21,23,26,5,8,13,16,6,7,14,15))
+        env = self.psi.Tb2_inv.applyRight(env.reshape(self.psi.D_mpo**4)).reshape(self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
+        H_eff += ncon([self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),env,self.psi.RR.tensor],((2,-1,7,9),(5,-4,11,13),(2,-3,8,10),(5,-6,12,14),(8,7,12,11),(10,9,14,13)),forder=(-3,-6,-1,-4),order=(13,14,5,9,10,2,8,7,12,11))
+
+        physDim = H_eff.shape[0]
+        return twoBodyH(H_eff.reshape(physDim**2,physDim**2))
+
 # -----------------------------
 class gradImplementation_mpso_2d_mps_twoSite_square_oneBodyH(gradImplementation_mpso_2d_mps_uniform):
     def getEffectiveH(self,site):
