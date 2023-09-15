@@ -128,7 +128,7 @@ class mps_finite(finite_1dChains):
                 D_left = self.tensors[n].shape[1] + mps2.tensors[n].shape[1]
                 D_right = self.tensors[n].shape[2] + mps2.tensors[n].shape[2]
                 newMPS.tensors[n] = np.zeros((self.phsDim,D_left,D_right)).astype(complex)
-                newMPS.tensors[n][:,:self.tensors[n].shape[1],:self.tensors.shape[1]] = self.tensors[n]
+                newMPS.tensors[n][:,:self.tensors[n].shape[1],:self.tensors[n].shape[1]] = self.tensors[n]
                 newMPS.tensors[n][:,self.tensors[n].shape[1]:,self.tensors[n].shape[1]:] = mps2.tensors[n]
         return newMPS
 
