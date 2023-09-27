@@ -101,6 +101,32 @@ class map2EffH_2d_blockingSites_rect(map2EffH):
             effH_twoSite = effH_twoSite / 6
             return localH([oneBodyH(effH_oneSite),twoBodyH_hori(effH_twoSite)])
 
+        elif self.shape == [2,4]:
+            effH_oneSite = ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-1,-3,-9,-11),(-2,-10),(-4,-12),(-5,-13),(-6,-14),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-3,-5,-11,-13),(-1,-9),(-2,-10),(-4,-12),(-6,-14),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-5,-7,-13,-15),(-1,-9),(-2,-10),(-3,-11),(-4,-12),(-6,-14),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-2,-4,-10,-12),(-1,-9),(-3,-11),(-5,-13),(-6,-14),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-4,-6,-12,-14),(-1,-9),(-2,-10),(-3,-11),(-5,-13),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-6,-8,-14,-16),(-1,-9),(-2,-10),(-3,-11),(-4,-12),(-5,-13),(-7,-15)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+            effH_oneSite = effH_oneSite / 8
+
+            effH_twoSite = ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-7,-9,-23,-25),(-1,-17),(-2,-18),(-3,-19),(-4,-20),(-5,-21),(-6,-22),(-8,-24),(-10,-26),(-11,-27),(-12,-28),(-13,-29),(-14,-30),(-15,-31),(-16,-32)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23,-24,-25,-26,-27,-28,-29,-30,-31,-32)).reshape(physDim**16,physDim**16)
+            effH_twoSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-8,-10,-24,-26),(-1,-17),(-2,-18),(-3,-19),(-4,-20),(-5,-21),(-6,-22),(-7,-23),(-9,-25),(-11,-27),(-12,-28),(-13,-29),(-14,-30),(-15,-31),(-16,-32)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23,-24,-25,-26,-27,-28,-29,-30,-31,-32)).reshape(physDim**16,physDim**16)
+            effH_twoSite = effH_twoSite / 8
+
+        elif self.shape == [3,2]:
+            effH_oneSite = ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-1,-4,-7,-10),(-2,-8),(-3,-9),(-5,-11),(-6,-12)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12)).reshape(physDim**6,physDim**6)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-2,-5,-8,-11),(-1,-7),(-3,-9),(-4,-10),(-6,-12)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12)).reshape(physDim**6,physDim**6)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-3,-6,-9,-12),(-1,-7),(-2,-8),(-4,-10),(-5,-11)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12)).reshape(physDim**6,physDim**6)
+            effH_oneSite = effH_oneSite / 6
+
+            effH_twoSite = ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-4,-7,-16,-19),(-1,-13),(-2,-14),(-3,-15),(-5,-17),(-6,-18),(-8,-20),(-9,-21),(-10,-22),(-11,-23),(-12,-24)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23,-24)).reshape(physDim**12,physDim**12)
+            effH_twoSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-5,-8,-17,-20),(-1,-13),(-2,-14),(-3,-15),(-4,-16),(-6,-18),(-7,-19),(-9,-21),(-10,-22),(-11,-23),(-12,-24)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23,-24)).reshape(physDim**12,physDim**12)
+            effH_twoSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-6,-9,-18,-21),(-1,-13),(-2,-14),(-3,-15),(-4,-16),(-5,-17),(-7,-19),(-8,-20),(-10,-22),(-11,-23),(-12,-24)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23,-24)).reshape(physDim**12,physDim**12)
+            effH_twoSite = effH_twoSite / 6
+
+            return localH([oneBodyH(effH_oneSite),twoBodyH_hori(effH_twoSite)])
+
     def map_twoBodyH_vert(self,localH_term):
         physDim = localH_term.tensor.shape[0]
         if self.shape[0] == 1:  #Horizontal row
@@ -139,8 +165,33 @@ class map2EffH_2d_blockingSites_rect(map2EffH):
             effH_twoSite = effH_twoSite / 6
             return localH([oneBodyH(effH_oneSite),twoBodyH_vert(effH_twoSite)])
 
+        elif self.shape == [2,4]:
+            effH_oneSite = ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-1,-2,-9,-10),(-3,-11),(-4,-12),(-5,-13),(-6,-14),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-3,-4,-11,-12),(-1,-9),(-2,-10),(-5,-13),(-6,-14),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-5,-6,-13,-14),(-1,-9),(-2,-10),(-3,-11),(-4,-12),(-7,-15),(-8,-16)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-7,-8,-15,-16),(-1,-9),(-2,-10),(-3,-11),(-4,-12),(-5,-13),(-6,-14)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16)).reshape(physDim**8,physDim**8)
+            effH_oneSite = effH_oneSite / 8
 
+            effH_twoSite = ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-2,-9,-18,-25),(-1,-17),(-3-19),(-4,-20),(-5,-21),(-6,-22),(-7,-23),(-8,-24),(-10,-26),(-11,-27),(-12,-28),(-13,-29),(-14,-30),(-15,-31),(-16,-32)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23,-24,-25,-26,-27,-28,-29,-30,-31,-32)).reshape(physDim**16,physDim**16)
+            effH_twoSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-4,-11,-20,-27),(-1,-17),(-2,-18),(-3,-19),(-5,-21),(-6,-22),(-7,-23),(-8,-24),(-9,-25),(-10,-26),(-12,-28),(-13,-29),(-14,-30),(-15,-31),(-16,-32)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23,-24,-25,-26,-27,-28,-29,-30,-31,-32)).reshape(physDim**16,physDim**16)
+            effH_twoSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-6,-13,-22,-29),(-1,-17),(-2,-18),(-3,-19),(-4,-20),(-5,-21),(-7,-23),(-8,-24),(-9,-25),(-10,-26),(-11,-27),(-12,-28),(-14,-30),(-15,-31),(-16,-32)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23,-24,-25,-26,-27,-28,-29,-30,-31,-32)).reshape(physDim**16,physDim**16)
+            effH_twoSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-8,-15,-24,-31),(-1,-17),(-2,-18),(-3,-19),(-4,-20),(-5,-21),(-6,-22),(-7,-23),(-9,-25),(-10,-26),(-11,-27),(-12,-28),(-13,-29),(-14,-30),(-16,-32)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23,-24,-25,-26,-27,-28,-29,-30,-31,-32)).reshape(physDim**16,physDim**16)
+            effH_twoSite = effH_twoSite / 8
 
+            return localH([oneBodyH(effH_oneSite),twoBodyH_vert(effH_twoSite)])
+
+        elif self.shape == [3,2]:
+            effH_oneSite = ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-1,-2,-7,-8),(-3,-9),(-4,-10),(-5,-11),(-6,-12)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12)).reshape(physDim**6,physDim**6)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-2,-3,-8,-9),(-1,-7),(-4,-10),(-5,-11),(-6,-12)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12)).reshape(physDim**6,physDim**6)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-4,-5,-10,-11),(-1,-7),(-2,-8),(-3,-9),(-6,-12)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12)).reshape(physDim**6,physDim**6)
+            effH_oneSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-5,-6,-11,-12),(-1,-7),(-2,-8),(-3,-9),(-4,-10)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12)).reshape(physDim**6,physDim**6)
+            effH_oneSite = effH_oneSite / 6
+
+            effH_twoSite = ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-3,-7,-15,-19),(-1,-13),(-2,-14),(-4,-16),(-5,-17),(-6,-18),(-8,-20),(-9,-21),(-10,-22),(-11,-23),(-12,-24)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23,-24)).reshape(physDim**12,physDim**12)
+            effH_twoSite += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-6,-10,-18,-22),(-1,-13),(-2,-14),(-3,-15),(-4,-16),(-5,-17),(-7,-19),(-8,-20),(-9,-21),(-11,-23),(-12,-24)),forder=(-1,-2,-3,-4,-5,-6,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23,-24)).reshape(physDim**12,physDim**12)
+            effH_twoSite = effH_twoSite / 6
+
+            return localH([oneBodyH(effH_oneSite),twoBodyH_vert(effH_twoSite)])
 
 #generic code for blocking a single row of arbitrary length
 def blockingSingleRow_2d_effH_alongRow_oneSiteH(tensor,length_of_line):
