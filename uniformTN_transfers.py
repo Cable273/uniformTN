@@ -104,7 +104,7 @@ class inverseTransfer_rightPlusTwoPhysical(inverseTransfer):
 class fixedPoint:
     def __init__(self,vector,D,noLegs):
         #take a (D^{no legs}) array as input (equivalent to (D,D,D..D) array
-        self.vector = vector
+        self.vector = vector.astype(complex)
         #use view object to raise errors for copies
         self.tensor = self.vector.view()
         self.tensor.shape = np.ones(noLegs,dtype=int)*D
