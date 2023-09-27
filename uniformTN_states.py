@@ -73,9 +73,6 @@ class stateAnsatz(ABC):
 
         if projectionMetric is not None:
             gradEvaluater.projectTangentSpace(projectionMetric)
-        print(np.einsum('ijk,ijk',gradEvaluater.grad['mps'],gradEvaluater.grad['mps'].conj()))
-        print(np.einsum('ijab,ijab',gradEvaluater.grad['mpo'],gradEvaluater.grad['mpo'].conj()))
-
 
         self.shiftTensors(-learningRate,gradEvaluater.grad)
         self.norm()
@@ -85,7 +82,7 @@ class uMPS_1d(stateAnsatz):
         self.mps = mps
         self.D = D
     def randoInit(self):
-        #WLOG just initialise as left canonical (always possible due to gauge)
+        #WLOG just init as left canon uniform tensor
         self.mps = randoUnitary(2*self.D,self.D).reshape(2,self.D,self.D)
     def get_transfers(self):
         self.Ta = mpsTransfer(self.mps)
@@ -95,6 +92,7 @@ class uMPS_1d(stateAnsatz):
         self.R.norm_pairedVector(self.L.vector)
     def get_inverses(self):
         self.Ta_inv = inverseTransfer(self.Ta,self.L.vector,self.R.vector)
+
     def del_transfers(self):
         del self.Ta
     def del_fixedPoints(self):
@@ -102,6 +100,7 @@ class uMPS_1d(stateAnsatz):
         del self.L
     def del_inverses(self):
         del self.Ta_inv
+
     def shiftTensors(self,coef,tensor):
         self.mps += coef*tensor
     def norm(self):
@@ -115,6 +114,31 @@ class uMPS_1d(stateAnsatz):
     def load(self,filename):
         self.mps = np.load(filename)
         self.D = np.size(self.mps,axis=1)
+
+    def get_canonForms_centre(self):
+        #get Al/Ar/Ac/C
+        #L/R are hermitian with positive eigs with correct scaling 
+        #extract scaling from eigs
+        e,u = np.linalg.eig(self.L.tensor)
+        # alpha = e[0] / np.abs(e[0])
+        alpha = e[0]
+        L = self.L.tensor / alpha
+        norm = np.einsum('ij,ij',L,self.R.tensor)
+        R = self.R.tensor / norm
+        el,ul = np.linalg.eigh(L)
+        er,ur = np.linalg.eigh(R)
+
+        #L = l^{dag} l
+        l = np.dot(np.diag(np.sqrt(el)),ul.conj().transpose())
+        #R = (r^T)^{dag} r^T
+        r = np.dot(np.diag(np.sqrt(er)),ur.conj().transpose()).transpose()
+        l_inv = np.linalg.inv(l)
+        r_inv = np.linalg.inv(r)
+
+        self.Al = ncon([self.mps,l,l_inv],((-1,2,3),(-4,2),(3,-5)),forder=(-1,-4,-5))
+        self.Ar = ncon([self.mps,r_inv,r],((-1,2,3),(-4,2),(3,-5)),forder=(-1,-4,-5))
+        self.C = np.einsum('ij,jk->ik',l,r)
+        self.Ac = ncon([self.mps,l,r],((-1,2,3),(-4,2),(3,-5)),forder=(-1,-4,-5))
 
 class uMPS_1d_left(uMPS_1d):
     def randoInit(self):
@@ -408,29 +432,33 @@ class uMPSU1_2d_left_NSite_block(uMPSU1_2d_left):
         self.mps = polarDecomp(self.mps.reshape(self.physDim*self.D_mps,self.D_mps)).reshape(self.physDim,self.D_mps,self.D_mps)
         self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(self.physDim,self.physDim,self.D_mpo,self.D_mpo)).reshape(self.physDim*self.D_mpo,self.physDim*self.D_mpo)).reshape(self.physDim,self.D_mpo,self.physDim,self.D_mpo)).reshape(self.physDim,self.physDim,self.D_mpo,self.D_mpo)
 
-class uMPS_1d_centre(uMPS_1d_left):
-    def randoInit(self):
-        super().randoInit() #initialise as random uniform mps, left canon
-        self.construct_centreGauge_tensors()
+class uMPS_1d_centre(uMPS_1d):
+    def vumps_update(self,H,beta,stable_polar=True):
+        from uniformTN_effH_vumps import vumpsEffH
+        vumps_H_mapper = vumpsEffH(self,H)
+        H_ac,H_c = vumps_H_mapper.get_effH()
 
-    def construct_centreGauge_tensors(self):
-        #get left/right dom eigvectors L,R
-        T = mpsTransfer(self.mps)
-        R = T.findRightEig()
-        R.norm_pairedCanon()
+        e_ac,u_ac = sp.linalg.eigh(H_ac)
+        e_c,u_c = sp.linalg.eigh(H_c)
+        #imaginary time evolve to pick out gs with component along previous vectors Ac0, C0 
+        #to cope with degenerate eigs, just taking ground state from linalg.eig can sometimes cause issues
+        #ie Ac = e^{-beta H_ac} Ac0, C = e^{-beta H_c} C_0
+        #rotate to energy basis
+        Ac0 = np.dot(u_ac.conj().transpose(),self.Ac.reshape(2*self.D**2))
+        C0 = np.dot(u_c.conj().transpose(),self.C.reshape(self.D**2))
+        Ac = np.multiply(Ac0,np.exp(-beta*(e_ac-e_ac[np.argmin(e_ac)]))) #shift spectrum so gs is E=0, avoids nans
+        C = np.multiply(C0,np.exp(-beta*(e_c-e_c[np.argmin(e_c)])))
+        Ac = Ac / np.power(np.vdot(Ac,Ac),0.5)
+        C = C / np.power(np.vdot(C,C),0.5)
+        #rotate back to orig basis
+        self.Ac = np.dot(u_ac,Ac).reshape(2,self.D,self.D)
+        self.C = np.dot(u_c,C).reshape(self.D,self.D)
 
-        #decompose L=l^+l, R=rr^+
-        l = np.eye(self.D)
-        U,S,Vd = sp.linalg.svd(R.tensor,full_matrices=False)
-        r = np.dot(U,np.diag(np.sqrt(S)))
-        #mixed canon form
-        C = np.dot(l,r)
-        U,S,Vd = sp.linalg.svd(C)
-        Ac = ncon([self.mps,l,r],((-1,3,4),(-2,3),(4,-5)),forder=(-1,-2,-5))
-        self.Ac = Ac
-        self.C = C
-        #find Ar,Al
-        self.polarDecomp_bestCanon()
+        if stable_polar is True:
+            self.polarDecomp_bestCanon_stable()
+        else:
+            self.polarDecomp_bestCanon()
+        self.mps = self.Al
 
     def polarDecomp_bestCanon(self):
         Ac_l = self.Ac.reshape(2*self.D,self.D)
@@ -458,23 +486,3 @@ class uMPS_1d_centre(uMPS_1d_left):
 
         self.Al = np.dot(U_ac_l,Uc_l.conj().transpose()).reshape(2,self.D,self.D)
         self.Ar = np.einsum('jik->ijk',np.dot(Uc_r.conj().transpose(),U_ac_r).reshape(self.D,2,self.D))
-
-    def vumps_update(self,beta,twoBodyH,H_ac,H_c,stable_polar=True):
-        #regular eigensolver #replace with lanzos for bigger D
-        e_ac,u_ac = sp.linalg.eigh(H_ac)
-        e_c,u_c = sp.linalg.eigh(H_c)
-        #imaginary time evolve to pick out gs with component along previous vector 
-        #(like power method to deal with degeneracies, but only one param beta) 
-        Ac0 = np.dot(u_ac.conj().transpose(),self.Ac.reshape(2*self.D**2))
-        C0 = np.dot(u_c.conj().transpose(),self.C.reshape(self.D**2))
-        Ac = np.multiply(Ac0,np.exp(-beta*(e_ac-e_ac[np.argmin(e_ac)]))) #shift spectrum so gs is E=0, avoids nans
-        C = np.multiply(C0,np.exp(-beta*(e_c-e_c[np.argmin(e_c)])))
-        Ac = Ac / np.power(np.vdot(Ac,Ac),0.5)
-        C = C / np.power(np.vdot(C,C),0.5)
-        self.Ac = np.dot(u_ac,Ac).reshape(2,self.D,self.D)
-        self.C = np.dot(u_c,C).reshape(self.D,self.D)
-        if stable_polar is True:
-            self.polarDecomp_bestCanon_stable()
-        else:
-            self.polarDecomp_bestCanon()
-        self.mps = self.Al
