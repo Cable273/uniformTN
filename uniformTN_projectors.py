@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from progressbar import ProgressBar
 from scipy.sparse import linalg as sparse_linalg
 from ncon import ncon
-from einsumt import einsumt as einsum
 from abc import ABC, abstractmethod
 
 #projection to closest unitary, wrt frobenius norm (==euclidean metric for g(x,x))

@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from progressbar import ProgressBar
 from scipy.sparse import linalg as sparse_linalg
 from ncon import ncon
-from einsumt import einsumt as einsum
 from abc import ABC, abstractmethod
 from uniformTN_transfers import *
 import copy
