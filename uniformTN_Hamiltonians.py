@@ -76,7 +76,7 @@ class localH_term:
         elif type(psi) == uMPS_1d:
             return self.exp_1d(psi)
         elif type(psi) == uMPS_1d_centre:
-            return self.exp_1d(psi)
+            return self.exp_1d_centre(psi)
         elif type(psi) == uMPS_1d_left_bipartite:
             return self.exp_1d_left_bipartite(psi)
         elif type(psi) == uMPS_1d_left_twoSite:
@@ -88,6 +88,8 @@ class oneBodyH(localH_term):
 
     def exp_1d(self,psi):
         return np.real(ncon([psi.mps,self.tensor,psi.mps.conj(),psi.L.tensor,psi.R.tensor],((1,3,4),(2,1),(2,5,6),(5,3),(6,4)),order=(3,5,1,2,4,6)))
+    def exp_1d_centre(self,psi):
+        return np.real(ncon([psi.Ac,self.tensor,psi.Ac.conj()],((1,3,4),(2,1),(2,3,4)),order=(3,1,2,4)))
     def exp_1d_left(self,psi):
         return np.real(ncon([psi.mps,self.tensor,psi.mps.conj(),psi.R.tensor],((1,3,4),(2,1),(2,3,5),(5,4)),order=(3,1,2,4,5)))
     def exp_2d_left(self,psi):
@@ -148,6 +150,8 @@ class twoBodyH(localH_term):
     #1d
     def exp_1d(self,psi):
         return np.real(ncon([psi.mps,psi.mps,self.tensor,psi.mps.conj(),psi.mps.conj(),psi.L.tensor,psi.R.tensor],((1,5,6),(3,6,7),(2,4,1,3),(2,10,9),(4,9,8),(10,5),(8,7))))
+    def exp_1d_centre(self,psi):
+        return np.real(ncon([psi.Al,psi.Ac,self.tensor,psi.Al.conj(),psi.Ac.conj()],((1,5,6),(3,6,7),(2,4,1,3),(2,5,8),(4,8,7)),order=(5,1,2,6,8,3,4,7)))
     def exp_1d_left(self,psi):
         return np.real(ncon([psi.mps,psi.mps,self.tensor,psi.mps.conj(),psi.mps.conj(),psi.R.tensor],((1,5,6),(3,6,7),(2,4,1,3),(2,5,9),(4,9,8),(8,7))))
 
