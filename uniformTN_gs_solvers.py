@@ -38,9 +38,12 @@ def gradDescent(psi0,H,N_iter,learningRate,decay=0,tol=1e-15,envTol=1e-15,printE
     eDensity = eDensity[:n]
     return psi,eDensity
 
-def vumps_1d(psi0,H,N_iter,beta,tol=1e-15,printE0=False,printDiff=False,stable_polar = True):
+def vumps_1d(psi0,H,N_iter,beta,tol=1e-15,printE0=False,printDiff=False,stable_polar = True,stateConsistErrors=False):
     psi = copy.deepcopy(psi0) #dont change state
     eDensity = np.zeros(N_iter)
+    leftError = np.zeros(N_iter)
+    rightError = np.zeros(N_iter)
+
     pbar=ProgressBar()
     for n in pbar(range(0,N_iter)):
         #construct pseudo inverses for Al / Ar
@@ -64,5 +67,16 @@ def vumps_1d(psi0,H,N_iter,beta,tol=1e-15,printE0=False,printDiff=False,stable_p
             if diff < tol:
                 break
         psi.vumps_update(H,beta,stable_polar = stable_polar)
+
+        diff_left = np.einsum('ijk,ku->iju',psi.Al,psi.C)-psi.Ac
+        diff_right = np.einsum('ijk,uj->iuk',psi.Ar,psi.C)-psi.Ac
+        leftError[n] = np.real(np.einsum('ijk,ijk',diff_left,diff_left.conj()))
+        rightError[n] = np.real(np.einsum('ijk,ijk',diff_right,diff_right.conj()))
+
     eDensity = eDensity[:n]
-    return psi,eDensity
+    leftError = leftError[:n]
+    rightError = rightError[:n]
+    if stateConsistErrors is False:
+        return psi,eDensity
+    else:
+        return psi,eDensity,leftError,rightError
