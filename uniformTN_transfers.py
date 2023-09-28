@@ -12,7 +12,8 @@ from abc import ABC, abstractmethod
 
 class transferMatrix(ABC):
     def findLeftEig(self,noEigs_lanczos=1):
-        el,ul = sp.sparse.linalg.eigs(self.matrix.transpose(),which="LM",k=noEigs_lanczos)
+        # el,ul = sp.sparse.linalg.eigs(self.matrix.transpose(),which="LM",k=noEigs_lanczos)
+        el,ul = np.linalg.eig(self.matrix.transpose())
         return fixedPoint(ul[:,np.argmin(np.abs(el-1))],self.D,self.noLegs)
     def findRightEig(self,noEigs_lanczos=1):
         # er,ur = sp.sparse.linalg.eigs(self.matrix,which="LM",k=noEigs_lanczos)
