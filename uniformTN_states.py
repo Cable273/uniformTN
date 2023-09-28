@@ -114,30 +114,6 @@ class uMPS_1d(stateAnsatz):
         self.mps = np.load(filename)
         self.D = np.size(self.mps,axis=1)
 
-    def get_canonForms_centre(self):
-        #get Al/Ar/Ac/C
-        #L/R are hermitian with positive eigs with correct scaling 
-        #extract scaling from eigs
-        e,u = np.linalg.eig(self.L.tensor)
-        # alpha = e[0] / np.abs(e[0])
-        alpha = e[0]
-        L = self.L.tensor / alpha
-        norm = np.einsum('ij,ij',L,self.R.tensor)
-        R = self.R.tensor / norm
-        el,ul = np.linalg.eigh(L)
-        er,ur = np.linalg.eigh(R)
-
-        #L = l^{dag} l
-        l = np.dot(np.diag(np.sqrt(el)),ul.conj().transpose())
-        #R = (r^T)^{dag} r^T
-        r = np.dot(np.diag(np.sqrt(er)),ur.conj().transpose()).transpose()
-        l_inv = np.linalg.inv(l)
-        r_inv = np.linalg.inv(r)
-
-        self.Al = ncon([self.mps,l,l_inv],((-1,2,3),(-4,2),(3,-5)),forder=(-1,-4,-5))
-        self.Ar = ncon([self.mps,r_inv,r],((-1,2,3),(-4,2),(3,-5)),forder=(-1,-4,-5))
-        self.C = np.einsum('ij,jk->ik',l,r)
-        self.Ac = ncon([self.mps,l,r],((-1,2,3),(-4,2),(3,-5)),forder=(-1,-4,-5))
 
 class uMPS_1d_left(uMPS_1d):
     def randoInit(self):
@@ -151,6 +127,19 @@ class uMPS_1d_left(uMPS_1d):
         del self.R
     def norm(self):
         self.mps = polarDecomp(self.mps.reshape(2*self.D,self.D)).reshape(2,self.D,self.D)
+
+class uMPS_1d_right(uMPS_1d):
+    def randoInit(self):
+        self.mps = np.einsum('ijk->ikj',randoUnitary(2*self.D,self.D).reshape(2,self.D,self.D))
+    def get_fixedPoints(self):
+        self.L = self.Ta.findLeftEig()
+        self.L.norm_pairedCanon()
+    def get_inverses(self):
+        self.Ta_inv = inverseTransfer_right(self.Ta,self.L.vector)
+    def del_fixedPoints(self):
+        del self.L
+    def norm(self):
+        self.mps = np.einsum('ijk->ikj',polarDecomp(np.einsum('ijk->ikj',self.mps).reshape(2*self.D,self.D)).reshape(2,self.D,self.D))
 
 class uMPS_1d_left_twoSite(uMPS_1d_left):
     def randoInit(self):
@@ -432,6 +421,49 @@ class uMPSU1_2d_left_NSite_block(uMPSU1_2d_left):
         self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo.reshape(self.physDim,self.physDim,self.D_mpo,self.D_mpo)).reshape(self.physDim*self.D_mpo,self.physDim*self.D_mpo)).reshape(self.physDim,self.D_mpo,self.physDim,self.D_mpo)).reshape(self.physDim,self.physDim,self.D_mpo,self.D_mpo)
 
 class uMPS_1d_centre(uMPS_1d):
+    def __init__(self,D,mps=None):
+        super().__init__(D,mps)
+        if mps is not None:
+            self.get_canonForms_centre()
+
+    def randoInit(self):
+        #WLOG just init as left canon uniform tensor
+        self.mps = randoUnitary(2*self.D,self.D).reshape(2,self.D,self.D)
+        self.get_canonForms_centre()
+
+    def get_canonForms_centre(self):
+        #get Al/Ar/Ac/C
+        #L/R are hermitian with positive eigs with correct scaling 
+        #extract scaling from eigs
+        self.get_transfers()
+        self.get_fixedPoints()
+        e,u = np.linalg.eig(self.L.tensor)
+        alpha = e[0] / np.abs(e[0])
+        L = self.L.tensor / alpha
+        norm = np.einsum('ij,ij',L,self.R.tensor)
+        R = self.R.tensor / norm
+        self.del_transfers()
+        self.del_fixedPoints()
+        el,ul = np.linalg.eigh(L)
+        er,ur = np.linalg.eigh(R)
+
+        #L = l^{dag} l
+        l = np.dot(np.diag(np.sqrt(el)),ul.conj().transpose())
+        #R = (r^T)^{dag} r^T
+        r = np.dot(np.diag(np.sqrt(er)),ur.conj().transpose()).transpose()
+        l_inv = np.linalg.inv(l)
+        r_inv = np.linalg.inv(r)
+
+        self.Al = ncon([self.mps,l,l_inv],((-1,2,3),(-4,2),(3,-5)),forder=(-1,-4,-5))
+        self.Ar = ncon([self.mps,r_inv,r],((-1,2,3),(-4,2),(3,-5)),forder=(-1,-4,-5))
+        self.C = np.einsum('ij,jk->ik',l,r)
+        self.Ac = ncon([self.mps,l,r],((-1,2,3),(-4,2),(3,-5)),forder=(-1,-4,-5))
+
+        self.state_left = uMPS_1d_left(self.D)
+        self.state_right = uMPS_1d_right(self.D)
+        self.state_left.mps = self.Al
+        self.state_right.mps = self.Ar
+
     def vumps_update(self,H,beta,stable_polar=True):
         from uniformTN_effH_vumps import vumpsEffH
         vumps_H_mapper = vumpsEffH(self,H)
@@ -457,7 +489,10 @@ class uMPS_1d_centre(uMPS_1d):
             self.polarDecomp_bestCanon_stable()
         else:
             self.polarDecomp_bestCanon()
+
         self.mps = self.Al
+        self.state_left.mps = self.Al
+        self.state_right.mps = self.Ar
 
     def polarDecomp_bestCanon(self):
         Ac_l = self.Ac.reshape(2*self.D,self.D)

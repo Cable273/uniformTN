@@ -42,19 +42,19 @@ def vumps_1d(psi0,H,N_iter,beta,tol=1e-15,printE0=False,printDiff=False,stable_p
     psi = copy.deepcopy(psi0) #dont change state
     eDensity = np.zeros(N_iter)
     pbar=ProgressBar()
-
-    #get original Ac,C,Al,Ar from A
-    psi.get_transfers()
-    psi.get_fixedPoints()
-    psi.get_inverses()
-    psi.get_canonForms_centre()
     for n in pbar(range(0,N_iter)):
-        if n > 0:
-            psi.get_transfers()
-            psi.get_fixedPoints()
-            psi.get_inverses()
+        #construct pseudo inverses for Al / Ar
+        psi.state_left.get_transfers() #psi.state_left = uMPS_1d_left obj with mps = Al
+        psi.state_left.get_fixedPoints()
+        psi.state_left.get_inverses()
 
-        eDensity[n] = H.exp(psi)
+        psi.state_right.get_transfers() #psi.state_right = uMPS_1d_right obj with mps = Ar
+        psi.state_right.get_fixedPoints()
+        psi.state_right.get_inverses()
+
+        #for energy, use expectation with state translationally invariant Al Al Al...
+        #Because for intermediate steps, centre gauge state given by Ac,C,Al,Ar isn't consistent
+        eDensity[n] = H.exp(psi.state_left)
         if printE0 is True:
             print(eDensity[n])
         if n>1:

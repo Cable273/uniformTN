@@ -43,8 +43,8 @@ class vumpsEffH:
             H_c += self.H_imp[n].getCentreTerms_C()
 
         #apply pseudo inverses
-        leftEnv = self.psi.Ta_inv.applyRight(leftEnv.reshape(self.psi.D**2)).reshape(self.psi.D,self.psi.D)
-        rightEnv = self.psi.Ta_inv.applyLeft(rightEnv.reshape(self.psi.D**2)).reshape(self.psi.D,self.psi.D)
+        leftEnv = self.psi.state_left.Ta_inv.applyRight(leftEnv.reshape(self.psi.D**2)).reshape(self.psi.D,self.psi.D)
+        rightEnv = self.psi.state_right.Ta_inv.applyLeft(rightEnv.reshape(self.psi.D**2)).reshape(self.psi.D,self.psi.D)
 
         H_ac += ncon([leftEnv,np.eye(physDim),np.eye(self.psi.D)],((-5,-3),(-2,-1),(-6,-4)),forder=(-2,-5,-6,-1,-3,-4))
         H_ac += ncon([np.eye(self.psi.D),np.eye(physDim),rightEnv],((-5,-3),(-2,-1),(-6,-4)),forder=(-2,-5,-6,-1,-3,-4))
