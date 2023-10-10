@@ -30,6 +30,8 @@ class map2EffH(ABC):
             return self.map_twoBodyH_hori(localH_term)
         elif type(localH_term) == twoBodyH_vert:
             return self.map_twoBodyH_vert(localH_term)
+        elif type(localH_term) == plaquetteH:
+            return self.map_plaquetteH(localH_term)
 
 
 class map2EffH_2d_blockingSites_rect(map2EffH):
@@ -193,6 +195,30 @@ class map2EffH_2d_blockingSites_rect(map2EffH):
 
             return localH([oneBodyH(effH_oneSite),twoBodyH_vert(effH_twoSite)])
 
+    def map_plaquetteH(self,localH_term):
+        physDim = localH_term.tensor.shape[0]
+        if self.shape == [1,2]:
+            effH_twoBodyH_vert = ncon([localH_term.tensor],((-1,-2,-3,-4,-5,-6,-7,-8)),forder=(-1,-3,-2,-4,-5,-7,-6,-8)).reshape(physDim**4,physDim**4)
+            effH_plaquetteH = ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-1,-2,-3,-4,-5,-6,-7,-8),(-9,-10),(-11,-12),(-13,-14),(-15,-16)),forder=(-9,-1,-11,-2,-3,-13,-4,-15,-10,-5,-12,-6,-7,-14,-8,-16)).reshape(physDim**8,physDim**8)
+            effH_twoBodyH_vert = effH_twoBodyH_vert / 2
+            effH_plaquetteH = effH_plaquetteH / 2
+            return localH([twoBodyH_vert(effH_twoBodyH_vert),plaquetteH(effH_plaquetteH)])
+
+        elif self.shape == [1,3]:
+            effH_twoBodyH_vert = ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim)],((-1,-2,-3,-4,-5,-6,-7,-8),(-9,-10),(-11,-12)),forder=(-1,-3,-9,-2,-4,-11,-5,-7,-10,-6,-8,-12)).reshape(physDim**6,physDim**6)
+            effH_twoBodyH_vert += ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim)],((-1,-2,-3,-4,-5,-6,-7,-8),(-9,-10),(-11,-12)),forder=(-9,-1,-3,-11,-2,-4,-10,-5,-7,-12,-6,-8)).reshape(physDim**6,physDim**6)
+            effH_plaquetteH = ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-1,-2,-3,-4,-5,-6,-7,-8),(-9,-10),(-11,-12),(-13,-14),(-15,-16),(-17,-18),(-19,-20),(-21,-22),(-23,-24)),forder=(-9,-11,-1,-13,-15,-2,-3,-17,-19,-4,-21,-23,-10,-12,-5,-14,-16,-6,-7,-18,-20,-8,-22,-24)).reshape(physDim**12,physDim**12)
+            effH_twoBodyH_vert = effH_twoBodyH_vert / 3
+            effH_plaquetteH = effH_plaquetteH / 3
+            return localH([twoBodyH_vert(effH_twoBodyH_vert),plaquetteH(effH_plaquetteH)])
+
+        elif self.shape == [2,1]:
+            effH_twoBodyH_hori = ncon([localH_term.tensor],((-1,-2,-3,-4,-5,-6,-7,-8)),forder=(-1,-2,-3,-4,-5,-6,-7,-8)).reshape(physDim**4,physDim**4)
+            effH_plaquetteH = ncon([localH_term.tensor,np.eye(physDim),np.eye(physDim),np.eye(physDim),np.eye(physDim)],((-1,-2,-3,-4,-5,-6,-7,-8),(-9,-10),(-11,-12),(-13,-14),(-15,-16)),forder=(-9,-1,-2,-11,-13,-3,-4,-15,-10,-5,-6,-12,-14,-7,-8,-16)).reshape(physDim**8,physDim**8)
+            effH_twoBodyH_hori = effH_twoBodyH_hori / 2
+            effH_plaquetteH = effH_plaquetteH / 2
+            return localH([twoBodyH_hori(effH_twoBodyH_hori),plaquetteH(effH_plaquetteH)])
+
 #generic code for blocking a single row of arbitrary length
 def blockingSingleRow_2d_effH_alongRow_oneSiteH(tensor,length_of_line):
         lenTensor = int(np.size(tensor.shape)/2)
@@ -266,6 +292,8 @@ def blockingSingleRow_2d_effH_alongRow_twoSiteH(tensor,length_of_line):
         forder = np.append(forder_bot,forder_top)
         effH_twoSite = ncon(tensorList,labels,forder=forder).reshape((physDim**length_of_line)**2,(physDim**length_of_line)**2)/length_of_line
         return effH_twoSite
+
+
 
 def blockingSingleRow_2d_effH_perpRow_twoSiteH(tensor,length_of_line):
         lenTensor = int(np.size(tensor.shape)/2)
