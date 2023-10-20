@@ -67,6 +67,15 @@ class gradImplementation_mpso_2d_mpo_uniform_H_verticalLength_2(gradImplementati
     def init_d_dep_quants(self):
         self.d_dep = d_dep_quants_uniform_verticalLength2(self.psi)
 
+class gradImplementation_mpso_2d_mpo_uniform_H_verticalLength_3(gradImplementation_mpso_2d_mpo):
+    def init_outerContracts(self):
+        self.outers = dict()
+        self.outers['len1'] =  ncon([self.psi.mps,self.psi.mps.conj(),self.psi.T.tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1),order=(3,4,5))
+        self.outers['len2'] = ncon([self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.T.tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2))
+        self.outers['len3'] = ncon([self.psi.mps,self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.mps.conj(),self.psi.T.tensor],((-1,7,8),(-3,8,9),(-5,9,10),(-2,7,13),(-4,13,12),(-6,12,11),(11,10)),forder=(-2,-4,-6,-1,-3,-5))
+    def init_d_dep_quants(self):
+        self.d_dep = d_dep_quants_uniform_verticalLength3(self.psi)
+
 class gradImplementation_mpso_2d_mpo_uniform_oneBodyH(gradImplementation_mpso_2d_mpo_uniform_H_verticalLength_1):
     def buildEnvs_vert(self):
         #terms under H
@@ -134,6 +143,29 @@ class gradImplementation_mpso_2d_mpo_uniform_plaquetteH(gradImplementation_mpso_
         envDouble = ncon([self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.H,self.psi.RR.tensor,self.outers['len2'],self.outers['len2']],((2,1,-17,18),(6,5,18,19),(3,4,-20,21),(7,8,21,22),(10,9,-23,24),(14,13,24,25),(11,12,-26,27),(15,16,27,28),(11,3,15,7,10,2,14,6),(28,25,22,19),(12,4,9,1),(16,8,13,5)),forder=(-26,-23,-20,-17),order=(19,22,5,6,7,8,25,28,13,14,15,16,18,21,2,3,1,4,24,27,10,11,9,12))
         self.envs_hori.add( env_mpso_hori_uniform(self.psi,np.einsum('abcc->ab',envDouble)) )
         self.envs_hori.add( env_mpso_hori_uniform(self.psi,np.einsum('aabc->bc',envDouble)) )
+
+class gradImplementation_mpso_2d_mpo_uniform_cross2dH(gradImplementation_mpso_2d_mpo_uniform_H_verticalLength_3):
+    def buildEnvs_vert(self):
+        env = ncon([self.psi.mpo,self.psi.mpo,self.psi.mpo,self.psi.mpo,self.psi.mpo,self.psi.mpo,self.psi.mpo,self.psi.mpo,self.psi.mpo,self.H],((-2,-1,-24,25),(4,-3,25,26),(-7,-6,26,-27),(9,-8,-28,29),(12,-11,29,30),(15,-14,30,-31),(-18,-17,-32,33),(20,-19,33,34),(-23,-22,34,-35),(-21,-10,-13,-16,-5,20,9,12,15,4)),forder=(-18,-21,-23,-10,-13,-16,-2,-5,-7,-17,-19,-22,-8,-11,-14,-1,-3,-6,-32,-35,-28,-31,-24,-27),order=(9,29,12,30,15,4,25,26,20,33,34))
+        self.envs_vert_quadrantSeed.add( env_mpso_vert_uniform(self.psi,env,shape=[3,3]) )
+        self.envs_vert.add( env_mpso_vert_uniform(self.psi,env,shape=[3,3]) )
+
+        env = ncon([env,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo.conj(),self.outers['len3']],((1,-2,-3,4,-5,-6,7,-8,-9,10,-11,-12,13,-14,-15,16,-17,-18,19,-20,21,-22,23,-24),(1,25,19,-26),(4,27,21,-28),(7,29,23,-30),(25,27,29,10,13,16)),forder=(-2,-3,-5,-6,-8,-9,-11,-12,-14,-15,-17,-18,-26,-20,-28,-22,-30,-24),order=(16,13,10,23,7,29,21,4,27,19,1,25))
+        self.envs_vert.add( env_mpso_vert_uniform(self.psi,env,shape=[3,2]) )
+        env = ncon([env,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo.conj(),self.outers['len3']],((1,-2,3,-4,5,-6,7,-8,9,-10,11,-12,13,-14,15,-16,17,-18),(1,19,13,-20),(3,21,15,-22),(5,23,17,-24),(19,21,23,7,9,11)),forder=(-2,-4,-6,-8,-10,-12,-20,-14,-22,-16,-24,-18),order=(11,9,7,17,5,23,15,3,21,13,1,19))
+        self.envs_vert.add( env_mpso_vert_uniform(self.psi,env,shape=[3,1]) )
+
+        # #term right of H
+        env = ncon([env,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo.conj(),self.outers['len3']],((1,2,3,4,5,6,7,-8,9,-10,11,-12),(1,13,7,-14),(2,15,9,-16),(3,17,11,-18),(13,15,17,4,5,6)),forder=(-14,-8,-16,-10,-18,-12),order=(6,5,4,11,3,17,9,2,15,7,1,13))
+        env = self.psi.Tb3_inv.applyRight(env.reshape(self.psi.D_mpo**6)).reshape(self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
+        env = ncon([env,self.psi.mpo,self.psi.mpo,self.psi.mpo],((-15,13,-12,10,-9,7),(-2,-1,7,-8),(-4,-3,10,-11),(-6,-5,13,-14)),forder=(-6,-4,-2,-5,-3,-1,-15,-14,-12,-11,-9,-8),order=(7,10,13))
+        self.envs_vert.add( env_mpso_vert_uniform(self.psi,env,shape=[3,1]) )
+
+    def buildEnvs_hori(self):
+        envTriple = ncon([self.psi.mpo,self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo,self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo.conj(),self.H,self.psi.RRR.tensor,self.outers['len3'],self.outers['len3'],self.outers['len3']],((2,1,-33,34),(5,4,34,35),(9,8,35,36),(2,3,-37,38),(6,7,38,39),(9,10,39,40),(12,11,-41,42),(16,15,42,43),(20,19,43,44),(13,14,-45,46),(17,18,46,47),(21,22,47,48),(24,23,-49,50),(27,26,50,51),(31,30,51,52),(24,25,-53,54),(28,29,54,55),(31,32,55,56),(28,13,17,21,6,27,12,16,20,5),(56,52,48,44,40,36),(32,22,10,30,19,8),(29,18,7,26,15,4),(25,14,3,23,11,1)),forder=(-53,-49,-45,-41,-37,-33),order=(36,40,8,9,10,44,48,19,20,21,22,52,56,30,31,32,35,39,4,5,6,7,43,47,15,16,17,18,51,55,26,27,28,29,34,38,1,2,3,42,46,11,12,13,14,50,54,23,24,25))
+        self.envs_hori.add( env_mpso_hori_uniform(self.psi,np.einsum('abiijj->ab',envTriple)) )
+        self.envs_hori.add( env_mpso_hori_uniform(self.psi,np.einsum('iiabjj->ab',envTriple)) )
+        self.envs_hori.add( env_mpso_hori_uniform(self.psi,np.einsum('iijjab->ab',envTriple)) )
 # -----------------------------
 #Bipartite
 class gradImplementation_mpso_2d_mpo_bipartite(gradImplementation_mpso_2d_mpo):
@@ -502,6 +534,26 @@ class d_dep_quants_uniform_verticalLength2(d_dep_quants_uniform):
         outers = dict()
         outers['upper'] = ncon([self.psi.mps,self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.mps.conj(),Td,self.psi.T.tensor],((-1,7,8),(-3,8,9),(-5,10,11),(-2,7,15),(-4,15,14),(-6,13,12),(14,9,13,10),(12,11)),forder=(-2,-4,-6,-1,-3,-5),order=(7,8,15,9,14,10,13,11,12))
         outers['lower'] = ncon([self.psi.mps,self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.mps.conj(),Td,self.psi.T.tensor],((-1,7,8),(-3,9,10),(-5,10,11),(-2,7,15),(-4,14,13),(-6,13,12),(15,8,14,9),(12,11)),forder=(-2,-4,-6,-1,-3,-5),order=(7,8,15,9,14,10,13,11,12))
+        return outers
+
+class d_dep_quants_uniform_verticalLength3(d_dep_quants_uniform):
+    def getFixedPoints(self,d,Td):
+        print("CHECK ME")
+        Twd_lower = mpsu1Transfer_left_fourLayerWithMpsInsert_lower(self.psi.mps,self.psi.mpo,self.psi.T,Td)
+        R_Twd_lower = Twd_lower.findRightEig()
+        R_Twd_lower.norm_pairedCanon()
+        Twd_upper = mpsu1Transfer_left_fourLayerWithMpsInsert_upper(self.psi.mps,self.psi.mpo,self.psi.T,Td)
+        R_Twd_upper = Twd_upper.findRightEig()
+        R_Twd_upper.norm_pairedCanon()
+        RRRR = dict()
+        RRRR['lower'] = R_Twd_lower.tensor
+        RRRR['upper'] = R_Twd_upper.tensor
+        return RRRR
+    def getOuterContracts(self,d,Td):
+        print("CHECK ME 2")
+        outers = dict()
+        outers['upper'] = ncon([self.psi.mps,self.psi.mps,self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.mps.conj(),self.psi.mps.conj(),Td,self.psi.T.tensor],((-1,9,10),(-3,10,11),(-5,11,12),(-7,13,14),(-2,9,19),(-4,19,18),(-6,18,17),(-8,16,15),(17,12,16,13),(15,14)),forder=(-2,-4,-6,-8,-1,-3,-5,-7),order=(9,10,19,11,18,12,17,13,16,14,15))
+        outers['lower'] = ncon([self.psi.mps,self.psi.mps,self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.mps.conj(),self.psi.mps.conj(),Td,self.psi.T.tensor],((-1,9,10),(-3,11,12),(-5,12,13),(-7,13,14),(-2,9,19),(-4,18,17),(-6,17,16),(-8,16,15),(19,10,18,11),(15,14)),forder=(-2,-4,-6,-8,-1,-3,-5,-7),order=(9,10,19,11,18,12,17,13,16,14,15))
         return outers
 
 class d_dep_quants_bipartite_verticalLength1(d_dep_quants_bipartite):

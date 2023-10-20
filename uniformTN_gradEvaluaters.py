@@ -220,22 +220,21 @@ class gradEvaluater_mpso_2d(gradEvaluater):
         pass
     def copyEvaluaters(self):
         self.grad['mps'] = self.gradA_evaluater.grad
-        # self.grad['mpo'] = self.gradB_evaluater.grad
-        self.grad['mpo'] = np.zeros(self.psi.mpo.shape).astype(complex)
+        self.grad['mpo'] = self.gradB_evaluater.grad
     def eval(self,geo=False):
         self.gradA_evaluater.eval()
-        # self.gradB_evaluater.eval(geo=geo)
+        self.gradB_evaluater.eval(geo=geo)
         self.copyEvaluaters()
     def projectTangentSpace(self,metric):
         self.gradA_evaluater.projectTangentSpace(metric)
-        # self.gradB_evaluater.projectTangentSpace(metric)
+        self.gradB_evaluater.projectTangentSpace(metric)
         self.copyEvaluaters()
 
 class gradEvaluater_mpso_2d_uniform(gradEvaluater_mpso_2d):
     def __init__(self,psi,H):
         super().__init__(psi,H)
         self.gradA_evaluater = gradEvaluater_mpso_2d_mps_uniform(psi,H)
-        # self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_uniform(psi,H)
+        self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_uniform(psi,H)
 class gradEvaluater_mpso_2d_twoSite_square(gradEvaluater_mpso_2d):
     def __init__(self,psi,H):
         super().__init__(psi,H)
