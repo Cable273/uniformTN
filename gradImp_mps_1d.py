@@ -171,3 +171,26 @@ class gradImplementation_bipartite_1d_left_twoBodyH(gradImplementation_bipartite
         else:
             return ncon([self.psi.mps[self.index2],self.psi.mps[self.index1],self.H,self.psi.mps[self.index2].conj(),self.psi.mps[self.index1].conj(),self.psi.R[self.index2].tensor],((1,-5,6),(3,6,7),(2,4,1,3),(2,-10,9),(4,9,8),(8,7)),forder=(-10,-5))
 
+class gradImplementation_bipartite_1d_left_threeBodyH(gradImplementation_bipartite_1d):
+    def getCentralTerms(self):
+        if self.H_index == self.grad_index:
+            grad = ncon([self.psi.mps[self.index1],self.psi.mps[self.index2],self.psi.mps[self.index1],self.H,self.psi.mps[self.index2].conj(),self.psi.mps[self.index1].conj(),self.psi.R[self.index2].tensor],((1,-7,8),(3,8,9),(5,9,10),(-2,4,6,1,3,5),(4,-13,12),(6,12,11),(11,10)),forder=(-2,-7,-13),order=(11,10,5,6,9,12,3,4,8,1))
+            grad += ncon([self.psi.mps[self.index1],self.psi.mps[self.index2],self.psi.mps[self.index1],self.H,self.psi.mps[self.index1].conj(),self.psi.mps[self.index2].conj(),self.psi.R[self.index2].tensor],((1,7,8),(3,8,9),(5,9,10),(2,4,-6,1,3,5),(2,7,13),(4,13,-12),(-11,10)),forder=(-6,-12,-11),order=(7,1,2,8,13,3,4,9,5,10))
+        else:
+            grad = ncon([self.psi.mps[self.index2],self.psi.mps[self.index1],self.psi.mps[self.index2],self.H,self.psi.mps[self.index2].conj(),self.psi.mps[self.index2].conj(),self.psi.R[self.index1].tensor],((1,7,8),(3,8,9),(5,9,10),(2,-4,6,1,3,5),(2,7,-13),(6,-12,11),(11,10)),forder=(-4,-13,-12),order=(11,10,5,6,9,3,8,1,2,7))
+        return grad
+
+    def buildLeftEnv(self):
+        if self.H_index == self.grad_index:
+            env = ncon([self.psi.mps[self.index1],self.psi.mps[self.index2],self.psi.mps[self.index1],self.H,self.psi.mps[self.index1].conj(),self.psi.mps[self.index2].conj(),self.psi.mps[self.index1].conj()],((1,7,8),(3,8,9),(5,9,-10),(2,4,6,1,3,5),(2,7,13),(4,13,12),(6,12,-11)),forder=(-11,-10),order=(7,1,2,8,13,3,4,9,12,5,6))
+            env = ncon([env,self.psi.mps[self.index2],self.psi.mps[self.index2].conj()],((4,2),(1,2,-3),(1,4,-5)),forder=(-5,-3),order=(2,1,4))
+        else:
+            env = ncon([self.psi.mps[self.index2],self.psi.mps[self.index1],self.psi.mps[self.index2],self.H,self.psi.mps[self.index2].conj(),self.psi.mps[self.index1].conj(),self.psi.mps[self.index2].conj()],((1,7,8),(3,8,9),(5,9,-10),(2,4,6,1,3,5),(2,7,13),(4,13,12),(6,12,-11)),forder=(-11,-10),order=(7,1,2,8,13,3,4,9,12,5,6))
+        return env
+
+    def buildRightEnv(self):
+        if self.H_index == self.grad_index:
+            env = ncon([self.psi.mps[self.index1],self.psi.mps[self.index2],self.psi.mps[self.index1],self.H,self.psi.mps[self.index1].conj(),self.psi.mps[self.index2].conj(),self.psi.mps[self.index1].conj(),self.psi.R[self.index2].tensor,self.psi.mps[self.index2],self.psi.mps[self.index2].conj()],((1,8,9),(3,9,10),(5,10,11),(2,4,6,1,3,5),(2,15,14),(4,14,13),(6,13,12),(12,11),(17,-7,8),(17,-16,15)),forder=(-16,-7),order=(12,11,5,6,10,13,3,4,9,14,1,2,8,15,17))
+        else:
+            env = ncon([self.psi.mps[self.index2],self.psi.mps[self.index1],self.psi.mps[self.index2],self.H,self.psi.mps[self.index2].conj(),self.psi.mps[self.index1].conj(),self.psi.mps[self.index2].conj(),self.psi.R[self.index1].tensor],((1,-7,8),(3,8,9),(5,9,10),(2,4,6,1,3,5),(2,-14,13),(4,13,12),(6,12,11),(11,10)),forder=(-14,-7),order=(11,10,5,6,9,12,3,4,8,13,1,2))
+        return env

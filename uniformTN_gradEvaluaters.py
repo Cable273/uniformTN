@@ -197,6 +197,8 @@ class gradEvaluater_bipartite_1d_left_ind(gradEvaluater_uniform_1d):
             return gradImplementation_bipartite_1d_left_oneBodyH(self.psi,H.tensor,self.H_index,self.grad_index)
         elif type(H) == twoBodyH or type(H) == twoBodyH_hori or type(H) == twoBodyH_vert:
             return gradImplementation_bipartite_1d_left_twoBodyH(self.psi,H.tensor,self.H_index,self.grad_index)
+        elif type(H) == threeBodyH:
+            return gradImplementation_bipartite_1d_left_threeBodyH(self.psi,H.tensor,self.H_index,self.grad_index)
 
     def projectTangentSpace_euclid(self):
         self.grad = project_mps_euclid(self.grad,self.psi.mps[self.index1])

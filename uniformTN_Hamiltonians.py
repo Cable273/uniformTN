@@ -159,6 +159,14 @@ class threeBodyH(localH_term):
         return np.real(ncon([psi.mps,psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.mps.conj(),self.tensor,psi.L.tensor,psi.R.tensor],((1,7,8),(3,8,9),(5,9,10),(2,14,13),(4,13,12),(6,12,11),(2,4,6,1,3,5),(14,7),(11,10)),order=(14,7,1,2,8,13,3,4,9,12,5,6,10,11)))
     def exp_1d_left(self,psi):
         return np.real(ncon([psi.mps,psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.mps.conj(),self.tensor,psi.R.tensor],((1,7,8),(3,8,9),(5,9,10),(2,7,13),(4,13,12),(6,12,11),(2,4,6,1,3,5),(11,10)),order=(7,1,2,8,13,3,4,9,12,5,6,10,11)))
+
+    def exp_1d_left_bipartite_ind(self,mps1,mps2,R2):
+        return ncon([mps1,mps2,mps1,mps1.conj(),mps2.conj(),mps1.conj(),self.tensor,R2.tensor],((1,7,8),(3,8,9),(5,9,10),(2,7,13),(4,13,12),(6,12,11),(2,4,6,1,3,5),(11,10)))
+    def exp_1d_left_bipartite(self,psi):
+        E = self.exp_1d_left_bipartite_ind(psi.mps[1],psi.mps[2],psi.R[2])
+        E += self.exp_1d_left_bipartite_ind(psi.mps[2],psi.mps[1],psi.R[1])
+        return E/2
+
     #to implement: exp_1d_left_twoSite,exp_1d_left_bipartite
 
 class twoBodyH_hori(twoBodyH):
