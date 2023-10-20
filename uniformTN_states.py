@@ -72,6 +72,8 @@ class stateAnsatz(ABC):
 
         if projectionMetric is not None:
             gradEvaluater.projectTangentSpace(projectionMetric)
+        # print(np.einsum('ijk,ijk',gradEvaluater.grad['mps'],gradEvaluater.grad['mps'].conj()))
+        # print(np.einsum('ijkl,ijkl',gradEvaluater.grad['mpo'],gradEvaluater.grad['mpo'].conj()))
 
         self.shiftTensors(-learningRate,gradEvaluater.grad)
         self.norm()
@@ -263,19 +265,6 @@ class uMPSU1_2d_left_twoSite(uMPSU1_2d_left):
         super().load(filename)
         self.D_mps = np.size(self.mps,axis=2)
         self.D_mpo = np.size(self.mpo,axis=4)
-
-
-class uMPSU1_2d_left_twoSite_staircase(uMPSU1_2d_left_twoSite):
-    def get_transfers(self):
-        self.Ta = mpsTransfer_twoSite(self.mps)
-        T = self.Ta.findRightEig()
-        T.norm_pairedCanon()
-        self.Tb = mpsu1Transfer_left_oneLayer_twoSite_staircase(self.mps,self.mpo,T)
-        self.Tb2 = mpsu1Transfer_left_twoLayer_twoSite_staircase(self.mps,self.mpo,T)
-    def get_inverses(self):
-        self.Ta_inv = inverseTransfer_left(self.Ta,self.T.vector)
-        self.Tb_inv = inverseTransfer_left(self.Tb,self.R.vector)
-        self.Tb2_inv = inverseTransfer_leftPlusTwoPhysical(self.Tb2,self.RR.vector)
 
 class uMPSU1_2d_left_twoSite_square(uMPSU1_2d_left_twoSite):
     def get_transfers(self):
