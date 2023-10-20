@@ -117,6 +117,8 @@ class gradEvaluater_uniform_1d_oneSiteLeft(gradEvaluater_uniform_1d):
             return gradImplementation_uniform_1d_oneSiteLeft_oneBodyH(self.psi,H.tensor)
         elif type(H) == twoBodyH or type(H) == twoBodyH_hori or type(H) == twoBodyH_vert:
             return gradImplementation_uniform_1d_oneSiteLeft_twoBodyH(self.psi,H.tensor)
+        elif type(H) == threeBodyH:
+            return gradImplementation_uniform_1d_oneSiteLeft_threeBodyH(self.psi,H.tensor)
 
     def attachRight(self,leftEnv):
         leftEnv = self.psi.Ta_inv.applyRight(leftEnv.reshape(self.psi.D**2)).reshape(self.psi.D,self.psi.D)
@@ -218,21 +220,22 @@ class gradEvaluater_mpso_2d(gradEvaluater):
         pass
     def copyEvaluaters(self):
         self.grad['mps'] = self.gradA_evaluater.grad
-        self.grad['mpo'] = self.gradB_evaluater.grad
+        # self.grad['mpo'] = self.gradB_evaluater.grad
+        self.grad['mpo'] = np.zeros(self.psi.mpo.shape).astype(complex)
     def eval(self,geo=False):
         self.gradA_evaluater.eval()
-        self.gradB_evaluater.eval(geo=geo)
+        # self.gradB_evaluater.eval(geo=geo)
         self.copyEvaluaters()
     def projectTangentSpace(self,metric):
         self.gradA_evaluater.projectTangentSpace(metric)
-        self.gradB_evaluater.projectTangentSpace(metric)
+        # self.gradB_evaluater.projectTangentSpace(metric)
         self.copyEvaluaters()
 
 class gradEvaluater_mpso_2d_uniform(gradEvaluater_mpso_2d):
     def __init__(self,psi,H):
         super().__init__(psi,H)
         self.gradA_evaluater = gradEvaluater_mpso_2d_mps_uniform(psi,H)
-        self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_uniform(psi,H)
+        # self.gradB_evaluater = gradEvaluater_mpso_2d_mpo_uniform(psi,H)
 class gradEvaluater_mpso_2d_twoSite_square(gradEvaluater_mpso_2d):
     def __init__(self,psi,H):
         super().__init__(psi,H)
@@ -285,6 +288,7 @@ class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps):
         for n in range(0,len(self.H.terms)):
             effH.append(self.H_imp[n].getEffectiveH())
         effH = localH(effH)
+        temp = effH.terms[0].matrix
         return gradEvaluater_uniform_1d_oneSiteLeft(self.eff_psi,effH)
 
     def fetch_implementation(self,H):
@@ -296,6 +300,8 @@ class gradEvaluater_mpso_2d_mps_uniform(gradEvaluater_mpso_2d_mps):
             return gradImplementation_mpso_2d_mps_uniform_twoBodyH_vert(self.psi,H.tensor)
         elif type(H) == plaquetteH:
             return gradImplementation_mpso_2d_mps_uniform_plaquetteH(self.psi,H.tensor)
+        elif type(H) == cross2dH:
+            return gradImplementation_mpso_2d_mps_uniform_cross2dH(self.psi,H.tensor)
 
 class gradEvaluater_mpso_2d_mps_twoSite(gradEvaluater_mpso_2d_mps):
     def getEffective_1d_evaluater(self):
@@ -369,6 +375,8 @@ class gradEvaluater_mpso_2d_mpo_uniform(gradEvaluater_mpso_2d_mpo):
             return gradImplementation_mpso_2d_mpo_uniform_twoBodyH_vert(self.psi,H.tensor)
         elif type(H) == plaquetteH:
             return gradImplementation_mpso_2d_mpo_uniform_plaquetteH(self.psi,H.tensor)
+        elif type(H) == cross2dH:
+            return gradImplementation_mpso_2d_mpo_uniform_cross2dH(self.psi,H.tensor)
 
     def projectTangentSpace_euclid(self):
         self.grad = project_mpo_euclid(self.grad,self.psi.mpo)

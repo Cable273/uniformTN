@@ -144,6 +144,12 @@ class mpsu1Transfer_left_twoLayer(regularTransfer):
         self.D = np.size(W,axis=2)
         self.noLegs = 4
         self.matrix = ncon([A,A,W,W,W.conj(),W.conj(),A.conj(),A.conj(),T.tensor],((1,7,8),(4,8,9),(2,1,-12,-14),(5,4,-16,-18),(2,3,-13,-15),(5,6,-17,-19),(3,7,11),(6,11,10),(10,9)),forder=(-13,-12,-17,-16,-15,-14,-19,-18),order=(7,8,9,10,11,1,2,3,4,5,6)).reshape(self.D**4,self.D**4)
+class mpsu1Transfer_left_threeLayer(regularTransfer):
+    def __init__(self,A,B,T):
+        self.D = np.size(B,axis=2)
+        self.noLegs = 6
+        self.matrix = ncon([A,A,A,B,B,B,B.conj(),B.conj(),B.conj(),A.conj(),A.conj(),A.conj(),T.tensor],((1,10,11),(4,11,12),(7,12,13),(2,1,-17,-18),(5,4,-21,-22),(8,7,-25,-26),(2,3,-19,-20),(5,6,-23,-24),(8,9,-27,-28),(3,10,16),(6,16,15),(9,15,14),(14,13)),forder=(-19,-17,-23,-21,-27,-25,-20,-18,-24,-22,-28,-26),order=(10,11,12,13,14,15,16,1,2,3,4,5,6,7,8,9)).reshape(self.D**6,self.D**6)
+
 class mpsu1Transfer_left_twoLayer_twoSite_square(regularTransfer): #twoSite unit cell mpso
     def __init__(self,A,B,T,style):
         self.D = np.size(B,axis=4)

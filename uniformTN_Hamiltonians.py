@@ -134,20 +134,16 @@ class twoBodyH(localH_term):
     def reshapeTensor(self,H_matrix):
         physDim = int(np.sqrt(H_matrix.shape[0]))
         return H_matrix.reshape([physDim,physDim,physDim,physDim])
-
-    #1d
     def exp_1d(self,psi):
         return np.real(ncon([psi.mps,psi.mps,self.tensor,psi.mps.conj(),psi.mps.conj(),psi.L.tensor,psi.R.tensor],((1,5,6),(3,6,7),(2,4,1,3),(2,10,9),(4,9,8),(10,5),(8,7))))
     def exp_1d_centre(self,psi):
         return np.real(ncon([psi.Al,psi.Ac,self.tensor,psi.Al.conj(),psi.Ac.conj()],((1,5,6),(3,6,7),(2,4,1,3),(2,5,8),(4,8,7)),order=(5,1,2,6,8,3,4,7)))
     def exp_1d_left(self,psi):
         return np.real(ncon([psi.mps,psi.mps,self.tensor,psi.mps.conj(),psi.mps.conj(),psi.R.tensor],((1,5,6),(3,6,7),(2,4,1,3),(2,5,9),(4,9,8),(8,7))))
-
     def exp_1d_left_twoSite(self,psi):
         E = np.real(ncon([psi.mps,self.tensor,psi.mps.conj(),psi.R.tensor],((1,2,5,6),(3,4,1,2),(3,4,5,7),(7,6)),order=(5,1,3,2,4,6,7)))
         E += np.real(ncon([psi.mps,psi.mps,self.tensor,psi.mps.conj(),psi.mps.conj(),psi.R.tensor],((1,2,7,8),(3,4,8,9),(5,6,2,3),(1,5,7,11),(6,4,11,10),(10,9)),order=(7,1,2,5,8,11,3,6,4,9,10)))
         return E/2
-
     def exp_1d_left_bipartite_ind(self,mps1,mps2,R1):
         return np.real(ncon([mps1,mps2,self.tensor,mps1.conj(),mps2.conj(),R1.tensor],((1,5,6),(3,6,7),(2,4,1,3),(2,5,9),(4,9,8),(8,7))))
     def exp_1d_left_bipartite(self,psi):
@@ -155,8 +151,17 @@ class twoBodyH(localH_term):
         E += self.exp_1d_left_bipartite_ind(psi.mps[2],psi.mps[1],psi.R[2])
         return E/2
 
-class twoBodyH_hori(twoBodyH):
+class threeBodyH(localH_term):
+    def reshapeTensor(self,H_matrix):
+        physDim = int(np.sqrt(H_matrix.shape[0]))
+        return H_matrix.reshape([physDim,physDim,physDim,physDim,physDim,physDim])
+    def exp_1d(self,psi):
+        return np.real(ncon([psi.mps,psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.mps.conj(),self.tensor,psi.L.tensor,psi.R.tensor],((1,7,8),(3,8,9),(5,9,10),(2,14,13),(4,13,12),(6,12,11),(2,4,6,1,3,5),(14,7),(11,10)),order=(14,7,1,2,8,13,3,4,9,12,5,6,10,11)))
+    def exp_1d_left(self,psi):
+        return np.real(ncon([psi.mps,psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.mps.conj(),self.tensor,psi.R.tensor],((1,7,8),(3,8,9),(5,9,10),(2,7,13),(4,13,12),(6,12,11),(2,4,6,1,3,5),(11,10)),order=(7,1,2,8,13,3,4,9,12,5,6,10,11)))
+    #to implement: exp_1d_left_twoSite,exp_1d_left_bipartite
 
+class twoBodyH_hori(twoBodyH):
     def exp_2d_left(self,psi):
         centreContract = ncon([psi.mpo,psi.mpo,self.tensor,psi.mpo.conj(),psi.mpo.conj(),psi.R.tensor],((2,-1,9,10),(6,-5,10,11),(3,7,2,6),(3,-4,9,13),(7,-8,13,12),(12,11)),forder=(-4,-8,-1,-5),order=(9,2,3,10,13,6,7,11,12))
         outerContract = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1))
@@ -243,3 +248,17 @@ class plaquetteH(localH_term):
     def exp_2d_left(self,psi):
         outerContractDouble = ncon([psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.T.tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2))
         return np.real(ncon([psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),self.tensor,psi.RR.tensor,outerContractDouble,outerContractDouble],((2,1,17,18),(6,5,18,19),(3,4,17,21),(7,8,21,20),(10,9,22,23),(14,13,23,24),(11,12,22,26),(15,16,26,25),(11,3,15,7,10,2,14,6),(25,24,20,19),(12,4,9,1),(16,8,13,5)),order=(17,1,4,2,3,18,21,5,8,6,7,19,20,24,25,13,16,14,15,23,26,9,12,10,11,22)))
+
+
+#got cross like configurations (nearest neighbour interactions) in 2d
+#eg PXP model in 2d
+#index ordering convention: bottom, middle left, middle centre, middle right, top
+class cross2dH(localH_term):
+    def reshapeTensor(self,H_matrix):
+        physDim = int(np.sqrt(np.sqrt(H_matrix.shape[0])))
+        return H_matrix.reshape([physDim,physDim,physDim,physDim,physDim,physDim,physDim,physDim,physDim,physDim])
+
+    def exp_2d_left(self,psi):
+        outerContract = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1))
+        outerContractTriple = ncon([psi.mps,psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.mps.conj(),psi.T.tensor],((-1,7,8),(-3,8,9),(-5,9,10),(-2,7,13),(-4,13,12),(-6,12,11),(11,10)),forder=(-2,-4,-6,-1,-3,-5))
+        return np.real(ncon([psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),psi.mpo,psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),psi.mpo.conj(),psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),self.tensor,psi.RRR.tensor,outerContract,outerContractTriple,outerContractTriple],((2,1,27,28),(6,5,28,29),(3,4,27,31),(6,7,31,30),(9,8,32,33),(13,12,33,34),(17,16,34,35),(10,11,32,38),(14,15,38,37),(18,19,37,36),(21,20,39,40),(25,24,40,41),(22,23,39,43),(25,26,43,42),(22,10,14,18,3,21,9,13,17,2),(42,41,36,35,30,29),(11,8),(23,15,4,20,12,1),(26,19,7,24,16,5)),order=(32,8,9,10,11,33,38,12,13,14,15,34,37,16,17,18,19,35,36,29,30,5,6,7,28,31,1,2,3,4,27,41,42,24,25,26,40,43,20,21,22,23,39)))

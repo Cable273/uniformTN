@@ -70,6 +70,17 @@ class gradImplementation_uniform_1d_oneSiteLeft_twoBodyH(gradImplementation_unif
     def buildRightEnv(self):
         return ncon([self.psi.mps,self.psi.mps,self.H,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.R.tensor],((1,-5,6),(3,6,7),(2,4,1,3),(2,-10,9),(4,9,8),(8,7)),forder=(-10,-5))
 
+class gradImplementation_uniform_1d_oneSiteLeft_threeBodyH(gradImplementation_uniform_1d):
+    def getCentralTerms(self):
+        grad = ncon([self.psi.mps,self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.H,self.psi.R.tensor],((1,-7,8),(3,8,9),(5,9,10),(4,-13,12),(6,12,11),(-2,4,6,1,3,5),(11,10)),forder=(-2,-7,-13),order=(11,10,5,6,9,12,3,4,8,1))
+        grad += ncon([self.psi.mps,self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.H,self.psi.R.tensor],((1,7,8),(3,8,9),(5,9,10),(2,7,-13),(6,-12,11),(2,-4,6,1,3,5),(11,10)),forder=(-4,-13,-12),order=(11,10,5,6,9,3,8,1,2,7))
+        grad += ncon([self.psi.mps,self.psi.mps,self.psi.mps,self.psi.mps.conj(),self.psi.mps.conj(),self.H,self.psi.R.tensor],((1,7,8),(3,8,9),(5,9,10),(2,7,13),(4,13,-12),(2,4,-6,1,3,5),(-11,10)),forder=(-6,-12,-11),order=(7,1,2,8,13,3,4,9,5,10))
+        return grad
+    def buildLeftEnv(self):
+        return ncon([self.psi.mps,self.psi.mps,self.psi.mps,self.H,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.mps.conj()],((1,7,8),(3,8,9),(5,9,-10),(2,4,6,1,3,5),(2,7,13),(4,13,12),(6,12,-11)),forder=(-11,-10),order=(7,1,2,8,13,3,4,9,12,5,6))
+    def buildRightEnv(self):
+        return ncon([self.psi.mps,self.psi.mps,self.psi.mps,self.H,self.psi.mps.conj(),self.psi.mps.conj(),self.psi.mps.conj(),self.psi.R.tensor],((1,-7,8),(3,8,9),(5,9,10),(2,4,6,1,3,5),(2,-14,13),(4,13,12),(6,12,11),(11,10)),forder=(-14,-7),order=(11,10,5,6,9,12,3,4,8,13,1,2))
+
 # -----------------------------
 class gradImplementation_uniform_1d_twoSiteLeft(gradImplementation_uniform_1d):
     def __init__(self,psi,imp_site1,imp_site2):

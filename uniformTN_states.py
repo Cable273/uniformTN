@@ -130,6 +130,7 @@ class uMPS_1d_left(uMPS_1d):
     def norm(self):
         self.mps = polarDecomp(self.mps.reshape(2*self.D,self.D)).reshape(2,self.D,self.D)
 
+
 class uMPS_1d_right(uMPS_1d):
     def randoInit(self):
         self.mps = np.einsum('ijk->ikj',randoUnitary(2*self.D,self.D).reshape(2,self.D,self.D))
@@ -251,6 +252,15 @@ class uMPSU1_2d_left(uMPSU_2d):
         #polar decomp to ensure left canon still
         self.mps = polarDecomp(self.mps.reshape(2*self.D_mps,self.D_mps)).reshape(2,self.D_mps,self.D_mps)
         self.mpo = np.einsum('iajb->ijab',polarDecomp(np.einsum('ijab->iajb',self.mpo).reshape(2*self.D_mpo,2*self.D_mpo)).reshape(2,self.D_mpo,2,self.D_mpo))
+
+    #for PXP model and cross like Hamiltonians. Refactor transfer/fixed point construction to be more general later...
+    def get_transfers_len3(self):
+        self.Tb3 = mpsu1Transfer_left_threeLayer(self.mps,self.mpo,self.T)
+    def get_fixedPoints_len3(self):
+        self.RRR = self.Tb3.findRightEig()
+        self.RRR.norm_pairedCanon()
+    def get_inverses_len3(self):
+        self.Tb3_inv = inverseTransfer_left(self.Tb3,self.RRR.vector)
 
 class uMPSU1_2d_left_twoSite(uMPSU1_2d_left):
     def randoInit(self):
