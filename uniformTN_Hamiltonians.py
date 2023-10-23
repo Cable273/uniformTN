@@ -161,7 +161,7 @@ class threeBodyH(localH_term):
         return np.real(ncon([psi.mps,psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.mps.conj(),self.tensor,psi.R.tensor],((1,7,8),(3,8,9),(5,9,10),(2,7,13),(4,13,12),(6,12,11),(2,4,6,1,3,5),(11,10)),order=(7,1,2,8,13,3,4,9,12,5,6,10,11)))
 
     def exp_1d_left_bipartite_ind(self,mps1,mps2,R2):
-        return ncon([mps1,mps2,mps1,mps1.conj(),mps2.conj(),mps1.conj(),self.tensor,R2.tensor],((1,7,8),(3,8,9),(5,9,10),(2,7,13),(4,13,12),(6,12,11),(2,4,6,1,3,5),(11,10)))
+        return np.real(ncon([mps1,mps2,mps1,mps1.conj(),mps2.conj(),mps1.conj(),self.tensor,R2.tensor],((1,7,8),(3,8,9),(5,9,10),(2,7,13),(4,13,12),(6,12,11),(2,4,6,1,3,5),(11,10))))
     def exp_1d_left_bipartite(self,psi):
         E = self.exp_1d_left_bipartite_ind(psi.mps[1],psi.mps[2],psi.R[2])
         E += self.exp_1d_left_bipartite_ind(psi.mps[2],psi.mps[1],psi.R[1])
@@ -270,3 +270,16 @@ class cross2dH(localH_term):
         outerContract = ncon([psi.mps,psi.mps.conj(),psi.T.tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1))
         outerContractTriple = ncon([psi.mps,psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.mps.conj(),psi.T.tensor],((-1,7,8),(-3,8,9),(-5,9,10),(-2,7,13),(-4,13,12),(-6,12,11),(11,10)),forder=(-2,-4,-6,-1,-3,-5))
         return np.real(ncon([psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),psi.mpo,psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),psi.mpo.conj(),psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),self.tensor,psi.RRR.tensor,outerContract,outerContractTriple,outerContractTriple],((2,1,27,28),(6,5,28,29),(3,4,27,31),(6,7,31,30),(9,8,32,33),(13,12,33,34),(17,16,34,35),(10,11,32,38),(14,15,38,37),(18,19,37,36),(21,20,39,40),(25,24,40,41),(22,23,39,43),(25,26,43,42),(22,10,14,18,3,21,9,13,17,2),(42,41,36,35,30,29),(11,8),(23,15,4,20,12,1),(26,19,7,24,16,5)),order=(32,8,9,10,11,33,38,12,13,14,15,34,37,16,17,18,19,35,36,29,30,5,6,7,28,31,1,2,3,4,27,41,42,24,25,26,40,43,20,21,22,23,39)))
+
+    def exp_2d_left_bipartite(self,psi):
+        outerContract = dict()
+        outerContractTriple = dict()
+        outerContract[1] = ncon([psi.mps[1],psi.mps[1].conj(),psi.T[2].tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1))
+        outerContract[2] = ncon([psi.mps[2],psi.mps[2].conj(),psi.T[1].tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1))
+        outerContractTriple[1] = ncon([psi.mps[1],psi.mps[2],psi.mps[1],psi.mps[1].conj(),psi.mps[2].conj(),psi.mps[1].conj(),psi.T[2].tensor],((-1,7,8),(-3,8,9),(-5,9,10),(-2,7,13),(-4,13,12),(-6,12,11),(11,10)),forder=(-2,-4,-6,-1,-3,-5))
+        outerContractTriple[2] = ncon([psi.mps[2],psi.mps[1],psi.mps[2],psi.mps[2].conj(),psi.mps[1].conj(),psi.mps[2].conj(),psi.T[1].tensor],((-1,7,8),(-3,8,9),(-5,9,10),(-2,7,13),(-4,13,12),(-6,12,11),(11,10)),forder=(-2,-4,-6,-1,-3,-5))
+
+        exp = np.real(ncon([psi.mpo[2],psi.mpo[1],psi.mpo[2].conj(),psi.mpo[1].conj(),psi.mpo[2],psi.mpo[1],psi.mpo[2],psi.mpo[2].conj(),psi.mpo[1].conj(),psi.mpo[2].conj(),psi.mpo[2],psi.mpo[1],psi.mpo[2].conj(),psi.mpo[1].conj(),self.tensor,psi.RRR[2].tensor,outerContract[2],outerContractTriple[2],outerContractTriple[1]],((2,1,27,28),(6,5,28,29),(3,4,27,31),(6,7,31,30),(9,8,32,33),(13,12,33,34),(17,16,34,35),(10,11,32,38),(14,15,38,37),(18,19,37,36),(21,20,39,40),(25,24,40,41),(22,23,39,43),(25,26,43,42),(22,10,14,18,3,21,9,13,17,2),(42,41,36,35,30,29),(11,8),(23,15,4,20,12,1),(26,19,7,24,16,5)),order=(32,8,9,10,11,33,38,12,13,14,15,34,37,16,17,18,19,35,36,29,30,5,6,7,28,31,1,2,3,4,27,41,42,24,25,26,40,43,20,21,22,23,39)))
+        exp += np.real(ncon([psi.mpo[1],psi.mpo[2],psi.mpo[1].conj(),psi.mpo[2].conj(),psi.mpo[1],psi.mpo[2],psi.mpo[1],psi.mpo[1].conj(),psi.mpo[2].conj(),psi.mpo[1].conj(),psi.mpo[1],psi.mpo[2],psi.mpo[1].conj(),psi.mpo[2].conj(),self.tensor,psi.RRR[1].tensor,outerContract[1],outerContractTriple[1],outerContractTriple[2]],((2,1,27,28),(6,5,28,29),(3,4,27,31),(6,7,31,30),(9,8,32,33),(13,12,33,34),(17,16,34,35),(10,11,32,38),(14,15,38,37),(18,19,37,36),(21,20,39,40),(25,24,40,41),(22,23,39,43),(25,26,43,42),(22,10,14,18,3,21,9,13,17,2),(42,41,36,35,30,29),(11,8),(23,15,4,20,12,1),(26,19,7,24,16,5)),order=(32,8,9,10,11,33,38,12,13,14,15,34,37,16,17,18,19,35,36,29,30,5,6,7,28,31,1,2,3,4,27,41,42,24,25,26,40,43,20,21,22,23,39)))
+        return exp / 2
+    

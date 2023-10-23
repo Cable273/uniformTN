@@ -72,6 +72,9 @@ class stateAnsatz(ABC):
 
         if projectionMetric is not None:
             gradEvaluater.projectTangentSpace(projectionMetric)
+        # print(np.einsum('ijk,ijk',gradEvaluater.grad,gradEvaluater.grad.conj()))
+        # print(np.einsum('ijk,ijk',gradEvaluater.grad[1],gradEvaluater.grad[1].conj()))
+        # print(np.einsum('ijk,ijk',gradEvaluater.grad[2],gradEvaluater.grad[2].conj()))
         # print(np.einsum('ijk,ijk',gradEvaluater.grad['mps'],gradEvaluater.grad['mps'].conj()))
         # print(np.einsum('ijkl,ijkl',gradEvaluater.grad['mpo'],gradEvaluater.grad['mpo'].conj()))
 
@@ -379,6 +382,22 @@ class uMPSU1_2d_left_bipartite(uMPSU1_2d_left_multipleTensors):
         self.Tb[2] = mpsu1Transfer_left_oneLayerBip(self.mps[2],self.mps[1],self.mpo[2],self.mpo[1],T2,T1)
         self.Tb2[1] = mpsu1Transfer_left_twoLayerBip(self.mps[1],self.mps[2],self.mpo[1],self.mpo[2],T1,T2)
         self.Tb2[2] = mpsu1Transfer_left_twoLayerBip(self.mps[2],self.mps[1],self.mpo[2],self.mpo[1],T2,T1)
+
+    #for PXP model and cross like Hamiltonians. Refactor transfer/fixed point construction to be more general later...
+    def get_transfers_len3(self):
+        self.Tb3 = dict()
+        self.Tb3[1] = mpsu1Transfer_left_threeLayerBip(self.mps[1],self.mps[2],self.mpo[1],self.mpo[2],self.T[1],self.T[2])
+        self.Tb3[2] = mpsu1Transfer_left_threeLayerBip(self.mps[2],self.mps[1],self.mpo[2],self.mpo[1],self.T[2],self.T[1])
+    def get_fixedPoints_len3(self):
+        self.RRR = dict()
+        self.RRR[1] = self.Tb3[1].findRightEig()
+        self.RRR[2] = self.Tb3[2].findRightEig()
+        self.RRR[1].norm_pairedCanon()
+        self.RRR[2].norm_pairedCanon()
+    def get_inverses_len3(self):
+        self.Tb3_inv = dict()
+        self.Tb3_inv[1] = inverseTransfer_left(self.Tb3[1],self.RRR[1].vector)
+        self.Tb3_inv[2] = inverseTransfer_left(self.Tb3[2],self.RRR[2].vector)
 
 class uMPSU1_2d_left_fourSite_sep(uMPSU1_2d_left_multipleTensors):
     def __init__(self,D_mps,D_mpo,mps=None,mpo=None):

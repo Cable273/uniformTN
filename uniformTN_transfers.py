@@ -150,6 +150,16 @@ class mpsu1Transfer_left_threeLayer(regularTransfer):
         self.noLegs = 6
         self.matrix = ncon([A,A,A,B,B,B,B.conj(),B.conj(),B.conj(),A.conj(),A.conj(),A.conj(),T.tensor],((1,10,11),(4,11,12),(7,12,13),(2,1,-17,-18),(5,4,-21,-22),(8,7,-25,-26),(2,3,-19,-20),(5,6,-23,-24),(8,9,-27,-28),(3,10,16),(6,16,15),(9,15,14),(14,13)),forder=(-19,-17,-23,-21,-27,-25,-20,-18,-24,-22,-28,-26),order=(10,11,12,13,14,15,16,1,2,3,4,5,6,7,8,9)).reshape(self.D**6,self.D**6)
 
+class mpsu1Transfer_left_threeLayerBip(regularTransfer):
+    def __init__(self,A1,A2,B1,B2,T1,T2):
+        self.D = np.size(B1,axis=2)
+        self.noLegs = 6
+        matrix1 = ncon([A1,A2,A1,B1,B2,B1,B1.conj(),B2.conj(),B1.conj(),A1.conj(),A2.conj(),A1.conj(),T2.tensor],((1,10,11),(4,11,12),(7,12,13),(2,1,-17,-18),(5,4,-21,-22),(8,7,-25,-26),(2,3,-19,-20),(5,6,-23,-24),(8,9,-27,-28),(3,10,16),(6,16,15),(9,15,14),(14,13)),forder=(-19,-17,-23,-21,-27,-25,-20,-18,-24,-22,-28,-26),order=(10,11,12,13,14,15,16,1,2,3,4,5,6,7,8,9)).reshape(self.D**6,self.D**6)
+        matrix2 = ncon([A2,A1,A2,B2,B1,B2,B2.conj(),B1.conj(),B2.conj(),A2.conj(),A1.conj(),A2.conj(),T1.tensor],((1,10,11),(4,11,12),(7,12,13),(2,1,-17,-18),(5,4,-21,-22),(8,7,-25,-26),(2,3,-19,-20),(5,6,-23,-24),(8,9,-27,-28),(3,10,16),(6,16,15),(9,15,14),(14,13)),forder=(-19,-17,-23,-21,-27,-25,-20,-18,-24,-22,-28,-26),order=(10,11,12,13,14,15,16,1,2,3,4,5,6,7,8,9)).reshape(self.D**6,self.D**6)
+        self.matrix = np.dot(matrix1,matrix2)
+        del matrix1
+        del matrix2
+
 class mpsu1Transfer_left_twoLayer_twoSite_square(regularTransfer): #twoSite unit cell mpso
     def __init__(self,A,B,T,style):
         self.D = np.size(B,axis=4)
@@ -225,7 +235,6 @@ class mpsu1Transfer_left_twoLayerWithMpsInsertBip_plusOne(regularTransfer):
         self.matrix = np.dot(matrix1,matrix2)
         del matrix1
         del matrix2
-
 
 class mpsu1Transfer_left_threeLayerWithMpsInsert_lower(regularTransfer):
     def __init__(self,A,W,T,T_insert):
