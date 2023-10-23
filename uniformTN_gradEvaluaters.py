@@ -406,6 +406,8 @@ class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater_mpso_2d_mpo_multipleTens
             return gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_hori(self.psi,H.tensor)
         elif type(H) == twoBodyH_vert:
             return gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_vert(self.psi,H.tensor)
+        elif type(H) == cross2dH:
+            return gradImplementation_mpso_2d_mpo_bipartite_cross2dH(self.psi,H.tensor)
 
     def projectTangentSpace_tdvp(self):
         rho1 = ncon([self.psi.mps[1],self.psi.mps[1].conj(),self.psi.T[2].tensor],((-1,3,4),(-2,3,5),(5,4)),forder=(-2,-1))
