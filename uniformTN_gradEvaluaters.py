@@ -530,6 +530,8 @@ class gradEvaluater_mpso_2d_mps_bipartite(gradEvaluater):
             return gradImplementation_mpso_2d_mps_multipleTensors_twoBodyH_hori(self.psi,H.tensor,indexSetter = indexSetter)
         elif type(H) == twoBodyH_vert:
             return gradImplementation_mpso_2d_mps_multipleTensors_twoBodyH_vert(self.psi,H.tensor,indexSetter = indexSetter)
+        elif type(H) == cross2dH:
+            return gradImplementation_mpso_2d_mps_multipleTensors_cross2dH(self.psi,H.tensor,indexSetter = indexSetter)
 
 class gradEvaluater_mpso_2d_mps_fourSite_sep(gradEvaluater):
     def effective_1d_bipartite_psi(self,index1,index2):
