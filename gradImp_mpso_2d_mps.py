@@ -249,6 +249,30 @@ class gradImplementation_mpso_2d_mps_multipleTensors_twoBodyH_vert(gradImplement
         physDim = H_eff_shifted.shape[0]
         return twoBodyH((H_eff_centre + H_eff_shifted).reshape(physDim**2,physDim**2))
 
+class gradImplementation_mpso_2d_mps_multipleTensors_plaquetteH(gradImplementation_mpso_2d_mps_multipleTensors):
+    #IMPLEMENTED FOR BIPARTITE ONLY (not fourSite_sep)
+    def getEffectiveH(self,index):
+        index1,index2,index3,index4 = self.indexSetter(index)
+        outerContractDouble = dict()
+        outerContractDouble[1] = ncon([self.psi.mps[1],self.psi.mps[2],self.psi.mps[1].conj(),self.psi.mps[2].conj(),self.psi.T[1].tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2))
+        outerContractDouble[2] = ncon([self.psi.mps[2],self.psi.mps[1],self.psi.mps[2].conj(),self.psi.mps[1].conj(),self.psi.T[2].tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2))
+
+        H_eff = ncon([self.psi.mpo[index2],self.psi.mpo[index1],self.psi.mpo[index2].conj(),self.psi.mpo[index1].conj(),self.psi.mpo[index1],self.psi.mpo[index2],self.psi.mpo[index1].conj(),self.psi.mpo[index2].conj(),self.H,self.psi.RR[index1].tensor,outerContractDouble[index2]],((2,-1,17,18),(6,5,18,19),(3,-4,17,21),(7,8,21,20),(10,-9,22,23),(14,13,23,24),(11,-12,22,26),(15,16,26,25),(11,3,15,7,10,2,14,6),(25,24,20,19),(16,8,13,5)),forder=(-12,-4,-9,-1),order=(25,24,13,14,15,16,23,26,10,11,22,19,20,5,6,7,8,18,21,2,3,17))
+        H_eff += ncon([self.psi.mpo[index1],self.psi.mpo[index2],self.psi.mpo[index1].conj(),self.psi.mpo[index2].conj(),self.psi.mpo[index2],self.psi.mpo[index1],self.psi.mpo[index2].conj(),self.psi.mpo[index1].conj(),self.H,self.psi.RR[index2].tensor,outerContractDouble[index2]],((2,1,17,18),(6,-5,18,19),(3,4,17,21),(7,-8,21,20),(10,9,22,23),(14,-13,23,24),(11,12,22,26),(15,-16,26,25),(11,3,15,7,10,2,14,6),(25,24,20,19),(12,4,9,1)),forder=(-16,-8,-13,-5),order=(22,10,11,9,12,23,26,14,15,24,25,20,19,6,7,18,21,2,3,1,4,17))
+
+        env1 = ncon([self.psi.mpo[index2],self.psi.mpo[index1],self.psi.mpo[index2].conj(),self.psi.mpo[index1].conj(),self.psi.mpo[index1],self.psi.mpo[index2],self.psi.mpo[index1].conj(),self.psi.mpo[index2].conj(),self.H,outerContractDouble[index1],outerContractDouble[index2]],((2,1,17,18),(6,5,18,-19),(3,4,17,21),(7,8,21,-20),(10,9,22,23),(14,13,23,-24),(11,12,22,26),(15,16,26,-25),(11,3,15,7,10,2,14,6),(12,4,9,1),(16,8,13,5)),forder=(-25,-24,-20,-19),order=(22,9,10,11,12,23,26,13,14,15,16,17,1,2,3,4,18,21,5,6,7,8))
+        env2 = ncon([self.psi.mpo[index1],self.psi.mpo[index2],self.psi.mpo[index1].conj(),self.psi.mpo[index2].conj(),self.psi.mpo[index2],self.psi.mpo[index1],self.psi.mpo[index2].conj(),self.psi.mpo[index1].conj(),self.H,outerContractDouble[index2],outerContractDouble[index1]],((2,1,17,18),(6,5,18,-19),(3,4,17,21),(7,8,21,-20),(10,9,22,23),(14,13,23,-24),(11,12,22,26),(15,16,26,-25),(11,3,15,7,10,2,14,6),(12,4,9,1),(16,8,13,5)),forder=(-25,-24,-20,-19),order=(22,9,10,11,12,23,26,13,14,15,16,17,1,2,3,4,18,21,5,6,7,8))
+        #extra site
+        env2 = ncon([env2,self.psi.mpo[index1],self.psi.mpo[index1].conj(),self.psi.mpo[index2],self.psi.mpo[index2].conj(),outerContractDouble[index2]],((13,11,9,7),(2,1,7,-8),(2,3,9,-10),(5,4,11,-12),(5,6,13,-14),(6,3,4,1)),forder=(-14,-12,-10,-8),order=(7,9,2,1,3,11,13,5,4,6))
+        env = env1 + env2
+        env = self.psi.Tb2_inv[index1].applyRight(env.reshape(self.psi.D_mpo**4)).reshape(self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
+
+        H_eff += ncon([env,self.psi.mpo[index2],self.psi.mpo[index2].conj(),self.psi.mpo[index1],self.psi.mpo[index1].conj(),self.psi.RR[index2].tensor],((13,11,9,7),(2,-1,7,8),(2,-3,9,10),(5,-4,11,12),(5,-6,13,14),(14,12,10,8)),forder=(-6,-3,-4,-1),order=(7,9,2,11,13,5,8,10,12,14))
+
+        physDim = H_eff.shape[0]
+        H_eff = H_eff.reshape(physDim**2,physDim**2)
+        return twoBodyH(H_eff)
+
 class gradImplementation_mpso_2d_mps_multipleTensors_cross2dH(gradImplementation_mpso_2d_mps_multipleTensors):
     #IMPLEMENTED FOR BIPARTITE ONLY (not fourSite_sep)
     def getEffectiveH(self,index):

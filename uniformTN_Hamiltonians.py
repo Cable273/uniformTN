@@ -257,6 +257,15 @@ class plaquetteH(localH_term):
         outerContractDouble = ncon([psi.mps,psi.mps,psi.mps.conj(),psi.mps.conj(),psi.T.tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2))
         return np.real(ncon([psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),psi.mpo,psi.mpo,psi.mpo.conj(),psi.mpo.conj(),self.tensor,psi.RR.tensor,outerContractDouble,outerContractDouble],((2,1,17,18),(6,5,18,19),(3,4,17,21),(7,8,21,20),(10,9,22,23),(14,13,23,24),(11,12,22,26),(15,16,26,25),(11,3,15,7,10,2,14,6),(25,24,20,19),(12,4,9,1),(16,8,13,5)),order=(17,1,4,2,3,18,21,5,8,6,7,19,20,24,25,13,16,14,15,23,26,9,12,10,11,22)))
 
+    def exp_2d_left_bipartite(self,psi):
+        outerContractDouble = dict()
+        outerContractDouble[1] = ncon([psi.mps[1],psi.mps[2],psi.mps[1].conj(),psi.mps[2].conj(),psi.T[1].tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2))
+        outerContractDouble[2] = ncon([psi.mps[2],psi.mps[1],psi.mps[2].conj(),psi.mps[1].conj(),psi.T[2].tensor],((-1,5,6),(-2,6,7),(-3,5,9),(-4,9,8),(8,7)),forder=(-3,-4,-1,-2))
+
+        exp =  np.real(ncon([psi.mpo[2],psi.mpo[1],psi.mpo[2].conj(),psi.mpo[1].conj(),psi.mpo[1],psi.mpo[2],psi.mpo[1].conj(),psi.mpo[2].conj(),self.tensor,psi.RR[1].tensor,outerContractDouble[1],outerContractDouble[2]],((2,1,17,18),(6,5,18,19),(3,4,17,21),(7,8,21,20),(10,9,22,23),(14,13,23,24),(11,12,22,26),(15,16,26,25),(11,3,15,7,10,2,14,6),(25,24,20,19),(12,4,9,1),(16,8,13,5)),order=(17,1,4,2,3,18,21,5,8,6,7,19,20,24,25,13,16,14,15,23,26,9,12,10,11,22)))
+        exp +=  np.real(ncon([psi.mpo[1],psi.mpo[2],psi.mpo[1].conj(),psi.mpo[2].conj(),psi.mpo[2],psi.mpo[1],psi.mpo[2].conj(),psi.mpo[1].conj(),self.tensor,psi.RR[2].tensor,outerContractDouble[2],outerContractDouble[1]],((2,1,17,18),(6,5,18,19),(3,4,17,21),(7,8,21,20),(10,9,22,23),(14,13,23,24),(11,12,22,26),(15,16,26,25),(11,3,15,7,10,2,14,6),(25,24,20,19),(12,4,9,1),(16,8,13,5)),order=(17,1,4,2,3,18,21,5,8,6,7,19,20,24,25,13,16,14,15,23,26,9,12,10,11,22)))
+        return exp / 2
+
 
 #got cross like configurations (nearest neighbour interactions) in 2d
 #eg PXP model in 2d
