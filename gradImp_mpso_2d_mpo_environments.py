@@ -253,6 +253,8 @@ class env_mpso_vert_bipartite(env_mpso_vert_multipleTensors):
                 return env_mpso_vert_bipartite_eval_1x2_env1(self.psi)
             elif self.shape == [2,1]:
                 return env_mpso_vert_bipartite_eval_2x1_env1(self.psi)
+            elif self.shape == [2,2]:
+                return env_mpso_vert_bipartite_eval_2x2_env1(self.psi)
             elif self.shape == [3,3]:
                 return env_mpso_vert_bipartite_eval_3x3_env1(self.psi)
             elif self.shape == [3,2]:
@@ -266,6 +268,8 @@ class env_mpso_vert_bipartite(env_mpso_vert_multipleTensors):
                 return env_mpso_vert_bipartite_eval_1x2_env2(self.psi)
             elif self.shape == [2,1]:
                 return env_mpso_vert_bipartite_eval_2x1_env2(self.psi)
+            elif self.shape == [2,2]:
+                return env_mpso_vert_bipartite_eval_2x2_env2(self.psi)
             elif self.shape == [3,3]:
                 return env_mpso_vert_bipartite_eval_3x3_env2(self.psi)
             elif self.shape == [3,2]:
@@ -636,6 +640,30 @@ class env_mpso_vert_bipartite_eval_2x1_env2(env_mpso_vert_multipleTensors_eval_2
             return self.gradBelow_ind([2,1],[1],tensor,fixedPoints['RRR_d_lower'][2],outers['outerContractTriple_lower'][1])
         else:
             return self.gradBelow_ind([2,1],[2],tensor,fixedPoints['RRR_d_lower_p1'][1],outers['outerContractTriple_lower_p1'][2])
+
+class env_mpso_vert_bipartite_eval_2x2_env1(env_gradEval):
+    def gradCentre_tensor(self,gradTensorLabel,tensor,outers):
+        if gradTensorLabel == 1:
+            grad = ncon([tensor,self.psi.mpo[2].conj(),self.psi.mpo[1].conj(),self.psi.mpo[2].conj(),self.psi.RR[1].tensor,outers['len2'][1],outers['len2'][2]],((-8,11,2,5,7,10,1,4,-17,19,13,15),(2,3,13,14),(5,6,14,16),(11,12,-18,20),(20,19,16,15),(-9,3,7,1),(12,6,10,4)),forder=(-8,-9,-17,-18),order=(15,16,5,4,6,14,2,1,3,13,19,20,10,7))
+        elif gradTensorLabel == 2:
+            grad = ncon([tensor,self.psi.mpo[1].conj(),self.psi.mpo[1].conj(),self.psi.mpo[2].conj(),self.psi.RR[1].tensor,outers['len2'][1],outers['len2'][2]],((8,11,-2,5,7,10,1,4,17,19,-13,15),(5,6,-14,16),(8,9,17,18),(11,12,18,20),(20,19,16,15),(9,-3,7,1),(12,6,10,4)),forder=(-2,-3,-13,-14),order=(20,19,11,10,12,18,8,7,9,17,15,16,5,4,6,1))
+        return grad
+    def gradAbove_tensor(self,gradTensorLabel,tensor,fixedPoints,outers):
+        return 0 #TODO
+    def gradBelow_tensor(self,gradTensorLabel,tensor,fixedPoints,outers):
+        return 0 #TODO
+
+class env_mpso_vert_bipartite_eval_2x2_env2(env_gradEval):
+    def gradCentre_tensor(self,gradTensorLabel,tensor,outers):
+        if gradTensorLabel == 1:
+            grad = ncon([tensor,self.psi.mpo[2].conj(),self.psi.mpo[2].conj(),self.psi.mpo[1].conj(),self.psi.RR[2].tensor,outers['len2'][2],outers['len2'][1]],((8,11,-2,5,7,10,1,4,17,19,-13,15),(5,6,-14,16),(8,9,17,18),(11,12,18,20),(20,19,16,15),(9,-3,7,1),(12,6,10,4)),forder=(-2,-3,-13,-14),order=(20,19,11,10,12,18,8,7,9,17,15,16,5,4,6,1))
+        elif gradTensorLabel == 2:
+            grad = ncon([tensor,self.psi.mpo[1].conj(),self.psi.mpo[2].conj(),self.psi.mpo[1].conj(),self.psi.RR[2].tensor,outers['len2'][2],outers['len2'][1]],((-8,11,2,5,7,10,1,4,-17,19,13,15),(2,3,13,14),(5,6,14,16),(11,12,-18,20),(20,19,16,15),(-9,3,7,1),(12,6,10,4)),forder=(-8,-9,-17,-18),order=(15,16,5,4,6,14,2,1,3,13,19,20,10,7))
+        return grad
+    def gradAbove_tensor(self,gradTensorLabel,tensor,fixedPoints,outers):
+        return 0 #TODO
+    def gradBelow_tensor(self,gradTensorLabel,tensor,fixedPoints,outers):
+        return 0 #TODO
 
 class env_mpso_vert_bipartite_eval_3x3_env1(env_gradEval):
     def gradCentre_tensor(self,gradTensorLabel,tensor,outers):

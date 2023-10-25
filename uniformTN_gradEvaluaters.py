@@ -406,6 +406,8 @@ class gradEvaluater_mpso_2d_mpo_bipartite(gradEvaluater_mpso_2d_mpo_multipleTens
             return gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_hori(self.psi,H.tensor)
         elif type(H) == twoBodyH_vert:
             return gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_vert(self.psi,H.tensor)
+        elif type(H) == plaquetteH:
+            return gradImplementation_mpso_2d_mpo_bipartite_plaquetteH(self.psi,H.tensor)
         elif type(H) == cross2dH:
             return gradImplementation_mpso_2d_mpo_bipartite_cross2dH(self.psi,H.tensor)
 

@@ -274,6 +274,30 @@ class gradImplementation_mpso_2d_mpo_bipartite_twoBodyH_vert(gradImplementation_
         self.envs_hori.add( env_mpso_hori_bipartite(self.psi,np.einsum('abcc->ab',envDouble),label=site[0])) 
         self.envs_hori.add( env_mpso_hori_bipartite(self.psi,np.einsum('aabc->bc',envDouble),label=site[1])) 
 
+class gradImplementation_mpso_2d_mpo_bipartite_plaquetteH(gradImplementation_mpso_2d_mpo_bipartite_H_verticalLength_2):
+    def buildEnvs_vert_siteLabels(self,site):
+        #term under H 
+        env = ncon([self.psi.mpo[site[1]],self.psi.mpo[site[0]],self.psi.mpo[site[0]],self.psi.mpo[site[1]],self.H],((2,-1,-13,14),(5,-4,14,-15),(8,-7,-16,17),(11,-10,17,-18),(-9,-3,-12,-6,8,2,11,5)),forder=(-9,-12,-3,-6,-7,-10,-1,-4,-16,-18,-13,-15),order=(17,8,11,2,14,5))
+        self.envs_vert_quadrantSeed.add( env_mpso_vert_bipartite(self.psi,env,shape=[2,2],label=site[0]) )
+        self.envs_vert.add( env_mpso_vert_bipartite(self.psi,env,shape=[2,2],label=site[0]) )
+
+        env = ncon([env,self.psi.mpo[site[0]].conj(),self.psi.mpo[site[1]].conj(),self.outers['len2'][site[0]]],((1,-2,3,-4,5,-6,7,-8,9,-10,11,-12),(1,13,9,-14),(3,15,11,-16),(13,15,5,7)),forder=(-2,-4,-6,-8,-14,-10,-16,-12),order=(9,1,5,13,11,3,7,15))
+        self.envs_vert.add( env_mpso_vert_bipartite(self.psi,env,shape=[2,1],label=site[1]) )
+
+        #term right of H
+        env = ncon([env,self.psi.mpo[site[1]].conj(),self.psi.mpo[site[0]].conj(),self.outers['len2'][site[1]]],((5,2,4,1,10,-12,7,-9),(5,6,10,-11),(2,3,7,-8),(6,3,4,1)),forder=(-11,-12,-8,-9),order=(10,5,4,6,7,2,1,3))
+        env = self.psi.Tb2_inv[site[0]].applyRight(env.reshape(self.psi.D_mpo**4)).reshape(self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo,self.psi.D_mpo)
+        env = ncon([env,self.psi.mpo[site[1]],self.psi.mpo[site[0]]],((-10,8,-7,5),(-2,-1,5,-6),(-4,-3,8,-9)),forder=(-4,-2,-3,-1,-10,-9,-7,-6),order=(5,8))
+        self.envs_vert.add( env_mpso_vert_bipartite(self.psi,env,shape=[2,1],label=site[0]) )
+        #extra site
+        env = ncon([env,self.psi.mpo[site[0]].conj(),self.psi.mpo[site[1]].conj(),self.outers['len2'][site[0]]],((5,2,4,1,10,-12,7,-9),(5,6,10,-11),(2,3,7,-8),(6,3,4,1)),forder=(-11,-12,-8,-9),order=(10,5,4,6,7,2,1,3))
+        env = ncon([env,self.psi.mpo[site[0]],self.psi.mpo[site[1]]],((-10,8,-7,5),(-2,-1,5,-6),(-4,-3,8,-9)),forder=(-4,-2,-3,-1,-10,-9,-7,-6),order=(5,8))
+        self.envs_vert.add( env_mpso_vert_bipartite(self.psi,env,shape=[2,1],label=site[1]) )
+    def buildEnvs_hori_siteLabels(self,site):
+        envDouble = ncon([self.psi.mpo[site[1]],self.psi.mpo[site[0]],self.psi.mpo[site[1]].conj(),self.psi.mpo[site[0]].conj(),self.psi.mpo[site[0]],self.psi.mpo[site[1]],self.psi.mpo[site[0]].conj(),self.psi.mpo[site[1]].conj(),self.H,self.psi.RR[site[0]].tensor,self.outers['len2'][site[0]],self.outers['len2'][site[1]]],((2,1,-17,18),(6,5,18,19),(3,4,-20,21),(7,8,21,22),(10,9,-23,24),(14,13,24,25),(11,12,-26,27),(15,16,27,28),(11,3,15,7,10,2,14,6),(28,25,22,19),(12,4,9,1),(16,8,13,5)),forder=(-26,-23,-20,-17),order=(25,28,13,14,15,16,19,22,6,7,5,8,24,27,10,11,9,12,18,21,2,3,1,4))
+        self.envs_hori.add( env_mpso_hori_bipartite(self.psi,np.einsum('abii->ab',envDouble),label=site[0])) 
+        self.envs_hori.add( env_mpso_hori_bipartite(self.psi,np.einsum('iiab->ab',envDouble),label=site[1])) 
+
 class gradImplementation_mpso_2d_mpo_bipartite_cross2dH(gradImplementation_mpso_2d_mpo_bipartite_H_verticalLength_3):
     def buildEnvs_vert_siteLabels(self,site):
         env = ncon([self.psi.mpo[site[0]],self.psi.mpo[site[1]],self.psi.mpo[site[0]],self.psi.mpo[site[1]],self.psi.mpo[site[0]],self.psi.mpo[site[1]],self.psi.mpo[site[0]],self.psi.mpo[site[1]],self.psi.mpo[site[0]],self.H],((-2,-1,-24,25),(4,-3,25,26),(-7,-6,26,-27),(9,-8,-28,29),(12,-11,29,30),(15,-14,30,-31),(-18,-17,-32,33),(20,-19,33,34),(-23,-22,34,-35),(-21,-10,-13,-16,-5,20,9,12,15,4)),forder=(-18,-21,-23,-10,-13,-16,-2,-5,-7,-17,-19,-22,-8,-11,-14,-1,-3,-6,-32,-35,-28,-31,-24,-27),order=(9,29,12,30,15,4,25,26,20,33,34))
