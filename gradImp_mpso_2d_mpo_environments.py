@@ -333,8 +333,8 @@ class env_mpso_vert_uniform_eval_1x2(env_gradEval):
 
 class env_mpso_vert_uniform_eval_2x2(env_gradEval):
     def gradCentre(self,tensor,outers):
-        grad = ncon([tensor,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.RR.tensor,outers['len2'],outers['len2']],((8,11,-2,5,7,10,1,4,17,20,-13,16),(5,16,-14,15),(8,9,17,18),(11,12,18,19),(19,20,15,16),(9,-3,7,1),(12,16,10,4)),forder=(-2,-3,-13,-14))
-        grad += ncon([tensor,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.RR.tensor,outers['len2'],outers['len2']],((-8,11,2,5,7,10,1,4,-17,20,13,16),(2,3,13,14),(5,16,14,15),(11,12,-18,19),(19,20,15,16),(-9,3,7,1),(12,16,10,4)),forder=(-8,-9,-17,-18))
+        grad = ncon([tensor,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.RR.tensor,outers['len2'],outers['len2']],((8,11,-2,5,7,10,1,4,17,20,-13,16),(5,6,-14,15),(8,9,17,18),(11,12,18,19),(19,20,15,16),(9,-3,7,1),(12,6,10,4)),forder=(-2,-3,-13,-14))
+        grad += ncon([tensor,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.RR.tensor,outers['len2'],outers['len2']],((-8,11,2,5,7,10,1,4,-17,20,13,16),(2,3,13,14),(5,6,14,15),(11,12,-18,19),(19,20,15,16),(-9,3,7,1),(12,6,10,4)),forder=(-8,-9,-17,-18))
         return grad
     def gradAbove(self,tensor,fixedPoints,outers):
         return ncon([tensor,self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo.conj(),self.psi.mpo,self.psi.mpo.conj(),self.psi.mpo,fixedPoints['upper'],outers['upper'],outers['upper']],((8,17,5,14,7,16,4,13,28,30,24,26),(8,9,28,29),(17,18,29,31),(5,6,24,25),(14,15,25,27),(11,10,20,22),(11,12,-21,23),(-2,1,-19,20),(31,30,27,26,23,22),(9,6,-3,7,4,1),(18,15,12,16,13,10)),forder=(-2,-3,-19,-21),order=(28,8,24,5,4,6,7,9,25,29,14,17,13,15,16,18,31,30,27,26,22,23,11,10,12,20,1))
