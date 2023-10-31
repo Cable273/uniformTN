@@ -4,14 +4,14 @@ Many body quantum library for riemmannian gradient descent / TDVP on various inf
 
 Implemented ansatz:
 - 1d: 
- - uniform MPS (uniform, left gauge, right gauge, centre gauge), 
- - Bipartite MPS (left gauge), 
- - Two site unit cell MPS (left gauge)
+    - uniform MPS (uniform, left gauge, right gauge, centre gauge), 
+    - Bipartite MPS (left gauge), 
+    - Two site unit cell MPS (left gauge)
 - 2d: 
- - MPSO in left gauge (sequential circuits - subset of iPEPS), 
- - MPSO blocked sites (grouping together sites to enhance tensors physical leg dimension)
- - Bipartite MPSO (left gauge)
- - FourSite_sep MPSO (left gauge) (four seperate tensors in a 2x2 grid)
+    - MPSO in left gauge (sequential circuits - subset of iPEPS), 
+    - MPSO blocked sites (grouping together sites to enhance tensors physical leg dimension)
+    - Bipartite MPSO (left gauge)
+    - FourSite_sep MPSO (left gauge) (four seperate tensors in a 2x2 grid)
 
 Implemented Hamiltonians:
  - 1d: oneBodyH, twoBodyH (nearest neighbour), threeBodyH (next nearest neighbour)
