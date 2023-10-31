@@ -1,6 +1,6 @@
 # uniformTN
 
-Many body quantum library for riemmannian gradient descent / TDVP on various infinite, translationally invariant tensor network ansatz, in both 1d and 2d. Allows one to calculate ground states and time evolve states in the thermodynamic limit.
+Many body quantum library for riemmannian gradient descent / TDVP on various infinite, translationally invariant tensor network ansatz, in both 1d and 2d. Allows one to calculate ground states and time evolve states in the thermodynamic limit. Also includes a vumps implementation for 1d MPS.
 
 Implemented ansatz:
 - 1d: 
