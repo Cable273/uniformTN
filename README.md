@@ -28,7 +28,7 @@ To install:
  - Ensure you have the following python dependencies installed:    
     - numpy
     - scipy
-    - ncon (version 1.0)
+    - ncon (version 1.0 - version 2.0 doesn't work [they changed some syntax])
     - einsum
     - progressbar
     - abc 
